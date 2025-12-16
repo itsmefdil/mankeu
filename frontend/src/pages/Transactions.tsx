@@ -1,0 +1,721 @@
+
+import { useState, useMemo } from 'react';
+import { DashboardLayout } from '@/layouts/DashboardLayout';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { financialService, type Transaction } from '@/services/financial';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+} from "@/components/ui/sheet"
+import { useMediaQuery } from "@/hooks/useMediaQuery"
+import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, Target, ChevronDown, Tag, AlignLeft, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+// import { useAuthStore } from '@/hooks/useAuth'; // Unused
+
+export default function TransactionsPage() {
+    // const { user } = useAuthStore(); // Unused
+    const queryClient = useQueryClient();
+    const isDesktop = useMediaQuery("(min-width: 768px)")
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<{ type: 'single' | 'bulk'; id?: number } | null>(null);
+
+    // Form State
+    const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+
+
+    // Filter State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterCategory, setFilterCategory] = useState<string>('all');
+    const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth() + 1);
+    const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Selection State
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    // Queries
+    const { data: transactions, isLoading } = useQuery({
+        queryKey: ['transactions'],
+        queryFn: financialService.getTransactions
+    });
+
+    const { data: categories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: financialService.getCategories
+    });
+
+    const { data: savings } = useQuery({
+        queryKey: ['savings'],
+        queryFn: financialService.getSavings
+    });
+
+    // Filtered Transactions
+    const filteredTransactions = useMemo(() => {
+        return transactions?.filter(tx => {
+            const matchesSearch = tx.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = filterCategory === 'all' || tx.category_id === Number(filterCategory);
+
+            const txDate = new Date(tx.transaction_date);
+            const matchesDate = txDate.getMonth() + 1 === filterMonth && txDate.getFullYear() === filterYear;
+
+            return matchesSearch && matchesCategory && matchesDate;
+        }).sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+    }, [transactions, searchQuery, filterCategory, filterMonth, filterYear]);
+
+
+
+    // Grouping
+    const groupedTransactions = useMemo(() => {
+        if (!filteredTransactions) return {};
+        return filteredTransactions.reduce((acc, tx) => {
+            const date = tx.transaction_date;
+            if (!acc[date]) acc[date] = [];
+            acc[date].push(tx);
+            return acc;
+        }, {} as Record<string, Transaction[]>);
+    }, [filteredTransactions]);
+
+
+    // Mutations
+    const createMutation = useMutation({
+        mutationFn: financialService.createTransaction,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            setIsAddOpen(false);
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (data: { id: number, tx: Partial<Transaction> }) => financialService.updateTransaction(data.id, data.tx),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            setIsEditOpen(false);
+            setEditingTx(null);
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: financialService.deleteTransaction,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        }
+    });
+
+    const bulkDeleteMutation = useMutation({
+        mutationFn: financialService.bulkDeleteTransactions,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            setSelectedIds([]);
+        }
+    });
+
+
+
+    const handleEdit = (tx: Transaction) => {
+        setEditingTx(tx);
+        setIsEditOpen(true);
+    };
+
+    const handleDelete = (id: number) => {
+        setDeleteTarget({ type: 'single', id });
+        setDeleteConfirmOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget?.type === 'single' && deleteTarget.id) {
+            deleteMutation.mutate(deleteTarget.id);
+        } else if (deleteTarget?.type === 'bulk') {
+            bulkDeleteMutation.mutate(selectedIds);
+        }
+        setDeleteConfirmOpen(false);
+        setDeleteTarget(null);
+    };
+
+    const handleSubmit = (e: React.FormEvent, data: Partial<Transaction>) => {
+        e.preventDefault();
+
+        // Convert goal_id to undefined if 0 (select placeholder)
+        const submissionData = { ...data };
+        if (submissionData.goal_id === 0) submissionData.goal_id = undefined;
+
+        if (editingTx) {
+            updateMutation.mutate({ id: editingTx.id, tx: submissionData });
+        } else {
+            createMutation.mutate(submissionData);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        if (filteredTransactions && selectedIds.length === filteredTransactions.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filteredTransactions?.map(tx => tx.id) || []);
+        }
+    };
+
+    const toggleSelectOne = (id: number) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(sid => sid !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = () => {
+        setDeleteTarget({ type: 'bulk' });
+        setDeleteConfirmOpen(true);
+    };
+
+    const formatDateHeader = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const today = new Date();
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) return 'Today';
+        if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+        return date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+    };
+
+    return (
+        <DashboardLayout>
+            <div className="flex flex-col gap-8 max-w-6xl mx-auto w-full">
+                {/* Header */}
+                {/* Header */}
+                <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                        <h1 className="text-2xl sm:text-3xl font-display font-bold truncate">Transactions</h1>
+                        <p className="text-muted-foreground mt-1 text-sm hidden sm:block">Manage your income and expenses</p>
+                    </div>
+
+                    <div className="flex gap-2 shrink-0">
+                        {selectedIds.length > 0 && (
+                            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending} className="animate-in fade-in zoom-in-95 rounded-xl shadow-sm">
+                                <Trash2 className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Delete</span> ({selectedIds.length})
+                            </Button>
+                        )}
+                        {isDesktop ? (
+                            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> New Transaction</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[425px]">
+                                    <DialogHeader>
+                                        <DialogTitle>Add Transaction</DialogTitle>
+                                        <DialogDescription>Add a new transaction to track your finances.</DialogDescription>
+                                    </DialogHeader>
+                                    <TransactionForm
+                                        categories={categories}
+                                        savings={savings}
+                                        onSubmit={handleSubmit}
+                                        isSubmitting={createMutation.isPending}
+                                        initialData={null}
+                                    />
+                                </DialogContent>
+                            </Dialog>
+                        ) : (
+                            <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
+                                <SheetTrigger asChild>
+                                    <Button className="shadow-lg shadow-primary/20 rounded-xl px-4">
+                                        <Plus className="h-5 w-5 sm:mr-2" />
+                                        <span className="sr-only sm:not-sr-only">New Transaction</span>
+                                        <span className="sm:hidden font-semibold">New</span>
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="bottom" className="h-[85vh] sm:max-w-none rounded-t-2xl px-6 pt-6 pb-0 overflow-y-auto">
+                                    <SheetHeader className="mb-4 text-left">
+                                        <SheetTitle>Add Transaction</SheetTitle>
+                                        <SheetDescription>Add a new transaction to track your finances.</SheetDescription>
+                                    </SheetHeader>
+                                    <TransactionForm
+                                        categories={categories}
+                                        savings={savings}
+                                        onSubmit={handleSubmit}
+                                        isSubmitting={createMutation.isPending}
+                                        initialData={null}
+                                    />
+                                </SheetContent>
+                            </Sheet>
+                        )}
+                    </div>
+                </div>
+
+
+
+                {/* Filters & Actions */}
+                {/* Filters & Actions */}
+                <div className="space-y-4">
+                    <div className="flex gap-3">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                className="pl-9 h-11 bg-card border-none shadow-sm rounded-xl focus-visible:ring-1 transition-all"
+                                placeholder="Search transactions..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <Button
+                            variant={showFilters ? "secondary" : "outline"}
+                            size="icon"
+                            className="h-11 w-11 rounded-xl shadow-sm border-none bg-card hover:bg-muted/50 shrink-0"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            <Filter className="h-4 w-4" />
+                        </Button>
+                    </div>
+
+                    {showFilters && (
+                        <div className="grid grid-cols-2 sm:flex gap-2 animate-in slide-in-from-top-2">
+                            <select
+                                className="h-10 w-full sm:w-auto rounded-xl border-none bg-card px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                            >
+                                <option value="all">All Categories</option>
+                                {categories?.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                ))}
+                            </select>
+                            <select
+                                className="h-10 w-full sm:w-auto rounded-xl border-none bg-card px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                                value={filterMonth}
+                                onChange={(e) => setFilterMonth(Number(e.target.value))}
+                            >
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                    <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'short' })}</option>
+                                ))}
+                            </select>
+                            <select
+                                className="h-10 w-full sm:w-auto rounded-xl border-none bg-card px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+                                value={filterYear}
+                                onChange={(e) => setFilterYear(Number(e.target.value))}
+                            >
+                                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="selectAll"
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                checked={filteredTransactions && filteredTransactions.length > 0 && selectedIds.length === filteredTransactions.length}
+                                onChange={toggleSelectAll}
+                            />
+                            <label htmlFor="selectAll" className="text-sm font-medium leading-none cursor-pointer text-muted-foreground select-none">
+                                Select All
+                            </label>
+                        </div>
+                        <span className="text-xs text-muted-foreground font-medium">
+                            {filteredTransactions?.length || 0} transactions
+                        </span>
+                    </div>
+                </div>
+
+                {/* Grouped Transactions List */}
+                <div className="space-y-6">
+                    {isLoading ? (
+                        <div className="text-center py-12 text-muted-foreground">Loading transactions...</div>
+                    ) : Object.keys(groupedTransactions).length === 0 ? (
+                        <div className="text-center py-12">
+                            <div className="bg-muted/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <CalendarIcon className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-lg font-semibold">No transactions found</h3>
+                            <p className="text-muted-foreground">Try adjusting filters or add a new transaction.</p>
+                        </div>
+                    ) : (
+                        Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((date) => (
+                            <div key={date} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-3 px-1 border-b border-border/50 flex items-center justify-between">
+                                    <h3 className="font-semibold text-sm text-foreground/80 flex items-center gap-2">
+                                        <CalendarIcon className="w-4 h-4" />
+                                        {formatDateHeader(date)}
+                                    </h3>
+                                    <span className="text-xs text-muted-foreground">
+                                        {groupedTransactions[date].length} transaction{groupedTransactions[date].length > 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col">
+                                    {groupedTransactions[date].map((tx) => {
+                                        const cat = categories?.find(c => c.id === tx.category_id);
+                                        const isIncome = cat?.type === 'income';
+
+                                        return (
+                                            <div
+                                                key={tx.id}
+                                                onClick={() => toggleSelectOne(tx.id)}
+                                                className={cn(
+                                                    "group flex items-center justify-between p-4 border-b border-border/40 bg-transparent hover:bg-muted/30 transition-all duration-200 last:border-0 cursor-pointer",
+                                                    selectedIds.includes(tx.id) && "bg-primary/5",
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/50 group-hover:bg-background border border-transparent group-hover:border-border transition-colors">
+                                                        <input
+                                                            type="checkbox"
+                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer pointer-events-none"
+                                                            checked={selectedIds.includes(tx.id)}
+                                                            onChange={() => { }}
+                                                            readOnly
+                                                        />
+                                                    </div>
+                                                    <div className="grid gap-0.5 min-w-0">
+                                                        <div className="font-medium text-base flex items-center gap-2 truncate">
+                                                            <span className="truncate">{tx.name}</span>
+                                                            {tx.goal_id && (
+                                                                <span className="inline-flex shrink-0 items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                                                    <Target className="w-3 h-3 mr-1" /> Goal
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                                                            <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isIncome ? "bg-emerald-500" : "bg-rose-500")} />
+                                                            <span className="truncate">{cat?.name || 'Uncategorized'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4 shrink-0 ml-2">
+                                                    <div className={cn("text-base font-bold tabular-nums text-right", isIncome ? "text-emerald-600" : "text-rose-600")}>
+                                                        {isIncome ? '+' : '-'}Rp {Math.floor(Number(tx.amount)).toLocaleString('id-ID')}
+                                                    </div>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleEdit(tx);
+                                                            }}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(tx.id);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Edit Dialog - Responsive */}
+                {isDesktop ? (
+                    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Edit Transaction</DialogTitle>
+                            </DialogHeader>
+                            <TransactionForm
+                                categories={categories}
+                                savings={savings}
+                                onSubmit={handleSubmit}
+                                isSubmitting={updateMutation.isPending}
+                                initialData={editingTx}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                ) : (
+                    <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
+                        <SheetContent side="bottom" className="h-[85vh] sm:max-w-none rounded-t-2xl px-6 pt-6 pb-0 overflow-y-auto">
+                            <SheetHeader className="mb-4 text-left">
+                                <SheetTitle>Edit Transaction</SheetTitle>
+                            </SheetHeader>
+                            <TransactionForm
+                                categories={categories}
+                                savings={savings}
+                                onSubmit={handleSubmit}
+                                isSubmitting={updateMutation.isPending}
+                                initialData={editingTx}
+                            />
+                        </SheetContent>
+                    </Sheet>
+                )}
+
+                {/* Delete Confirmation Modal */}
+                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                    <AlertDialogContent className="max-w-[90vw] sm:max-w-[425px] rounded-2xl">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-3">
+                                <div className="p-2 bg-destructive/10 rounded-lg">
+                                    <Trash2 className="h-5 w-5 text-destructive" />
+                                </div>
+                                Confirm Delete
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-base">
+                                {deleteTarget?.type === 'bulk'
+                                    ? `Are you sure you want to delete ${selectedIds.length} transactions? This action cannot be undone.`
+                                    : 'Are you sure you want to delete this transaction? This action cannot be undone.'
+                                }
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="gap-2 sm:gap-0">
+                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={confirmDelete}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+                            >
+                                {deleteMutation.isPending || bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+            </div>
+        </DashboardLayout>
+    );
+}
+
+function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialData }: any) {
+    const [formData, setFormData] = useState<Partial<Transaction>>({
+        name: '',
+        amount: 0,
+        transaction_date: new Date().toISOString().split('T')[0],
+        category_id: 0,
+        goal_id: 0
+    });
+
+    // Sync initialData
+    // We can't easily use hooks inside conditional rendering for initialization in parent comfortably without effects
+    // but here we are in a child component
+    useMemo(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name,
+                amount: initialData.amount,
+                transaction_date: initialData.transaction_date,
+                category_id: initialData.category_id,
+                goal_id: initialData.goal_id
+            });
+        }
+    }, [initialData]);
+
+    // Handle local submit and pass to parent
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Pass data up, BUT we need to update the parent's formData state 
+        // because parent's handleSubmit uses parent's state... 
+        // WAIT. The parent handleSubmit uses PARENT STATE 'formData'.
+        // Refactoring to 'TransactionForm' broke the link to parent state.
+
+        // CORRECTION: Parent handleSubmit expects to use its own state.
+        // We need to change the parent to accept data arguments or update state.
+        // EASIER: Let this form just call onSubmit(formData) and let parent handle it.
+        // BUT parent handleSubmit is currently designed to read 'formData' state variable.
+        // I need to refactor parent handleSubmit to accept data from argument!
+
+        // Or simpler: pass 'setFormData' to this child? No, parent state is used for both create and edit modals...
+
+        // Let's make parent listen to child? No.
+
+        // Let's refactor parent handleSubmit to NOT read state, but expect args? 
+        // No, parent handleSubmit is used by existing code in parent... wait, I removed the existing code form parent!
+        // So I can redefine how parent handleSubmit works!
+
+        // Actually, I am replacing the JSX that triggers handleSubmit.
+        // So I can just pass 'handleSubmit' that takes (e) -> and inside it calls parent logic?
+        // Parent logic reads 'formData'.
+        // If I move the form fields here, I move the state here.
+        // So 'formData' in parent is now UNUSED/STALE.
+        // I should DELETE 'formData' in parent and move it here?
+        // But parent handles mutation...
+
+        // Let's fix this properly:
+        // 1. Child (TransactionForm) manages its own state.
+        // 2. Child calls props.onSubmit(childState).
+        // 3. Parent's handleSubmit needs to be refactored to accept 'data'.
+
+        onSubmit(e, formData);
+    };
+
+    return (
+
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto px-1 py-2 space-y-6">
+
+                {/* 1. Amount Input - Centerpiece */}
+                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Total Amount</Label>
+                    <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                        <input
+                            id="amount"
+                            type="text"
+                            inputMode="numeric"
+                            className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/20 p-0 outline-none hover:outline-none"
+                            placeholder="0"
+                            value={formData.amount ? Math.floor(Number(formData.amount)).toLocaleString('id-ID') : ''}
+                            onKeyDown={(e) => {
+                                // Only allow numbers and control keys
+                                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Remove all dots and parse as integer
+                                const rawValue = e.target.value.replace(/\./g, '');
+                                const numValue = parseInt(rawValue) || 0;
+                                setFormData({ ...formData, amount: numValue });
+                            }}
+                            required
+                            autoFocus
+                        />
+                    </div>
+                </div>
+
+                {/* 2. Category Select - Custom Styled */}
+                <div className="space-y-2">
+                    <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-primary" /> Category
+                    </Label>
+                    <div className="relative">
+                        <select
+                            id="category"
+                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
+                            value={formData.category_id}
+                            onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
+                            required
+                        >
+                            <option value={0} disabled>Select a Category</option>
+                            {categories?.map((c: any) => (
+                                <option key={c.id} value={c.id}>{c.icon || '🔹'} {c.name} ({c.type})</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
+                        <div className="absolute inset-0 rounded-xl bg-card border border-input pointer-events-none -z-10" />
+                    </div>
+                </div>
+
+                {/* 3. Date & Description Grid */}
+                <div className="grid gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2">
+                            <CalendarIcon className="w-4 h-4 text-primary" /> Date
+                        </Label>
+                        <div className="relative">
+                            <Input
+                                id="date"
+                                type="date"
+                                className="h-14 rounded-xl border-input bg-background/50 text-lg font-medium cursor-pointer"
+                                value={formData.transaction_date}
+                                onClick={(e: any) => {
+                                    // Auto-open native date picker on mobile
+                                    if (e.currentTarget.showPicker) {
+                                        e.currentTarget.showPicker();
+                                    }
+                                }}
+                                onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                            <AlignLeft className="w-4 h-4 text-primary" /> Note
+                        </Label>
+                        <Input
+                            id="name"
+                            className="h-12 rounded-xl border-input bg-background/50 text-base"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            placeholder="What is this for?"
+                            required
+                        />
+                    </div>
+                </div>
+
+                {/* 4. Goal Link (Optional) */}
+                {categories?.find((c: any) => c.id === formData.category_id)?.type === 'saving' && (
+                    <div className="animate-in fade-in slide-in-from-top-4 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-dashed border-blue-200 dark:border-blue-800">
+                        <Label htmlFor="goal" className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-semibold mb-2">
+                            <Target className="w-4 h-4" /> Link to Savings Goal
+                        </Label>
+                        <div className="relative">
+                            <select
+                                id="goal"
+                                className="appearance-none flex h-12 w-full rounded-xl border border-blue-200 dark:border-blue-800 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                                value={formData.goal_id || 0}
+                                onChange={(e) => {
+                                    const goalId = Number(e.target.value);
+                                    const goal = savings?.find((s: any) => s.id === goalId);
+                                    setFormData({
+                                        ...formData,
+                                        goal_id: goalId,
+                                        name: goal ? "Deposit to " + goal.name : formData.name
+                                    });
+                                }}
+                            >
+                                <option value={0}>-- Select a Goal (Optional) --</option>
+                                {savings?.map((s: any) => (
+                                    <option key={s.id} value={s.id}>{s.name} (Current: {Math.floor(Number(s.amount)).toLocaleString('id-ID')})</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500 pointer-events-none" />
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="sticky bottom-0 left-0 right-0 pt-4 pb-2 bg-background/95 backdrop-blur-sm border-t border-border/50 mt-6">
+                <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full h-14 text-lg rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                    {isSubmitting ? 'Saving...' : 'Save Transaction'}
+                </Button>
+            </div>
+        </form>
+    )
+}
+
+

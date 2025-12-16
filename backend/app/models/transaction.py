@@ -13,8 +13,10 @@ class Transaction(Base):
     transaction_date = Column(Date, nullable=False)
     amount = Column(DECIMAL(15, 2), nullable=False)
     notes = Column(Text, nullable=True)
+    goal_id = Column(Integer, ForeignKey("savings.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
+    goal = relationship("Saving")

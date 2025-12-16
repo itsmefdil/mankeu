@@ -8,15 +8,29 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-# Set all CORS enabled origins
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Configure CORS
+if settings.CORS_ALLOW_ALL_ORIGINS:
+    # Allow all origins (development mode)
+    origins = ["*"]
+else:
+    # Use specific origins from settings
+    origins = []
+    if settings.BACKEND_CORS_ORIGINS:
+        origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS]
+    
+    # Explicitly add development origins if not already present
+    dev_origins = ["http://localhost:5173", "http://localhost:8000"]
+    for origin in dev_origins:
+        if origin not in origins:
+            origins.append(origin)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():

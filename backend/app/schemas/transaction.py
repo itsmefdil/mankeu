@@ -11,16 +11,20 @@ class TransactionBase(BaseModel):
     notes: Optional[str] = None
 
 class TransactionCreate(TransactionBase):
-    pass
+    goal_id: Optional[int] = None
 
 class TransactionUpdate(TransactionBase):
-    pass
+    goal_id: Optional[int] = None
 
 class TransactionResponse(TransactionBase):
     id: int
     user_id: int
     created_at: datetime
+    goal_id: Optional[int] = None
     # We might want to include category details here later
 
     class Config:
         from_attributes = True
+
+class TransactionBulkDelete(BaseModel):
+    ids: list[int]
