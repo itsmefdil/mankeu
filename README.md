@@ -11,6 +11,24 @@ Mankeu is a modern, feature-rich personal finance management application designe
 - **🏷️ Category Management**: Customize categories to fit your specific needs.
 - **🌓 Dark Mode**: Fully supported dark mode for a comfortable viewing experience.
 
+## Screenshots
+
+### Dashboard
+![Dashboard](screenshots/dashboard.png)
+*Get a comprehensive overview of your financial health with interactive charts and real-time statistics*
+
+### Transactions
+![Transactions](screenshots/transactions.png)
+*Track all your income and expenses with detailed categorization and filtering options*
+
+### Categories
+![Categories](screenshots/categories.png)
+*Manage and customize your transaction categories to fit your needs*
+
+### Budget & Goals
+![Budget & Goals](screenshots/budget-goals.png)
+*Set and monitor your monthly budgets and financial goals*
+
 ## Tech Stack
 
 ### Frontend
