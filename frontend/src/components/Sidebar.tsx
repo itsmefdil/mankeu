@@ -55,7 +55,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                 </nav>
             </div>
             <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                <Button className="w-full gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300 bg-gradient-to-r from-primary to-violet-600 border border-white/20" size="lg" asChild>
+                <Button className="w-full gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300" size="lg" asChild>
                     <Link to="/transactions" onClick={onNavigate}>
                         <PlusCircle className="h-4 w-4" /> <span>Add Transaction</span>
                     </Link>

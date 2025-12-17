@@ -4,6 +4,7 @@ import {
     ArrowDownRight,
     ArrowUpRight,
     Calendar,
+    ChevronDown,
     Sparkles,
     TrendingUp,
     Wallet,
@@ -215,11 +216,11 @@ export default function Dashboard() {
                     </div>
 
                     {/* Filter Controls */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                        <div className="flex gap-2 flex-1 sm:flex-none">
-                            <div className="relative flex-1 sm:flex-none">
+                    <div className="w-full lg:w-auto">
+                        <div className="grid grid-cols-2 lg:flex gap-2">
+                            <div className="relative">
                                 <select
-                                    className="w-full sm:w-auto appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-4 pr-10 py-2.5 sm:py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium"
+                                    className="w-full lg:w-40 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
                                     value={selectedMonth}
                                     onChange={(e) => setSelectedMonth(Number(e.target.value))}
                                 >
@@ -230,13 +231,13 @@ export default function Dashboard() {
                                     ))}
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down h-4 w-4"><path d="m6 9 6 6 6-6" /></svg>
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
                             </div>
 
-                            <div className="relative flex-1 sm:flex-none sm:w-28">
+                            <div className="relative">
                                 <select
-                                    className="w-full appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-4 pr-10 py-2.5 sm:py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium"
+                                    className="w-full lg:w-28 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
                                     value={selectedYear}
                                     onChange={(e) => setSelectedYear(Number(e.target.value))}
                                 >
@@ -245,15 +246,10 @@ export default function Dashboard() {
                                     ))}
                                 </select>
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down h-4 w-4"><path d="m6 9 6 6 6-6" /></svg>
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
                             </div>
                         </div>
-                        <Button className="sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all touch-target text-sm">
-                            <TrendingUp className="h-4 w-4 mr-2" />
-                            <span className="hidden sm:inline">Download Report</span>
-                            <span className="sm:hidden">Report</span>
-                        </Button>
                     </div>
                 </div>
 

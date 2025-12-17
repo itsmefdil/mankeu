@@ -17,7 +17,7 @@ export const TopBar = () => {
     const { user, logout } = useAuthStore();
     const { toggleTheme } = useTheme();
     const { isAmountHidden, toggleAmountVisibility } = usePreferencesStore();
-    const initials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'ME';
+
 
     return (
         <header className="flex h-16 items-center gap-4 border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 md:px-6 sticky top-0 z-40 transition-all duration-300">
@@ -73,8 +73,8 @@ export const TopBar = () => {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="rounded-xl pl-1 pr-3 gap-3 h-10 hover:bg-muted/60 transition-all group outline-none">
-                            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center text-primary-foreground font-bold text-xs ring-2 ring-background group-hover:ring-primary/20 transition-all shadow-md shadow-primary/20">
-                                {initials}
+                            <div className="h-8 w-8 rounded-lg overflow-hidden ring-2 ring-background group-hover:ring-primary/20 transition-all shadow-md shadow-primary/20 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                <span className="text-lg">🤠</span>
                             </div>
                             <div className="flex flex-col items-start hidden sm:flex text-left">
                                 <span className="text-sm font-semibold leading-none group-hover:text-primary transition-colors">{user?.name || 'Guest'}</span>

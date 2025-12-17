@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialService, type Transaction } from '@/services/financial';
 import { Button } from '@/components/ui/button';
+import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -411,7 +412,7 @@ export default function TransactionsPage() {
                                                 </div>
                                                 <div className="flex items-center gap-4 shrink-0 ml-2">
                                                     <div className={cn("text-base font-bold tabular-nums text-right", isIncome ? "text-emerald-600" : "text-rose-600")}>
-                                                        {isIncome ? '+' : '-'}Rp {Math.floor(Number(tx.amount)).toLocaleString('id-ID')}
+                                                        {isIncome ? '+' : '-'}<CurrencyDisplay value={tx.amount} />
                                                     </div>
                                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <Button

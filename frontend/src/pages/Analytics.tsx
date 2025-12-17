@@ -2,13 +2,12 @@ import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { financialService } from '@/services/financial';
-import {
-    PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-    XAxis, YAxis, CartesianGrid, AreaChart, Area
-} from 'recharts';
+import { Button } from '@/components/ui/button';
+import { CurrencyDisplay } from '@/components/CurrencyDisplay';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Loader2, TrendingUp, TrendingDown, Activity, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+
 
 export default function AnalyticsPage() {
     const currentDate = new Date();
@@ -200,7 +199,7 @@ export default function AnalyticsPage() {
                                 </div>
                                 <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Total Income</span>
                             </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Rp {stats.income.toLocaleString('id-ID')}</h3>
+                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate"><CurrencyDisplay value={stats.income} /></h3>
                         </div>
                         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                     </div>
@@ -214,7 +213,7 @@ export default function AnalyticsPage() {
                                 </div>
                                 <span className="text-sm font-semibold text-rose-700 dark:text-rose-300">Total Expense</span>
                             </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Rp {stats.expense.toLocaleString('id-ID')}</h3>
+                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate"><CurrencyDisplay value={stats.expense} /></h3>
                         </div>
                         <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                     </div>
@@ -239,7 +238,7 @@ export default function AnalyticsPage() {
                                     stats.net >= 0 ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300"
                                 )}>Net Saved</span>
                             </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Rp {stats.net.toLocaleString('id-ID')}</h3>
+                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate"><CurrencyDisplay value={stats.net} /></h3>
                         </div>
                     </div>
                 </div>
@@ -520,6 +519,6 @@ export default function AnalyticsPage() {
                 </div>
 
             </div>
-        </DashboardLayout>
+        </DashboardLayout >
     );
 }
