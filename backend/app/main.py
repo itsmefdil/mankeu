@@ -61,11 +61,7 @@ else:
     if settings.BACKEND_CORS_ORIGINS:
         origins = [str(origin) for origin in settings.BACKEND_CORS_ORIGINS]
     
-    # Explicitly add development origins if not already present
-    dev_origins = ["http://localhost:5173", "http://localhost:8000", "http://localhost:3000"]
-    for origin in dev_origins:
-        if origin not in origins:
-            origins.append(origin)
+
 
 app.add_middleware(
     CORSMiddleware,
