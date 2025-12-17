@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import auth, users, categories, transactions, budgets, fixed_expenses, debts, incomes, savings
+from app.api.endpoints import auth, users, categories, transactions, budgets, fixed_expenses, debts, incomes, savings, health
 
 
 api_router = APIRouter()
@@ -12,4 +12,6 @@ api_router.include_router(fixed_expenses.router, prefix="/fixed-expenses", tags=
 api_router.include_router(debts.router, prefix="/debts", tags=["debts"])
 api_router.include_router(incomes.router, prefix="/incomes", tags=["incomes"])
 api_router.include_router(savings.router, prefix="/savings", tags=["savings"])
+api_router.include_router(health.router, prefix="/health", tags=["health"])
+
 

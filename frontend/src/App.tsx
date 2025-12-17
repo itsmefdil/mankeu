@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { checkBackendConnection } from '@/services/health';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '@/pages/Dashboard';
 import TransactionsPage from '@/pages/Transactions';
@@ -13,8 +15,16 @@ import { useTheme } from '@/hooks/useTheme';
 
 const queryClient = new QueryClient();
 
+
+
 const App = () => {
   useTheme(); // Initialize theme on app load
+
+  useEffect(() => {
+    checkBackendConnection()
+      .then(() => console.log('Successfully connected to backend'))
+      .catch((err) => console.error('Failed to connect to backend', err));
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

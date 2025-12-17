@@ -1,7 +1,5 @@
-FROM python:3.12-slim-bookworm
-
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+# Stage 1: Builder
+FROM ghcr.io/astral-sh/uv:python3.12-alpine AS builder
 
 WORKDIR /app
 
@@ -22,7 +20,20 @@ COPY . .
 # Install the project itself
 RUN uv sync --frozen
 
-# Place the virtual environment in the PATH so we can run installed commands directly
+# Stage 2: Runtime
+FROM python:3.12-alpine
+
+WORKDIR /app
+
+# Copy the virtual environment from the builder stage
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy application code and necessary configuration files
+COPY app /app/app
+COPY alembic /app/alembic
+COPY alembic.ini /app/alembic.ini
+
+# Place the virtual environment in the PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
 # Expose the port
