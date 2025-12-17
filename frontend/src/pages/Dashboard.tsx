@@ -1,26 +1,27 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
-import { ArrowUpRight, ArrowDownRight, Wallet, TrendingUp, Loader2, PieChart as PieChartIcon, BarChart3, CreditCard, Sparkles, Calendar, Target } from 'lucide-react';
+import {
+    ArrowDownRight,
+    ArrowUpRight,
+    Calendar,
+    Sparkles,
+    TrendingUp,
+    Wallet,
+    CreditCard,
+    Target,
+    Loader2,
+    BarChart3,
+    PieChart as PieChartIcon
+} from 'lucide-react';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+import { CurrencyDisplay } from '@/components/CurrencyDisplay';
+import { usePreferencesStore } from '@/hooks/usePreferences';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { financialService } from '@/services/financial';
 import { useAuthStore } from '@/hooks/useAuth';
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    Legend,
-    BarChart,
-    Bar
-} from 'recharts';
 
 // Get greeting based on time of day
 const getGreeting = () => {
@@ -32,6 +33,7 @@ const getGreeting = () => {
 
 export default function Dashboard() {
     const { user } = useAuthStore();
+    const { isAmountHidden } = usePreferencesStore();
     const currentDate = new Date();
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
@@ -275,7 +277,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-display tracking-tight drop-shadow-lg animate-value truncate">
-                                    Rp {stats.balance.toLocaleString('id-ID')}
+                                    <CurrencyDisplay value={stats.balance} className="text-white" />
                                 </h3>
                                 <p className="text-white/80 text-xs sm:text-sm mt-1.5 sm:mt-2 flex items-center gap-1">
                                     <span className="inline-block w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
@@ -304,7 +306,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
-                                    Rp {stats.income.toLocaleString('id-ID')}
+                                    <CurrencyDisplay value={stats.income} />
                                 </h3>
                                 <p className="text-muted-foreground text-xs sm:text-sm mt-1 sm:mt-1.5">Total Income</p>
                             </div>
@@ -326,7 +328,7 @@ export default function Dashboard() {
                             </div>
                             <div>
                                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
-                                    Rp {stats.expense.toLocaleString('id-ID')}
+                                    <CurrencyDisplay value={stats.expense} />
                                 </h3>
                                 <p className="text-muted-foreground text-xs sm:text-sm mt-1 sm:mt-1.5">Total Expense</p>
                             </div>
@@ -391,7 +393,10 @@ export default function Dashboard() {
                                                 padding: '12px 16px',
                                                 boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                                             }}
-                                            formatter={(value) => [`Rp ${Number(value || 0).toLocaleString('id-ID')}`, '']}
+                                            formatter={(value) => [
+                                                isAmountHidden ? '•••••••' : `Rp ${Number(value || 0).toLocaleString('id-ID')}`,
+                                                ''
+                                            ]}
                                             labelStyle={{ color: '#ffffff', marginBottom: '8px', fontWeight: 600 }}
                                             itemStyle={{ color: '#ffffff' }}
                                         />
@@ -457,7 +462,10 @@ export default function Dashboard() {
                                                 padding: '12px 16px',
                                                 boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                                             }}
-                                            formatter={(value) => [`Rp ${Number(value || 0).toLocaleString('id-ID')}`, '']}
+                                            formatter={(value) => [
+                                                isAmountHidden ? '•••••••' : `Rp ${Number(value || 0).toLocaleString('id-ID')}`,
+                                                ''
+                                            ]}
                                             labelFormatter={(label) => `Day ${label}`}
                                             labelStyle={{ color: '#ffffff', fontWeight: 600 }}
                                             itemStyle={{ color: '#ffffff' }}
@@ -518,7 +526,7 @@ export default function Dashboard() {
                                             )}>
                                                 <span className="hidden sm:inline">{cat?.type === 'income' ? '+' : '-'} </span>
                                                 <span className="sm:hidden">{cat?.type === 'income' ? '+' : '-'}</span>
-                                                Rp {Number(tx.amount).toLocaleString('id-ID')}
+                                                <CurrencyDisplay value={Number(tx.amount)} />
                                             </div>
                                         </div>
                                     );
@@ -590,7 +598,10 @@ export default function Dashboard() {
                                                     marginBottom: '4px'
                                                 }}
                                                 itemStyle={{ color: '#ffffff' }}
-                                                formatter={(value) => [`Rp ${Number(value || 0).toLocaleString('id-ID')}`, '']}
+                                                formatter={(value) => [
+                                                    isAmountHidden ? '•••••••' : `Rp ${Number(value || 0).toLocaleString('id-ID')}`,
+                                                    ''
+                                                ]}
                                             />
                                             <Legend
                                                 content={({ payload }) => (
@@ -656,9 +667,9 @@ export default function Dashboard() {
                                                     <span className="font-semibold text-base truncate">{cat?.name || 'Unknown'}</span>
                                                     <span className="text-xs text-muted-foreground truncate">
                                                         {isOver ? (
-                                                            <span className="text-rose-500 font-medium">Over Rp {Math.abs(remaining).toLocaleString('id-ID')}</span>
+                                                            <span className="text-rose-500 font-medium">Over <CurrencyDisplay value={Math.abs(remaining)} /></span>
                                                         ) : (
-                                                            <span>Rp {remaining.toLocaleString('id-ID')} left</span>
+                                                            <span><CurrencyDisplay value={remaining} /> left</span>
                                                         )}
                                                     </span>
                                                 </div>
@@ -685,8 +696,8 @@ export default function Dashboard() {
                                                 </div>
                                             </div>
                                             <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5 font-medium">
-                                                <span>Rp {spent.toLocaleString('id-ID')}</span>
-                                                <span>Rp {Number(budget.budget_amount).toLocaleString('id-ID')}</span>
+                                                <span><CurrencyDisplay value={spent} /></span>
+                                                <span><CurrencyDisplay value={Number(budget.budget_amount)} /></span>
                                             </div>
                                         </div>
                                     )

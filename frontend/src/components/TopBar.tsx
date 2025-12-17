@@ -1,7 +1,8 @@
-import { Bell, Search, Sun, Moon, LogOut, Settings, User, Coins } from 'lucide-react';
+import { Search, Sun, Moon, LogOut, Settings, User, Coins, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import { usePreferencesStore } from '@/hooks/usePreferences';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,6 +16,7 @@ import { Link } from 'react-router-dom';
 export const TopBar = () => {
     const { user, logout } = useAuthStore();
     const { toggleTheme } = useTheme();
+    const { isAmountHidden, toggleAmountVisibility } = usePreferencesStore();
     const initials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'ME';
 
     return (
@@ -53,17 +55,18 @@ export const TopBar = () => {
                 </form>
             </div>
             <div className="flex items-center gap-2 md:gap-3">
+                <Button variant="ghost" size="icon" onClick={toggleAmountVisibility} className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                    {isAmountHidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    <span className="sr-only">Toggle amount visibility</span>
+                </Button>
+
                 <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
                     <Sun className="h-5 w-5 dark:hidden scale-100 dark:scale-0 transition-transform duration-200" />
                     <Moon className="h-5 w-5 hidden dark:block scale-0 dark:scale-100 transition-transform duration-200" />
                     <span className="sr-only">Toggle theme</span>
                 </Button>
 
-                <Button variant="ghost" size="icon" className="rounded-xl relative text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background animate-pulse"></span>
-                    <span className="sr-only">Notifications</span>
-                </Button>
+
 
                 <div className="h-6 w-px bg-border/60 mx-1 hidden md:block"></div>
 
