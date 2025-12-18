@@ -229,7 +229,7 @@ export default function TransactionsPage() {
                                 <DialogTrigger asChild>
                                     <Button className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> New Transaction</Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
+                                <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col gap-4">
                                     <DialogHeader>
                                         <DialogTitle>Add Transaction</DialogTitle>
                                         <DialogDescription>Add a new transaction to track your finances.</DialogDescription>
@@ -451,7 +451,7 @@ export default function TransactionsPage() {
                 {/* Edit Dialog - Responsive */}
                 {isDesktop ? (
                     <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col gap-4">
                             <DialogHeader>
                                 <DialogTitle>Edit Transaction</DialogTitle>
                             </DialogHeader>

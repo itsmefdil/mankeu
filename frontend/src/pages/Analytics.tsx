@@ -46,14 +46,16 @@ export default function AnalyticsPage() {
     const stats = useMemo(() => {
         let income = 0;
         let expense = 0;
+        let saving = 0;
 
         filteredTransactions.forEach(tx => {
             const cat = categoryMap.get(tx.category_id);
             if (cat?.type === 'income') income += Number(tx.amount);
             else if (cat?.type === 'expense') expense += Number(tx.amount);
+            else if (cat?.type === 'saving') saving += Number(tx.amount);
         });
 
-        return { income, expense, net: income - expense };
+        return { income, expense, saving, net: income - expense - saving };
     }, [filteredTransactions, categoryMap]);
 
     // Category Breakdown (Expense)
@@ -114,6 +116,7 @@ export default function AnalyticsPage() {
             const cat = categoryMap.get(tx.category_id);
             if (cat?.type === 'income') entry.income += Number(tx.amount);
             else if (cat?.type === 'expense') entry.expense += Number(tx.amount);
+            // Saving is not plotted in Income/Expense trend lines currently
         });
 
         return Array.from(map.values()).sort((a, b) => a.date - b.date);

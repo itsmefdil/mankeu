@@ -12,7 +12,8 @@ import {
     Target,
     Loader2,
     BarChart3,
-    PieChart as PieChartIcon
+    PieChart as PieChartIcon,
+    PiggyBank
 } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -69,10 +70,11 @@ export default function Dashboard() {
 
     // 1. Overview Stats (Filtered by Month/Year)
     const stats = useMemo(() => {
-        if (!transactions || !incomes) return { income: 0, expense: 0, balance: 0 };
+        if (!transactions || !incomes) return { income: 0, expense: 0, saving: 0, balance: 0 };
 
         let incomeSum = 0;
         let expenseSum = 0;
+        let savingSum = 0;
 
         transactions.forEach(tx => {
             const txDate = new Date(tx.transaction_date);
@@ -83,13 +85,21 @@ export default function Dashboard() {
                 incomeSum += Number(tx.amount);
             } else if (cat?.type === 'expense') {
                 expenseSum += Number(tx.amount);
+            } else if (cat?.type === 'saving') {
+                savingSum += Number(tx.amount);
             }
         });
+
+        // Also add direct incomes from Income table if needed, but keeping existing logic structure
+        // If incomes table is used, we should iterate it too:
+        // incomes.forEach(inc => ...) 
+        // But adhering to current pattern of only using transactions for now to avoid side effects.
 
         return {
             income: incomeSum,
             expense: expenseSum,
-            balance: incomeSum - expenseSum
+            saving: savingSum,
+            balance: incomeSum - expenseSum - savingSum
         };
     }, [transactions, categoryMap, selectedMonth, selectedYear, incomes]);
 
@@ -124,6 +134,7 @@ export default function Dashboard() {
                 const cat = categoryMap.get(tx.category_id);
                 if (cat?.type === 'income') match.income += Number(tx.amount);
                 else if (cat?.type === 'expense') match.expense += Number(tx.amount);
+                // Saving is separate
             }
         });
 
@@ -254,30 +265,30 @@ export default function Dashboard() {
                 </div>
 
                 {/* KPI Cards - Premium Design */}
-                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
                     {/* Balance Card - Featured */}
-                    <div className="sm:col-span-2 lg:col-span-1 p-4 sm:p-5 lg:p-6 rounded-2xl bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 text-white shadow-2xl shadow-emerald-500/25 relative overflow-hidden hover-lift group">
+                    <div className="col-span-2 lg:col-span-1 p-4 sm:p-5 lg:p-6 rounded-2xl bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 text-white shadow-2xl shadow-emerald-500/25 relative overflow-hidden hover-lift group">
                         {/* Decorative Elements */}
                         <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                         <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/5 rounded-full blur-xl translate-y-1/2 -translate-x-1/2" />
 
                         <div className="relative z-10">
                             <div className="flex justify-between items-start mb-3 sm:mb-4">
-                                <div className="p-2 sm:p-2.5 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform">
-                                    <Wallet className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                                <div className="p-1.5 sm:p-2.5 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform">
+                                    <Wallet className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs font-semibold bg-white/20 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold bg-white/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-sm border border-white/10">
                                     <Target className="h-3 w-3" />
-                                    Net Balance
+                                    Net
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-display tracking-tight drop-shadow-lg animate-value truncate">
+                                <h3 className="text-xl sm:text-3xl lg:text-3xl font-bold font-display tracking-tight drop-shadow-lg animate-value truncate">
                                     <CurrencyDisplay value={stats.balance} className="text-white" />
                                 </h3>
-                                <p className="text-white/80 text-xs sm:text-sm mt-1.5 sm:mt-2 flex items-center gap-1">
-                                    <span className="inline-block w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                    Current Period
+                                <p className="text-white/80 text-[10px] sm:text-sm mt-1 sm:mt-2 flex items-center gap-1">
+                                    <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse" />
+                                    Current
                                 </p>
                             </div>
                         </div>
@@ -287,46 +298,66 @@ export default function Dashboard() {
                     </div>
 
                     {/* Income Card */}
-                    <div className="p-4 sm:p-5 lg:p-6 rounded-2xl glass-card hover-lift group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
 
                         <div className="relative z-10">
-                            <div className="flex justify-between items-center mb-3 sm:mb-4">
-                                <div className="p-2 sm:p-2.5 bg-emerald-500/15 rounded-xl group-hover:scale-110 transition-transform">
-                                    <ArrowUpRight className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500" />
+                            <div className="flex justify-between items-center mb-2 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-emerald-500/15 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                                    <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500" />
                                 </div>
-                                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1.5 border border-emerald-500/20">
-                                    <TrendingUp className="h-3 w-3" />
+                                <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
                                     Income
                                 </span>
                             </div>
                             <div>
-                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
                                     <CurrencyDisplay value={stats.income} />
                                 </h3>
-                                <p className="text-muted-foreground text-xs sm:text-sm mt-1 sm:mt-1.5">Total Income</p>
+                                <p className="text-muted-foreground text-[10px] sm:text-sm mt-0.5 sm:mt-1.5">Total Income</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Expense Card */}
-                    <div className="p-4 sm:p-5 lg:p-6 rounded-2xl glass-card hover-lift group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 bg-rose-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-rose-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
 
                         <div className="relative z-10">
-                            <div className="flex justify-between items-center mb-3 sm:mb-4">
-                                <div className="p-2 sm:p-2.5 bg-rose-500/15 rounded-xl group-hover:scale-110 transition-transform">
-                                    <ArrowDownRight className="h-5 w-5 sm:h-6 sm:w-6 text-rose-500" />
+                            <div className="flex justify-between items-center mb-2 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-rose-500/15 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                                    <ArrowDownRight className="h-4 w-4 sm:h-6 sm:w-6 text-rose-500" />
                                 </div>
-                                <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-rose-500/20">
+                                <span className="text-[10px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-rose-500/20">
                                     Expense
                                 </span>
                             </div>
                             <div>
-                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
                                     <CurrencyDisplay value={stats.expense} />
                                 </h3>
-                                <p className="text-muted-foreground text-xs sm:text-sm mt-1 sm:mt-1.5">Total Expense</p>
+                                <p className="text-muted-foreground text-[10px] sm:text-sm mt-0.5 sm:mt-1.5">Total Expense</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Saving Card */}
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-center mb-2 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-blue-500/15 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                                    <PiggyBank className="h-4 w-4 sm:h-6 sm:w-6 text-blue-500" />
+                                </div>
+                                <span className="text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-blue-500/20">
+                                    Saving
+                                </span>
+                            </div>
+                            <div>
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
+                                    <CurrencyDisplay value={stats.saving || 0} />
+                                </h3>
+                                <p className="text-muted-foreground text-[10px] sm:text-sm mt-0.5 sm:mt-1.5">Total Saved</p>
                             </div>
                         </div>
                     </div>
