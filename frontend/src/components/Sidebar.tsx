@@ -67,7 +67,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 
 export const Sidebar = () => {
     return (
-        <aside className="hidden border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 md:flex md:w-64 md:flex-col fixed inset-y-0 left-0 z-50 transition-all duration-300 shadow-sm">
+        <aside className="hidden border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 md:flex md:w-64 md:flex-col fixed inset-y-0 left-0 z-50 transition-all duration-300 shadow-sm pt-safe pb-safe">
             <SidebarContent />
         </aside>
     );

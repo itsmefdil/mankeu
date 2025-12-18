@@ -11,6 +11,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import SettingsPage from '@/pages/Settings';
+import ServerConfig from '@/pages/ServerConfig';
 import { useTheme } from '@/hooks/useTheme';
 
 const queryClient = new QueryClient();
@@ -21,15 +22,43 @@ const App = () => {
   useTheme(); // Initialize theme on app load
 
   useEffect(() => {
-    checkBackendConnection()
-      .then(() => console.log('Successfully connected to backend'))
-      .catch((err) => console.error('Failed to connect to backend', err));
+    // Check if we need to configure server
+    const checkConnection = async () => {
+      // 1. Strict check: If no URL in localStorage, force config
+      // We ignore environment variables to enforce the 'setup first' flow
+      const storedUrl = localStorage.getItem('api_url');
+
+      if (!storedUrl) {
+        if (window.location.pathname !== '/server-config') {
+          window.location.replace('/server-config');
+        }
+        return;
+      }
+
+      // 2. Validate connection
+      try {
+        await checkBackendConnection();
+        console.log('Successfully connected to backend');
+      } catch (err) {
+        console.error('Failed to connect to backend', err);
+        // If connection fails and we are not on config page, redirect
+        // This ensures "broken" apps don't get stuck on a loading screen
+        if (window.location.pathname !== '/server-config') {
+          // Only redirect if it's a critical failure (like 404 or network error), 401 is fine (needs login)
+          // simplified: just redirect for now as "server first" implies we need a working server
+          window.location.replace('/server-config');
+        }
+      }
+    };
+
+    checkConnection();
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
+          <Route path="/server-config" element={<ServerConfig />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 

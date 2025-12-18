@@ -6,7 +6,7 @@ export const BottomNav = () => {
     const location = useLocation();
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 z-50 pt-2 px-6 pb-[env(safe-area-inset-bottom,20px)] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 z-50 pt-2 px-6 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
             <div className="flex items-center justify-between gap-1 h-14 max-w-sm mx-auto">
                 {NAV_ITEMS.slice(0, 5).map((item) => {
                     const isActive = location.pathname === item.href;
