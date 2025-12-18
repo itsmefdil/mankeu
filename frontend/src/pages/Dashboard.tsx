@@ -6,7 +6,6 @@ import {
     Calendar,
     ChevronDown,
     Sparkles,
-    TrendingUp,
     Wallet,
     CreditCard,
     Target,
