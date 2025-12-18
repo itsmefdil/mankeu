@@ -21,7 +21,7 @@ export const CurrencyDisplay = ({
             {isAmountHidden ? (
                 <span className="tracking-widest">•••••••</span>
             ) : (
-                <>{currency} {value.toLocaleString(locale)}</>
+                <>{currency} {Number(value).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
             )}
         </span>
     );

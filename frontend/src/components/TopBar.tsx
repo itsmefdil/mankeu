@@ -20,19 +20,19 @@ export const TopBar = () => {
 
 
     return (
-        <header className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 pt-safe transition-all duration-300">
+        <header className="sticky top-0 z-40 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-slate-900 dark:to-slate-900 md:bg-none md:bg-white/80 md:dark:bg-slate-900/80 backdrop-blur-md border-b border-transparent dark:border-slate-800 md:border-slate-200 md:dark:border-slate-700 pt-safe transition-all duration-300">
             <div className="flex h-16 items-center gap-4 px-4 md:px-6">
                 <div className="w-full flex-1">
                     {/* Mobile: Logo */}
                     <div className="md:hidden flex items-center gap-2.5">
-                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary via-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-primary/20 ring-1 ring-white/20 dark:ring-black/20">
+                        <div className="h-9 w-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/20">
                             <Coins className="h-5 w-5 text-white" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-display font-bold text-lg leading-none bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                            <span className="font-display font-bold text-lg leading-none text-white dark:bg-gradient-to-r dark:from-white dark:to-gray-300 dark:bg-clip-text dark:text-transparent">
                                 Mankeu
                             </span>
-                            <span className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase scale-90 origin-left">
+                            <span className="text-[10px] font-medium text-emerald-100 dark:text-muted-foreground tracking-widest uppercase scale-90 origin-left">
                                 Finance
                             </span>
                         </div>
@@ -56,12 +56,12 @@ export const TopBar = () => {
                     </form>
                 </div>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <Button variant="ghost" size="icon" onClick={toggleAmountVisibility} className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                    <Button variant="ghost" size="icon" onClick={toggleAmountVisibility} className="rounded-xl text-emerald-50 md:text-muted-foreground dark:text-muted-foreground hover:text-white md:hover:text-foreground hover:bg-white/10 md:hover:bg-muted/60 transition-colors">
                         {isAmountHidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         <span className="sr-only">Toggle amount visibility</span>
                     </Button>
 
-                    <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+                    <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl text-emerald-50 md:text-muted-foreground dark:text-muted-foreground hover:text-white md:hover:text-foreground hover:bg-white/10 md:hover:bg-muted/60 transition-colors">
                         <Sun className="h-5 w-5 dark:hidden scale-100 dark:scale-0 transition-transform duration-200" />
                         <Moon className="h-5 w-5 hidden dark:block scale-0 dark:scale-100 transition-transform duration-200" />
                         <span className="sr-only">Toggle theme</span>
@@ -73,13 +73,13 @@ export const TopBar = () => {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="rounded-xl pl-1 pr-3 gap-3 h-10 hover:bg-muted/60 transition-all group outline-none">
-                                <div className="h-8 w-8 rounded-lg overflow-hidden ring-2 ring-background group-hover:ring-primary/20 transition-all shadow-md shadow-primary/20 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <Button variant="ghost" className="rounded-xl pl-1 pr-3 gap-3 h-10 hover:bg-white/10 md:hover:bg-muted/60 transition-all group outline-none">
+                                <div className="h-8 w-8 rounded-lg overflow-hidden ring-2 ring-white/20 md:ring-background group-hover:ring-white/40 md:group-hover:ring-primary/20 transition-all shadow-md shadow-black/5 md:shadow-primary/20 bg-white/10 md:bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                                     <span className="text-lg">🤠</span>
                                 </div>
                                 <div className="flex flex-col items-start hidden sm:flex text-left">
-                                    <span className="text-sm font-semibold leading-none group-hover:text-primary transition-colors">{user?.name || 'Guest'}</span>
-                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Pro Plan</span>
+                                    <span className="text-sm font-semibold leading-none text-white md:text-foreground group-hover:text-white md:group-hover:text-primary transition-colors">{user?.name || 'Guest'}</span>
+                                    <span className="text-[10px] text-emerald-100 md:text-muted-foreground uppercase tracking-wider font-medium">Pro Plan</span>
                                 </div>
                             </Button>
                         </DropdownMenuTrigger>

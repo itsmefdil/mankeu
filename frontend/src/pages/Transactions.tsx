@@ -37,7 +37,16 @@ import {
 import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, Target, ChevronDown, Tag, AlignLeft, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SwipeableItem } from '@/components/SwipeableItem';
+import { PullToRefresh } from '@/components/PullToRefresh';
 // import { useAuthStore } from '@/hooks/useAuth'; // Unused
+
+// Haptic feedback helper
+const vibrate = (pattern: number | number[] = 10) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(pattern);
+    }
+};
 
 export default function TransactionsPage() {
     // const { user } = useAuthStore(); // Unused
@@ -111,6 +120,10 @@ export default function TransactionsPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             setIsAddOpen(false);
+            vibrate([50, 30, 50]); // Success pattern
+        },
+        onError: () => {
+            vibrate(200); // Error pattern
         }
     });
 
@@ -209,7 +222,19 @@ export default function TransactionsPage() {
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col gap-8 max-w-6xl mx-auto w-full">
+            <div className="flex flex-col gap-8 max-w-6xl mx-auto w-full pb-20 md:pb-0">
+                {/* Mobile FAB */}
+                {!isDesktop && (
+                    <Button
+                        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg shadow-primary/30 z-40 p-0 hover:scale-105 active:scale-95 transition-all"
+                        onClick={() => {
+                            vibrate(10);
+                            setIsAddOpen(true);
+                        }}
+                    >
+                        <Plus className="h-6 w-6" />
+                    </Button>
+                )}
                 {/* Header */}
                 {/* Header */}
                 <div className="flex items-center justify-between gap-4">
@@ -246,7 +271,7 @@ export default function TransactionsPage() {
                         ) : (
                             <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
                                 <SheetTrigger asChild>
-                                    <Button className="shadow-lg shadow-primary/20 rounded-xl px-4">
+                                    <Button className="shadow-lg shadow-primary/20 rounded-xl px-4 hidden">
                                         <Plus className="h-5 w-5 sm:mr-2" />
                                         <span className="sr-only sm:not-sr-only">New Transaction</span>
                                         <span className="sm:hidden font-semibold">New</span>
@@ -347,106 +372,111 @@ export default function TransactionsPage() {
                     </div>
                 </div>
 
-                {/* Grouped Transactions List */}
-                <div className="space-y-6">
-                    {isLoading ? (
-                        <div className="text-center py-12 text-muted-foreground">Loading transactions...</div>
-                    ) : Object.keys(groupedTransactions).length === 0 ? (
-                        <div className="text-center py-12">
-                            <div className="bg-muted/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                <CalendarIcon className="w-8 h-8 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-lg font-semibold">No transactions found</h3>
-                            <p className="text-muted-foreground">Try adjusting filters or add a new transaction.</p>
-                        </div>
-                    ) : (
-                        Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((date) => (
-                            <div key={date} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-3 px-1 border-b border-border/50 flex items-center justify-between">
-                                    <h3 className="font-semibold text-sm text-foreground/80 flex items-center gap-2">
-                                        <CalendarIcon className="w-4 h-4" />
-                                        {formatDateHeader(date)}
-                                    </h3>
-                                    <span className="text-xs text-muted-foreground">
-                                        {groupedTransactions[date].length} transaction{groupedTransactions[date].length > 1 ? 's' : ''}
-                                    </span>
+                <PullToRefresh onRefresh={async () => { await queryClient.invalidateQueries({ queryKey: ['transactions'] }); }}>
+                    <div className="space-y-6">
+                        {isLoading ? (
+                            <div className="text-center py-12 text-muted-foreground">Loading transactions...</div>
+                        ) : Object.keys(groupedTransactions).length === 0 ? (
+                            <div className="text-center py-12">
+                                <div className="bg-muted/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                    <CalendarIcon className="w-8 h-8 text-muted-foreground" />
                                 </div>
-                                <div className="flex flex-col">
-                                    {groupedTransactions[date].map((tx) => {
-                                        const cat = categories?.find(c => c.id === tx.category_id);
-                                        const isIncome = cat?.type === 'income';
+                                <h3 className="text-lg font-semibold">No transactions found</h3>
+                                <p className="text-muted-foreground">Try adjusting filters or add a new transaction.</p>
+                            </div>
+                        ) : (
+                            Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((date) => (
+                                <div key={date} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-3 px-1 border-b border-border/50 flex items-center justify-between">
+                                        <h3 className="font-semibold text-sm text-foreground/80 flex items-center gap-2">
+                                            <CalendarIcon className="w-4 h-4" />
+                                            {formatDateHeader(date)}
+                                        </h3>
+                                        <span className="text-xs text-muted-foreground">
+                                            {groupedTransactions[date].length} transaction{groupedTransactions[date].length > 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        {groupedTransactions[date].map((tx) => {
+                                            const cat = categories?.find(c => c.id === tx.category_id);
+                                            const isIncome = cat?.type === 'income';
 
-                                        return (
-                                            <div
-                                                key={tx.id}
-                                                onClick={() => toggleSelectOne(tx.id)}
-                                                className={cn(
-                                                    "group flex items-center justify-between p-4 border-b border-border/40 bg-transparent hover:bg-muted/30 transition-all duration-200 last:border-0 cursor-pointer",
-                                                    selectedIds.includes(tx.id) && "bg-primary/5",
-                                                )}
-                                            >
-                                                <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/50 group-hover:bg-background border border-transparent group-hover:border-border transition-colors">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer pointer-events-none"
-                                                            checked={selectedIds.includes(tx.id)}
-                                                            onChange={() => { }}
-                                                            readOnly
-                                                        />
-                                                    </div>
-                                                    <div className="grid gap-0.5 min-w-0">
-                                                        <div className="font-medium text-base flex items-center gap-2 truncate">
-                                                            <span className="truncate">{tx.name}</span>
-                                                            {tx.goal_id && (
-                                                                <span className="inline-flex shrink-0 items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                                                                    <Target className="w-3 h-3 mr-1" /> Goal
-                                                                </span>
-                                                            )}
+                                            return (
+                                                <SwipeableItem
+                                                    key={tx.id}
+                                                    onSwipeLeft={() => handleDelete(tx.id)}
+                                                    onSwipeRight={() => handleEdit(tx)}
+                                                    vibrate={() => vibrate(10)}
+                                                    leftContent={<Trash2 className="w-6 h-6 text-white" />}
+                                                    rightContent={<Pencil className="w-6 h-6 text-white" />}
+                                                    className={cn(
+                                                        "group flex items-center justify-between p-4 border-b border-border/40 bg-background hover:bg-muted/30 transition-all duration-200 last:border-0 cursor-pointer",
+                                                        selectedIds.includes(tx.id) && "bg-primary/5",
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-4 min-w-0 flex-1" onClick={() => toggleSelectOne(tx.id)}>
+                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/50 group-hover:bg-background border border-transparent group-hover:border-border transition-colors">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer pointer-events-none"
+                                                                checked={selectedIds.includes(tx.id)}
+                                                                onChange={() => { }}
+                                                                readOnly
+                                                            />
                                                         </div>
-                                                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-                                                            <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isIncome ? "bg-emerald-500" : "bg-rose-500")} />
-                                                            <span className="truncate">{cat?.name || 'Uncategorized'}</span>
+                                                        <div className="grid gap-0.5 min-w-0">
+                                                            <div className="font-medium text-base flex items-center gap-2 truncate">
+                                                                <span className="truncate">{tx.name}</span>
+                                                                {tx.goal_id && (
+                                                                    <span className="inline-flex shrink-0 items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                                                        <Target className="w-3 h-3 mr-1" /> Goal
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                                                                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isIncome ? "bg-emerald-500" : "bg-rose-500")} />
+                                                                <span className="truncate">{cat?.name || 'Uncategorized'}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-4 shrink-0 ml-2">
-                                                    <div className={cn("text-base font-bold tabular-nums text-right", isIncome ? "text-emerald-600" : "text-rose-600")}>
-                                                        {isIncome ? '+' : '-'}<CurrencyDisplay value={tx.amount} />
+                                                    <div className="flex items-center gap-4 shrink-0 ml-2" onClick={() => toggleSelectOne(tx.id)}>
+                                                        <div className={cn("text-base font-bold tabular-nums text-right", isIncome ? "text-emerald-600" : "text-rose-600")}>
+                                                            {isIncome ? '+' : '-'}<CurrencyDisplay value={tx.amount} />
+                                                        </div>
+                                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleEdit(tx);
+                                                                }}
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDelete(tx.id);
+                                                                }}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleEdit(tx);
-                                                            }}
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDelete(tx.id);
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                                </SwipeableItem>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        ))
-                    )}
-                </div>
+                            ))
+                        )}
+                    </div>
+                </PullToRefresh>
 
                 {/* Edit Dialog - Responsive */}
                 {isDesktop ? (

@@ -5,7 +5,7 @@ import { financialService } from '@/services/financial';
 import { Button } from '@/components/ui/button';
 import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-import { Loader2, TrendingUp, TrendingDown, Activity, Filter } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Activity, Filter, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
@@ -85,6 +85,89 @@ export default function AnalyticsPage() {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
     }, [filteredTransactions, categoryMap]);
+
+    // Comparison Stats (Previous Month)
+    const comparisonStats = useMemo(() => {
+        if (!transactions) return { income: 0, expense: 0, saving: 0 };
+
+        const prevDate = new Date(selectedYear, selectedMonth - 2, 1); // Month is 1-indexed, so -2 gives prev month index
+        const prevMonth = prevDate.getMonth() + 1;
+        const prevYear = prevDate.getFullYear();
+
+        let income = 0;
+        let expense = 0;
+        let saving = 0;
+
+        transactions.forEach(tx => {
+            const date = new Date(tx.transaction_date);
+            if (date.getMonth() + 1 === prevMonth && date.getFullYear() === prevYear) {
+                const cat = categoryMap.get(tx.category_id);
+                if (cat?.type === 'income') income += Number(tx.amount);
+                else if (cat?.type === 'expense') expense += Number(tx.amount);
+                else if (cat?.type === 'saving') saving += Number(tx.amount);
+            }
+        });
+
+        return { income, expense, saving };
+    }, [transactions, selectedMonth, selectedYear, categoryMap]);
+
+    // Calculate Trends
+    const trends = useMemo(() => {
+        const calcTrend = (current: number, previous: number) => {
+            if (previous === 0) return current > 0 ? 100 : 0;
+            return ((current - previous) / previous) * 100;
+        };
+
+        return {
+            income: calcTrend(stats.income, comparisonStats.income),
+            expense: calcTrend(stats.expense, comparisonStats.expense),
+            saving: calcTrend(stats.saving, comparisonStats.saving)
+        };
+    }, [stats, comparisonStats]);
+
+    // Automated Insights
+    const insights = useMemo(() => {
+        const list = [];
+
+        // 1. Biggest Expense Category
+        if (expenseByCategory.length > 0) {
+            const top = expenseByCategory[0];
+            list.push({
+                icon: TrendingDown,
+                color: "text-rose-500",
+                bg: "bg-rose-500/10",
+                title: "Top Expense",
+                desc: `Most spending in ${top.name} (${((top.value / stats.expense) * 100).toFixed(0)}%)`
+            });
+        }
+
+        // 2. Saving Rate
+        if (stats.income > 0) {
+            const rate = (stats.saving / stats.income) * 100;
+            list.push({
+                icon: Activity,
+                color: "text-blue-500",
+                bg: "bg-blue-500/10",
+                title: "Saving Rate",
+                desc: `You saved ${rate.toFixed(1)}% of income`
+            });
+        }
+
+        // 3. Cash Flow Health
+        const cashFlowColor = stats.income >= stats.expense ? "text-emerald-500" : "text-rose-500";
+        const cashFlowBg = stats.income >= stats.expense ? "bg-emerald-500/10" : "bg-rose-500/10";
+        list.push({
+            icon: stats.income >= stats.expense ? TrendingUp : TrendingDown,
+            color: cashFlowColor,
+            bg: cashFlowBg,
+            title: "Cash Flow",
+            desc: stats.income >= stats.expense ? "Positive cash flow this month" : "Expenses exceeded income"
+        });
+
+        return list;
+    }, [expenseByCategory, stats]);
+
+
 
     // Trend Data (Grouped by Day or Month depending on view)
     const trendData = useMemo(() => {
@@ -190,58 +273,145 @@ export default function AnalyticsPage() {
                     </div>
                 )}
 
-                {/* Stats Overview */}
-                {/* Stats Overview */}
-                <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
-                    {/* Income Card */}
-                    <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/10 relative overflow-hidden group">
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
-                                    <TrendingUp className="h-5 w-5" />
+                {/* Smart Insights Section */}
+                {viewMode === 'month' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                        {insights.map((item, i) => (
+                            <div key={i} className="bg-card border border-border/50 p-3 rounded-xl flex items-center gap-3 shadow-sm">
+                                <div className={cn("p-2 rounded-lg shrink-0", item.bg, item.color)}>
+                                    <item.icon className="h-4 w-4" />
                                 </div>
-                                <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Total Income</span>
+                                <div>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.title}</p>
+                                    <p className="text-sm font-medium text-foreground">{item.desc}</p>
+                                </div>
                             </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate"><CurrencyDisplay value={stats.income} /></h3>
+                        ))}
+                    </div>
+                )}
+
+                {/* Stats Overview */}
+                {/* Stats Overview */}
+                {/* Stats Overview */}
+                <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+                    {/* Income Card */}
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-center mb-2 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-emerald-500/15 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                                    <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500" />
+                                </div>
+                                <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
+                                    Income
+                                </span>
+                            </div>
+                            <div>
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
+                                    <CurrencyDisplay value={stats.income} />
+                                </h3>
+                                <div className="flex items-center gap-2 mt-0.5 sm:mt-1.5">
+                                    <p className="text-muted-foreground text-[10px] sm:text-sm">Total Income</p>
+                                    {viewMode === 'month' && (
+                                        <span className={cn(
+                                            "text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
+                                            trends.income >= 0 ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30" : "text-rose-600 bg-rose-100 dark:bg-rose-900/30"
+                                        )}>
+                                            {trends.income >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                                            {Math.abs(trends.income).toFixed(0)}%
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                     </div>
 
                     {/* Expense Card */}
-                    <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-rose-500/10 to-pink-500/5 border border-rose-500/10 relative overflow-hidden group">
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-rose-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                         <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 bg-rose-500/20 rounded-xl text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
-                                    <TrendingDown className="h-5 w-5" />
+                            <div className="flex justify-between items-center mb-2 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-rose-500/15 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                                    <TrendingDown className="h-4 w-4 sm:h-6 sm:w-6 text-rose-500" />
                                 </div>
-                                <span className="text-sm font-semibold text-rose-700 dark:text-rose-300">Total Expense</span>
+                                <span className="text-[10px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-rose-500/20">
+                                    Expense
+                                </span>
                             </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate"><CurrencyDisplay value={stats.expense} /></h3>
+                            <div>
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
+                                    <CurrencyDisplay value={stats.expense} />
+                                </h3>
+                                <div className="flex items-center gap-2 mt-0.5 sm:mt-1.5">
+                                    <p className="text-muted-foreground text-[10px] sm:text-sm">Total Expense</p>
+                                    {viewMode === 'month' && (
+                                        <span className={cn(
+                                            "text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
+                                            trends.expense <= 0 ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30" : "text-rose-600 bg-rose-100 dark:bg-rose-900/30"
+                                        )}>
+                                            {trends.expense > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                                            {Math.abs(trends.expense).toFixed(0)}%
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                    </div>
+
+                    {/* Saving Card */}
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 bg-blue-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-center mb-2 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-blue-500/15 rounded-lg sm:rounded-xl group-hover:scale-110 transition-transform">
+                                    <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-blue-500" />
+                                </div>
+                                <span className="text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-blue-500/20">
+                                    Saving
+                                </span>
+                            </div>
+                            <div>
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
+                                    <CurrencyDisplay value={stats.saving || 0} />
+                                </h3>
+                                <div className="flex items-center gap-2 mt-0.5 sm:mt-1.5">
+                                    <p className="text-muted-foreground text-[10px] sm:text-sm">Total Saved</p>
+                                    {viewMode === 'month' && (
+                                        <span className={cn(
+                                            "text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
+                                            trends.saving >= 0 ? "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30" : "text-amber-600 bg-amber-100 dark:bg-amber-900/30"
+                                        )}>
+                                            {trends.saving >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                                            {Math.abs(trends.saving).toFixed(0)}%
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Net Card */}
-                    <div className={cn(
-                        "p-5 sm:p-6 rounded-2xl border relative overflow-hidden group bg-gradient-to-br",
-                        stats.net >= 0
-                            ? "from-blue-500/10 to-indigo-500/5 border-blue-500/10"
-                            : "from-orange-500/10 to-yellow-500/5 border-orange-500/10"
-                    )}>
+                    <div className="p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden hover-lift group">
+                        {/* Decorative Elements */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+
                         <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className={cn(
-                                    "p-2.5 rounded-xl group-hover:scale-110 transition-transform",
-                                    stats.net >= 0 ? "bg-blue-500/20 text-blue-600 dark:text-blue-400" : "bg-orange-500/20 text-orange-600 dark:text-orange-400"
-                                )}>
-                                    <Activity className="h-5 w-5" />
+                            <div className="flex justify-between items-start mb-3 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform">
+                                    <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                                 </div>
-                                <span className={cn(
-                                    "text-sm font-semibold",
-                                    stats.net >= 0 ? "text-blue-700 dark:text-blue-300" : "text-orange-700 dark:text-orange-300"
-                                )}>Net Saved</span>
+                                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold bg-white/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                                    Net
+                                </div>
                             </div>
-                            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate"><CurrencyDisplay value={stats.net} /></h3>
+                            <div>
+                                <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display tracking-tight drop-shadow-lg animate-value truncate">
+                                    <CurrencyDisplay value={stats.net} className="text-white" />
+                                </h3>
+                                <p className="text-white/80 text-[10px] sm:text-sm mt-1 sm:mt-2">
+                                    Net Result
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
