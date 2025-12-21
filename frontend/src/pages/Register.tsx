@@ -32,14 +32,14 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background sm:bg-gray-50/50 p-4 sm:px-6 lg:px-8 transition-colors duration-300">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 sm:px-6 lg:px-8 transition-colors duration-300">
             {/* Header / Logo Area for Mobile */}
             <div className="mb-8 text-center sm:hidden">
                 <h1 className="text-3xl font-display font-bold text-primary">Mankeu</h1>
                 <p className="text-muted-foreground mt-2 text-sm">Join us today</p>
             </div>
 
-            <div className="w-full max-w-[400px] border-none shadow-none sm:border sm:border-border/60 sm:shadow-xl sm:shadow-primary/5 sm:bg-white/80 sm:backdrop-blur-xl rounded-3xl overflow-hidden p-0 sm:p-8">
+            <div className="w-full max-w-[400px] border-none shadow-none sm:border sm:border-border/60 sm:shadow-xl sm:shadow-primary/5 sm:bg-card sm:backdrop-blur-xl rounded-3xl overflow-hidden p-0 sm:p-8">
                 <div className="text-center mb-8 hidden sm:block">
                     <h1 className="text-3xl font-display font-bold text-foreground">Create Account</h1>
                     <p className="mt-2 text-sm text-muted-foreground">Start managing your finances today</p>

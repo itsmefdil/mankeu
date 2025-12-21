@@ -46,7 +46,7 @@ export default function ServerConfig() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background sm:bg-gray-50/50 p-4 sm:px-6 lg:px-8 transition-colors duration-300">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 sm:px-6 lg:px-8 transition-colors duration-300">
             {/* Header / Logo Area */}
             <div className="mb-8 text-center sm:hidden">
                 <div className="mx-auto bg-primary/10 w-16 h-16 rounded-3xl flex items-center justify-center shadow-sm mb-4">
@@ -56,7 +56,7 @@ export default function ServerConfig() {
                 <p className="text-muted-foreground mt-2 text-sm">Connect to your personal Mankeu cloud</p>
             </div>
 
-            <Card className="w-full max-w-[400px] border-none shadow-none sm:border sm:border-border/60 sm:shadow-xl sm:shadow-primary/5 sm:bg-white/80 sm:backdrop-blur-xl rounded-3xl overflow-hidden">
+            <Card className="w-full max-w-[400px] border-none shadow-none sm:border sm:border-border/60 sm:shadow-xl sm:shadow-primary/5 sm:bg-card sm:backdrop-blur-xl rounded-3xl overflow-hidden">
                 <CardHeader className="text-center pb-2 hidden sm:block">
                     <div className="mx-auto mb-6 bg-primary/10 w-20 h-20 rounded-3xl flex items-center justify-center shadow-inner transform hover:scale-105 transition-transform duration-300">
                         <Server className="w-10 h-10 text-primary" />
