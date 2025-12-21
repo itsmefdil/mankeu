@@ -41,7 +41,13 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        const newToken = response.headers['x-new-token'];
+        if (newToken) {
+            localStorage.setItem('token', newToken);
+        }
+        return response;
+    },
     (error) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');

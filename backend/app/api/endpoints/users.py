@@ -1,5 +1,5 @@
 from typing import Any, List
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -41,11 +41,15 @@ async def create_user(
 
 @router.get("/me", response_model=UserResponse)
 async def read_user_me(
+    response: Response,
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
     """
     Get current user.
     """
+    # Refresh token (sliding session)
+    new_token = security.create_access_token(current_user.id)
+    response.headers["x-new-token"] = new_token
     return current_user
 
 @router.get("/", response_model=List[UserResponse])

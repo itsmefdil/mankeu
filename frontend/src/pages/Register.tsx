@@ -57,6 +57,7 @@ export default function RegisterPage() {
                                 onChange={(e) => setName(e.target.value)}
                                 className="h-14 px-4 rounded-2xl border-2 border-border/60 bg-muted/30 text-base transition-all focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
                                 placeholder="John Doe"
+                                autoComplete="name"
                             />
                         </div>
                         <div className="space-y-2">
@@ -69,6 +70,7 @@ export default function RegisterPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="h-14 px-4 rounded-2xl border-2 border-border/60 bg-muted/30 text-base transition-all focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
                                 placeholder="hello@example.com"
+                                autoComplete="email"
                             />
                         </div>
                         <div className="space-y-2">
@@ -81,6 +83,7 @@ export default function RegisterPage() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="h-14 px-4 rounded-2xl border-2 border-border/60 bg-muted/30 text-base transition-all focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
                                 placeholder="••••••••"
+                                autoComplete="new-password"
                             />
                         </div>
                     </div>

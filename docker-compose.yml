@@ -6,8 +6,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: mankeu
-    ports:
-      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
@@ -22,7 +20,7 @@ services:
     container_name: mankeu_backend
     restart: always
     ports:
-      - "8000:8000"
+      - "8088:8000"
     volumes:
       - ./backend:/app
       - /app/.venv
@@ -38,7 +36,7 @@ services:
     container_name: mankeu_frontend
     restart: always
     ports:
-      - "3000:80"
+      - "3088:80"
     depends_on:
       - backend
 
