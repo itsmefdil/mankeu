@@ -10,9 +10,12 @@ import AnalyticsPage from '@/pages/Analytics';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { BackButtonHandler } from '@/components/BackButtonHandler';
 import SettingsPage from '@/pages/Settings';
 import ServerConfig from '@/pages/ServerConfig';
 import { useTheme } from '@/hooks/useTheme';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import { useState } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -20,8 +23,10 @@ const queryClient = new QueryClient();
 
 const App = () => {
   useTheme(); // Initialize theme on app load
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+
     // Check if we need to configure server
     const checkConnection = async () => {
       // 1. Strict check: If no URL in localStorage, force config
@@ -48,15 +53,22 @@ const App = () => {
           // simplified: just redirect for now as "server first" implies we need a working server
           window.location.replace('/server-config');
         }
+      } finally {
+        setIsLoading(false);
       }
     };
 
     checkConnection();
   }, []);
 
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <BackButtonHandler />
         <Routes>
           <Route path="/server-config" element={<ServerConfig />} />
           <Route path="/login" element={<Login />} />
