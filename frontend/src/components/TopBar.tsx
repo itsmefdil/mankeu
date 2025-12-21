@@ -75,7 +75,11 @@ export const TopBar = () => {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="rounded-xl pl-1 pr-3 gap-3 h-10 hover:bg-white/10 md:hover:bg-muted/60 transition-all group outline-none">
                                 <div className="h-8 w-8 rounded-lg overflow-hidden ring-2 ring-white/20 md:ring-background group-hover:ring-white/40 md:group-hover:ring-primary/20 transition-all shadow-md shadow-black/5 md:shadow-primary/20 bg-white/10 md:bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                    <span className="text-lg">🤠</span>
+                                    {user?.picture ? (
+                                        <img src={user.picture} alt={user.name} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <span className="text-lg">🤠</span>
+                                    )}
                                 </div>
                                 <div className="flex flex-col items-start hidden sm:flex text-left">
                                     <span className="text-sm font-semibold leading-none text-white md:text-foreground group-hover:text-white md:group-hover:text-primary transition-colors">{user?.name || 'Guest'}</span>
@@ -86,8 +90,17 @@ export const TopBar = () => {
                         <DropdownMenuContent className="w-56" align="end" forceMount>
                             <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{user?.name}</p>
-                                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        {user?.picture && (
+                                            <div className="h-8 w-8 rounded-full overflow-hidden shrink-0">
+                                                <img src={user.picture} alt={user.name} className="h-full w-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium leading-none truncate">{user?.name}</p>
+                                            <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />

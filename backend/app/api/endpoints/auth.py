@@ -54,6 +54,10 @@ async def login_google(
 
         email = id_info.get("email")
         name = id_info.get("name")
+        picture = id_info.get("picture")
+        given_name = id_info.get("given_name")
+        family_name = id_info.get("family_name")
+        locale = id_info.get("locale")
         
         if not email:
              raise HTTPException(status_code=400, detail="Invalid Google Token: No email found")
@@ -75,8 +79,22 @@ async def login_google(
         user = User(
             email=email,
             name=name if name else email.split("@")[0],
-            hashed_password=security.get_password_hash(random_password)
+            hashed_password=security.get_password_hash(random_password),
+            picture=picture,
+            given_name=given_name,
+            family_name=family_name,
+            locale=locale
         )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    else:
+        # Update existing user profile
+        user.name = name
+        user.picture = picture
+        user.given_name = given_name
+        user.family_name = family_name
+        user.locale = locale
         db.add(user)
         await db.commit()
         await db.refresh(user)

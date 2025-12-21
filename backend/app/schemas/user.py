@@ -15,6 +15,10 @@ class UserUpdate(UserBase):
 class UserResponse(UserBase):
     id: int
     created_at: datetime
+    picture: Optional[str] = None
+    given_name: Optional[str] = None
+    family_name: Optional[str] = None
+    locale: Optional[str] = None
 
     class Config:
         from_attributes = True

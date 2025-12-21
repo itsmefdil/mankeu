@@ -11,6 +11,10 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    picture = Column(String(500), nullable=True)
+    given_name = Column(String(100), nullable=True)
+    family_name = Column(String(100), nullable=True)
+    locale = Column(String(10), nullable=True)
 
     # Relationships
     transactions = relationship("Transaction", back_populates="user")

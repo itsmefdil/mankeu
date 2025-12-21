@@ -19,9 +19,31 @@ services:
       dockerfile: Dockerfile
     container_name: mankeu_backend
     restart: always
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/.env:/app/.env
+      - ./backend/app:/app/app # Persist code changes including migrations
+      - ./backend/alembic:/app/alembic # Persist migrations
     ports:
       - "8088:8000"
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  migration:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mankeu_migration
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/.env:/app/.env
+      - ./backend/app:/app/app # Persist code changes including migrations
+      - ./backend/alembic:/app/alembic # Persist migrations
+    command: alembic upgrade head
     depends_on:
       db:
         condition: service_healthy

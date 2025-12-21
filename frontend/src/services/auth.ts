@@ -5,6 +5,10 @@ export interface User {
     email: string;
     name: string;
     created_at: string;
+    picture?: string;
+    given_name?: string;
+    family_name?: string;
+    locale?: string;
 }
 
 export const authService = {
