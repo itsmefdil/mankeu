@@ -62,45 +62,98 @@ For those who prefer to use a hosted server instead of setting up their own back
 **https://api-finance.noma.my.id**
 
 ### Prerequisites
-- [Bun](https://bun.sh) (v1.0+)
-- [uv](https://github.com/astral-sh/uv) (v0.1+)
-- MySQL Server
+- **Runtime**: [Bun](https://bun.sh) (v1.0+)
+- **Python Tooling**: [uv](https://github.com/astral-sh/uv) (v0.1+)
+- **Database**: MySQL Server
+- **Android Support**: Java SDK 21 (for building APKs)
 
-### Installation
+---
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/mankeu.git
-   cd mankeu
-   ```
+### 🛠️ Development (Local Setup)
 
-2. **Backend Setup**
-   ```bash
-   cd backend
-   
-   # Create virtual environment and install dependencies using uv
-   uv venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   uv pip install -r requirements.txt
-   
-   # Setup environment variables
-   cp .env.example .env
-   # Update .env with your database credentials
-   
-   # Start server
-   uv run uvicorn app.main:app --reload
-   ```
+#### 1. Clone the repository
+```bash
+git clone https://github.com/itsmefdil/mankeu.git
+cd mankeu
+```
 
-3. **Frontend Setup**
-   ```bash
-   cd frontend
-   bun install
-   bun dev
-   ```
+#### 2. Backend Setup
+The backend uses **FastAPI** and manages dependencies with **uv**.
 
-4. **Access the application**
-   - Frontend: `http://localhost:5173`
-   -  Backend API Docs: `http://localhost:8000/docs`
+```bash
+cd backend
+
+# Create virtual environment and install dependencies
+uv venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+uv sync
+
+# Configure Environment
+cp .env.example .env
+# [Action Required] Edit .env with your MySQL credentials
+
+# Run Migrations & Start Server
+uv run alembic upgrade head
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+*Backend API Docs: `http://localhost:8000/docs`*
+
+#### 3. Frontend Setup
+The frontend uses **React (Vite)** and **Bun**.
+
+```bash
+cd frontend
+
+# Install dependencies
+bun install
+
+# Start Development Server
+bun dev
+```
+*Frontend URL: `http://localhost:5173`*
+
+---
+
+### 🐳 Deployment (Docker)
+
+Easily deploy the full stack (Frontend, Backend, Database) using Docker Compose.
+
+```bash
+# From the project root
+docker compose up -d --build
+```
+
+**Services:**
+- **Frontend**: `http://localhost:3088`
+- **Backend**: `http://localhost:8088` (Internal port 8000)
+- **Database**: `mankeu_db` (Internal port 3306)
+
+*Note: Data is persisted in the `db_data` volume.*
+
+---
+
+### 📱 Android Build
+
+You can build the Android APK without Android Studio using the provided CLI tools.
+
+#### 1. Setup Environment
+Ensure you have **Java 21** installed and the Android Command Line Tools set up.
+> See [ANDROID_BUILD.md](ANDROID_BUILD.md) for detailed environment setup instructions.
+
+#### 2. Build APK
+Use the helper script to sync the frontend and build the debug APK.
+
+```bash
+# Make the script executable
+chmod +x build-android.sh
+
+# Run the build script
+./build-android.sh
+```
+
+**Output:**
+The APK will be generated at:
+`frontend/android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## License
 
