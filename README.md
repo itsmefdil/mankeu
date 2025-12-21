@@ -14,20 +14,31 @@ Mankeu is a modern, feature-rich personal finance management application designe
 ## Screenshots
 
 ### Dashboard
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](assets/images/dashboard.png)
 *Get a comprehensive overview of your financial health with interactive charts and real-time statistics*
 
 ### Transactions
-![Transactions](screenshots/transactions.png)
+![Transactions](assets/images/transactions.png)
 *Track all your income and expenses with detailed categorization and filtering options*
 
 ### Categories
-![Categories](screenshots/categories.png)
+![Categories](assets/images/categories.png)
 *Manage and customize your transaction categories to fit your needs*
 
 ### Budget & Goals
-![Budget & Goals](screenshots/budget-goals.png)
+![Budget & Goals](assets/images/budget-goals.png)
 *Set and monitor your monthly budgets and financial goals*
+
+## Mobile Screenshots
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+  <img src="assets/images/mobile-dashboard.png" alt="Mobile Dashboard" width="200" />
+  <img src="assets/images/mobile-transactions.png" alt="Mobile Transactions" width="200" />
+  <img src="assets/images/mobile-categories.png" alt="Mobile Categories" width="200" />
+  <img src="assets/images/mobile-budget&goals.png" alt="Mobile Budget & Goals" width="200" />
+  <img src="assets/images/mobile-analytics.png" alt="Mobile Analytics" width="200" />
+</div>
+
 
 ## Tech Stack
 
@@ -45,6 +56,10 @@ Mankeu is a modern, feature-rich personal finance management application designe
 - **Data Validation**: Pydantic
 
 ## Getting Started
+
+### 🚀 Quick Try
+For those who prefer to use a hosted server instead of setting up their own backend, you can use the following URL:
+**https://api-finance.noma.my.id**
 
 ### Prerequisites
 - [Bun](https://bun.sh) (v1.0+)
