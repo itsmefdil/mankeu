@@ -197,6 +197,7 @@ export default function LoginPage() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="pl-10 h-12 bg-muted/30 border-border/60 focus:border-primary focus:bg-background transition-all rounded-xl"
                                         required
+                                        autoComplete="email"
                                     />
                                 </div>
                             </div>
@@ -205,9 +206,9 @@ export default function LoginPage() {
                                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70" htmlFor="password">
                                         Password
                                     </label>
-                                    <Link to="#" className="text-xs font-medium text-primary hover:underline">
+                                    {/* <Link to="#" className="text-xs font-medium text-primary hover:underline">
                                         Forgot password?
-                                    </Link>
+                                    </Link> */}
                                 </div>
                                 <div className="relative group">
                                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
@@ -221,6 +222,7 @@ export default function LoginPage() {
                                         onChange={(e) => setPassword(e.target.value)}
                                         className="pl-10 h-12 bg-muted/30 border-border/60 focus:border-primary focus:bg-background transition-all rounded-xl"
                                         required
+                                        autoComplete="current-password"
                                     />
                                 </div>
                             </div>

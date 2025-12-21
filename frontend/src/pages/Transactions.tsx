@@ -113,6 +113,23 @@ export default function TransactionsPage() {
         }, {} as Record<string, Transaction[]>);
     }, [filteredTransactions]);
 
+    // Daily Expense Calculation
+    const todayExpense = useMemo(() => {
+        if (!transactions || !categories) return 0;
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0]; // Compare using YYYY-MM-DD string from API
+
+        return transactions
+            .filter(tx => {
+                const isToday = tx.transaction_date === todayStr;
+                const category = categories.find(c => c.id === tx.category_id);
+                // Use strict check for 'expense' type
+                const isExpense = category?.type === 'expense';
+                return isToday && isExpense;
+            })
+            .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    }, [transactions, categories]);
+
 
     // Mutations
     const createMutation = useMutation({
@@ -298,6 +315,29 @@ export default function TransactionsPage() {
 
 
                 {/* Filters & Actions */}
+                {/* Daily Expense Summary */}
+                <div className="bg-gradient-to-br from-red-500/5 to-rose-500/10 dark:from-red-900/10 dark:to-rose-900/20 p-4 rounded-2xl border border-red-100/50 dark:border-red-800/30 relative overflow-hidden shadow-sm group hover:shadow-md transition-all duration-500">
+                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+                        <div>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                                <div className="p-1 bg-red-100/50 dark:bg-red-900/30 rounded-md">
+                                    <Tag className="w-3 h-3 text-red-600 dark:text-red-400" />
+                                </div>
+                                <p className="text-muted-foreground font-medium text-xs">Today Expense</p>
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-bold font-display text-red-600 dark:text-red-400 tracking-tight">
+                                <CurrencyDisplay value={todayExpense} />
+                            </h2>
+                        </div>
+                        <div className="text-[10px] sm:text-xs font-medium text-red-600/60 dark:text-red-400/50 px-2 py-0.5 bg-red-100/50 dark:bg-red-900/20 rounded-full self-start sm:self-end">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </div>
+                    </div>
+                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
+                        <Tag className="w-32 h-32 rotate-12 text-red-600" />
+                    </div>
+                </div>
+
                 {/* Filters & Actions */}
                 <div className="space-y-4">
                     <div className="flex gap-3">
