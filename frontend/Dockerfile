@@ -7,6 +7,8 @@ COPY package.json bun.lock ./
 RUN bun install
 
 COPY . .
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN bun run build
 
 # Production stage

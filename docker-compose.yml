@@ -52,8 +52,12 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
     container_name: mankeu_frontend
     restart: always
+    env_file:
+      - ./frontend/.env
     ports:
       - "3088:80"
     depends_on:
