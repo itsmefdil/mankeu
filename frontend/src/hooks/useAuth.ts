@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authService, type User } from '@/services/auth';
+import { Preferences } from '@capacitor/preferences';
 
 interface AuthState {
     user: User | null;
@@ -8,7 +9,7 @@ interface AuthState {
     login: (username: string, password: string) => Promise<void>;
     loginWithGoogle: (idToken: string) => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
-    logout: () => void;
+    logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
 }
 
@@ -20,7 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     login: async (email, password) => {
         try {
             const data = await authService.login(email, password);
-            localStorage.setItem('token', data.access_token);
+            await Preferences.set({ key: 'token', value: data.access_token });
 
             const user = await authService.getCurrentUser();
             set({ user, isAuthenticated: true });
@@ -33,7 +34,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     loginWithGoogle: async (idToken: string) => {
         try {
             const data = await authService.loginWithGoogle(idToken);
-            localStorage.setItem('token', data.access_token);
+            await Preferences.set({ key: 'token', value: data.access_token });
 
             const user = await authService.getCurrentUser();
             set({ user, isAuthenticated: true });
@@ -53,13 +54,13 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
     },
 
-    logout: () => {
-        localStorage.removeItem('token');
+    logout: async () => {
+        await Preferences.remove({ key: 'token' });
         set({ user: null, isAuthenticated: false });
     },
 
     checkAuth: async () => {
-        const token = localStorage.getItem('token');
+        const { value: token } = await Preferences.get({ key: 'token' });
         if (!token) {
             set({ isAuthenticated: false, isLoading: false });
             return;
@@ -69,7 +70,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             const user = await authService.getCurrentUser();
             set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
-            localStorage.removeItem('token');
+            await Preferences.remove({ key: 'token' });
             set({ user: null, isAuthenticated: false, isLoading: false });
         }
     },

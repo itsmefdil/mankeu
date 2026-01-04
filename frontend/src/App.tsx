@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { checkBackendConnection } from '@/services/health';
+import { Preferences } from '@capacitor/preferences';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '@/pages/Dashboard';
 import TransactionsPage from '@/pages/Transactions';
@@ -14,8 +15,6 @@ import { BackButtonHandler } from '@/components/BackButtonHandler';
 import SettingsPage from '@/pages/Settings';
 import ServerConfig from '@/pages/ServerConfig';
 import { useTheme } from '@/hooks/useTheme';
-import { LoadingScreen } from '@/components/ui/LoadingScreen';
-import { useState } from 'react';
 
 const queryClient = new QueryClient();
 
@@ -23,7 +22,6 @@ const queryClient = new QueryClient();
 
 const App = () => {
   useTheme(); // Initialize theme on app load
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
 
@@ -31,7 +29,7 @@ const App = () => {
     const checkConnection = async () => {
       // 1. Strict check: If no URL in localStorage, force config
       // We ignore environment variables to enforce the 'setup first' flow
-      const storedUrl = localStorage.getItem('api_url');
+      const { value: storedUrl } = await Preferences.get({ key: 'api_url' });
 
       if (!storedUrl) {
         if (window.location.pathname !== '/server-config') {
@@ -53,17 +51,12 @@ const App = () => {
           // simplified: just redirect for now as "server first" implies we need a working server
           window.location.replace('/server-config');
         }
-      } finally {
-        setIsLoading(false);
       }
     };
 
     checkConnection();
   }, []);
 
-  if (isLoading) {
-    return <LoadingScreen />;
-  }
 
   return (
     <QueryClientProvider client={queryClient}>

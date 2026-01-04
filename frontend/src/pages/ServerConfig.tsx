@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { updateApiBaseUrl } from "@/lib/axios";
+import { Preferences } from '@capacitor/preferences';
 import { checkBackendConnection } from "@/services/health";
 import { Server, AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -15,9 +16,12 @@ export default function ServerConfig() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Load existing URL or default
-        const currentUrl = localStorage.getItem("api_url") || import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
-        setUrl(currentUrl);
+        const loadUrl = async () => {
+            const { value: savedUrl } = await Preferences.get({ key: 'api_url' });
+            const currentUrl = savedUrl || import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+            setUrl(currentUrl);
+        };
+        loadUrl();
     }, []);
 
     const handleConnect = async () => {

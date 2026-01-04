@@ -11,16 +11,18 @@ const api = axios.create({
     },
 });
 
-export const updateApiBaseUrl = (url: string) => {
-    localStorage.setItem('api_url', url);
+export const updateApiBaseUrl = async (url: string) => {
+    await Preferences.set({ key: 'api_url', value: url });
     api.defaults.baseURL = url;
 };
 
+import { Preferences } from '@capacitor/preferences';
+
 // Request interceptor to ensure the latest URL is used if it wasn't updated in defaults
 api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        const customUrl = localStorage.getItem('api_url');
+    async (config) => {
+        const { value: token } = await Preferences.get({ key: 'token' });
+        const { value: customUrl } = await Preferences.get({ key: 'api_url' });
 
         // If there's a custom URL and it differs from the current baseURL (and isn't relative), use it
         // Note: Changing baseURL in interceptor might be tricky, so we rely on defaults.baseURL
@@ -41,16 +43,16 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-    (response) => {
+    async (response) => {
         const newToken = response.headers['x-new-token'];
         if (newToken) {
-            localStorage.setItem('token', newToken);
+            await Preferences.set({ key: 'token', value: newToken });
         }
         return response;
     },
-    (error) => {
+    async (error) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
+            await Preferences.remove({ key: 'token' });
             // window.location.href = '/login'; // Optional: Redirect to login
         }
         return Promise.reject(error);
