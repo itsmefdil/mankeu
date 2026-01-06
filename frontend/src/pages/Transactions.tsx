@@ -26,20 +26,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from "@/components/ui/sheet"
-import { useMediaQuery } from "@/hooks/useMediaQuery"
+
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, Target, ChevronDown, Tag, AlignLeft, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { PullToRefresh } from '@/components/PullToRefresh';
-// import { useAuthStore } from '@/hooks/useAuth'; // Unused
+import { useTranslation } from 'react-i18next';
+import { usePreferencesStore } from '@/hooks/usePreferences';
 
 // Haptic feedback helper
 const vibrate = (pattern: number | number[] = 10) => {
@@ -49,7 +43,8 @@ const vibrate = (pattern: number | number[] = 10) => {
 };
 
 export default function TransactionsPage() {
-    // const { user } = useAuthStore(); // Unused
+    const { t } = useTranslation();
+    const { language } = usePreferencesStore();
     const queryClient = useQueryClient();
     const isDesktop = useMediaQuery("(min-width: 768px)")
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -128,6 +123,31 @@ export default function TransactionsPage() {
                 return isToday && isExpense;
             })
             .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+    }, [transactions, categories]);
+
+    // Average Daily Expense Calculation
+    const avgDailyExpense = useMemo(() => {
+        if (!transactions || !categories) return 0;
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+        const currentDayOf = today.getDate(); // 1-31
+
+        const totalMonthExpense = transactions
+            .filter(tx => {
+                const date = new Date(tx.transaction_date);
+                const category = categories.find(c => c.id === tx.category_id);
+                const isExpense = category?.type === 'expense';
+
+                return isExpense &&
+                    date.getMonth() === currentMonth &&
+                    date.getFullYear() === currentYear &&
+                    date.getDate() <= currentDayOf; // Only count up to today for fairness? Or just total month to date.
+            })
+            .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+
+        // Avoid division by zero, though getDate() is min 1
+        return totalMonthExpense / Math.max(1, currentDayOf);
     }, [transactions, categories]);
 
 
@@ -231,10 +251,10 @@ export default function TransactionsPage() {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
 
-        if (date.toDateString() === today.toDateString()) return 'Today';
-        if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        if (date.toDateString() === today.toDateString()) return t('transactions.today');
+        if (date.toDateString() === yesterday.toDateString()) return t('transactions.yesterday');
 
-        return date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' });
+        return date.toLocaleDateString(language, { weekday: 'long', day: 'numeric', month: 'long' });
     };
 
     return (
@@ -256,26 +276,26 @@ export default function TransactionsPage() {
                 {/* Header */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold truncate">Transactions</h1>
-                        <p className="text-muted-foreground mt-1 text-sm hidden sm:block">Manage your income and expenses</p>
+                        <h1 className="text-2xl sm:text-3xl font-display font-bold truncate">{t('transactions.title')}</h1>
+                        <p className="text-muted-foreground mt-1 text-sm hidden sm:block">{t('transactions.description')}</p>
                     </div>
 
                     <div className="flex gap-2 shrink-0">
                         {selectedIds.length > 0 && (
                             <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending} className="animate-in fade-in zoom-in-95 rounded-xl shadow-sm">
-                                <Trash2 className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Delete</span> ({selectedIds.length})
+                                <Trash2 className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">{t('transactions.delete')}</span> ({selectedIds.length})
                             </Button>
                         )}
                         {/* Add Transaction Dialog - Unified Responsive */}
                         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                             <DialogTrigger asChild>
                                 {isDesktop ? (
-                                    <Button className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> New Transaction</Button>
+                                    <Button className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> {t('transactions.new_transaction')}</Button>
                                 ) : (
                                     <Button className="shadow-lg shadow-primary/20 rounded-xl px-4 hidden">
                                         <Plus className="h-5 w-5 sm:mr-2" />
-                                        <span className="sr-only sm:not-sr-only">New Transaction</span>
-                                        <span className="sm:hidden font-semibold">New</span>
+                                        <span className="sr-only sm:not-sr-only">{t('transactions.new_transaction')}</span>
+                                        <span className="sm:hidden font-semibold">{t('transactions.new')}</span>
                                     </Button>
                                 )}
                             </DialogTrigger>
@@ -286,8 +306,8 @@ export default function TransactionsPage() {
                                 "border-0 sm:border" // Mobile: No border
                             )}>
                                 <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                                    <DialogTitle>Add Transaction</DialogTitle>
-                                    <DialogDescription>Add a new transaction to track your finances.</DialogDescription>
+                                    <DialogTitle>{t('transactions.add_transaction')}</DialogTitle>
+                                    <DialogDescription>{t('transactions.add_description')}</DialogDescription>
                                 </DialogHeader>
                                 <TransactionForm
                                     categories={categories}
@@ -303,25 +323,24 @@ export default function TransactionsPage() {
 
                 {/* Filters & Actions */}
                 {/* Daily Expense Summary */}
-                <div className="bg-gradient-to-br from-red-500/5 to-rose-500/10 dark:from-red-900/10 dark:to-rose-900/20 p-4 rounded-2xl border border-red-100/50 dark:border-red-800/30 relative overflow-hidden shadow-sm group hover:shadow-md transition-all duration-500">
-                    <div className="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
-                        <div>
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                                <div className="p-1 bg-red-100/50 dark:bg-red-900/30 rounded-md">
-                                    <Tag className="w-3 h-3 text-red-600 dark:text-red-400" />
-                                </div>
-                                <p className="text-muted-foreground font-medium text-xs">Today Expense</p>
+                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5">
+                                <Tag className="w-3 h-3 text-red-600 dark:text-red-400" />
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('transactions.today_expense')}</p>
                             </div>
-                            <h2 className="text-2xl sm:text-3xl font-bold font-display text-red-600 dark:text-red-400 tracking-tight">
+                            <p className="text-sm font-bold font-mono text-red-600 dark:text-red-400">
                                 <CurrencyDisplay value={todayExpense} />
-                            </h2>
+                            </p>
                         </div>
-                        <div className="text-[10px] sm:text-xs font-medium text-red-600/60 dark:text-red-400/50 px-2 py-0.5 bg-red-100/50 dark:bg-red-900/20 rounded-full self-start sm:self-end">
-                            {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        <div className="h-px bg-slate-100 dark:bg-slate-700" />
+                        <div className="flex justify-between items-center">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('transactions.avg_daily')}</p>
+                            <p className="text-sm font-bold font-mono text-red-600/80 dark:text-red-400/80">
+                                <CurrencyDisplay value={avgDailyExpense} />
+                            </p>
                         </div>
-                    </div>
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-700">
-                        <Tag className="w-32 h-32 rotate-12 text-red-600" />
                     </div>
                 </div>
 
@@ -332,7 +351,7 @@ export default function TransactionsPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 className="pl-9 h-11 bg-card border-none shadow-sm rounded-xl focus-visible:ring-1 transition-all"
-                                placeholder="Search transactions..."
+                                placeholder={t('transactions.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -354,7 +373,7 @@ export default function TransactionsPage() {
                                 value={filterCategory}
                                 onChange={(e) => setFilterCategory(e.target.value)}
                             >
-                                <option value="all">All Categories</option>
+                                <option value="all">{t('transactions.all_categories')}</option>
                                 {categories?.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
@@ -365,7 +384,7 @@ export default function TransactionsPage() {
                                 onChange={(e) => setFilterMonth(Number(e.target.value))}
                             >
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                    <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'short' })}</option>
+                                    <option key={m} value={m}>{new Date(0, m - 1).toLocaleString(language, { month: 'short' })}</option>
                                 ))}
                             </select>
                             <select
@@ -390,11 +409,11 @@ export default function TransactionsPage() {
                                 onChange={toggleSelectAll}
                             />
                             <label htmlFor="selectAll" className="text-sm font-medium leading-none cursor-pointer text-muted-foreground select-none">
-                                Select All
+                                {t('transactions.select_all')}
                             </label>
                         </div>
                         <span className="text-xs text-muted-foreground font-medium">
-                            {filteredTransactions?.length || 0} transactions
+                            {filteredTransactions?.length || 0} {t('transactions.count_suffix')}
                         </span>
                     </div>
                 </div>
@@ -402,14 +421,14 @@ export default function TransactionsPage() {
                 <PullToRefresh onRefresh={async () => { await queryClient.invalidateQueries({ queryKey: ['transactions'] }); }}>
                     <div className="space-y-6">
                         {isLoading ? (
-                            <div className="text-center py-12 text-muted-foreground">Loading transactions...</div>
+                            <div className="text-center py-12 text-muted-foreground">{t('transactions.loading')}</div>
                         ) : Object.keys(groupedTransactions).length === 0 ? (
                             <div className="text-center py-12">
                                 <div className="bg-muted/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                                     <CalendarIcon className="w-8 h-8 text-muted-foreground" />
                                 </div>
-                                <h3 className="text-lg font-semibold">No transactions found</h3>
-                                <p className="text-muted-foreground">Try adjusting filters or add a new transaction.</p>
+                                <h3 className="text-lg font-semibold">{t('transactions.no_transactions')}</h3>
+                                <p className="text-muted-foreground">{t('transactions.no_transactions_desc')}</p>
                             </div>
                         ) : (
                             Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((date) => (
@@ -420,7 +439,7 @@ export default function TransactionsPage() {
                                             {formatDateHeader(date)}
                                         </h3>
                                         <span className="text-xs text-muted-foreground">
-                                            {groupedTransactions[date].length} transaction{groupedTransactions[date].length > 1 ? 's' : ''}
+                                            {groupedTransactions[date].length} {t('transactions.count_suffix')}
                                         </span>
                                     </div>
                                     <div className="flex flex-col">
@@ -514,7 +533,7 @@ export default function TransactionsPage() {
                         "border-0 sm:border"
                     )}>
                         <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                            <DialogTitle>Edit Transaction</DialogTitle>
+                            <DialogTitle>{t('transactions.edit_transaction')}</DialogTitle>
                         </DialogHeader>
                         <TransactionForm
                             categories={categories}
@@ -534,22 +553,22 @@ export default function TransactionsPage() {
                                 <div className="p-2 bg-destructive/10 rounded-lg">
                                     <Trash2 className="h-5 w-5 text-destructive" />
                                 </div>
-                                Confirm Delete
+                                {t('transactions.confirm_delete')}
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-base">
                                 {deleteTarget?.type === 'bulk'
-                                    ? `Are you sure you want to delete ${selectedIds.length} transactions? This action cannot be undone.`
-                                    : 'Are you sure you want to delete this transaction? This action cannot be undone.'
+                                    ? t('transactions.delete_bulk_confirm', { count: selectedIds.length })
+                                    : t('transactions.delete_single_confirm')
                                 }
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="gap-2 sm:gap-0">
-                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                            <AlertDialogCancel className="rounded-xl">{t('transactions.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={confirmDelete}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                             >
-                                {deleteMutation.isPending || bulkDeleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                {deleteMutation.isPending || bulkDeleteMutation.isPending ? t('transactions.deleting') : t('transactions.delete')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -560,7 +579,11 @@ export default function TransactionsPage() {
     );
 }
 
+
+
 function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialData }: any) {
+    const { t } = useTranslation();
+    const { currency, language } = usePreferencesStore();
     const [formData, setFormData] = useState<Partial<Transaction>>({
         name: '',
         amount: 0,
@@ -592,23 +615,23 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
 
                 {/* 1. Amount Input */}
                 <div className="relative py-8 bg-muted/20 rounded-3xl border border-dashed border-border flex flex-col items-center justify-center">
-                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Total Amount</Label>
+                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">{t('transactions.total_amount')}</Label>
                     <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                        <span className="text-2xl sm:text-3xl font-bold text-muted-foreground mr-2">Rp</span>
+                        <span className="text-2xl sm:text-3xl font-bold text-muted-foreground mr-2">{currency === 'USD' ? '$' : 'Rp'}</span>
                         <input
                             id="amount"
                             type="text"
                             inputMode="numeric"
                             className="text-4xl sm:text-5xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/20 p-0 outline-none hover:outline-none"
                             placeholder="0"
-                            value={formData.amount ? Math.floor(Number(formData.amount)).toLocaleString('id-ID') : ''}
+                            value={formData.amount ? Number(formData.amount).toLocaleString(language || 'id-ID') : ''}
                             onKeyDown={(e) => {
                                 if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                                     e.preventDefault();
                                 }
                             }}
                             onChange={(e) => {
-                                const rawValue = e.target.value.replace(/\./g, '');
+                                const rawValue = e.target.value.replace(/[^0-9]/g, '');
                                 const numValue = parseInt(rawValue) || 0;
                                 setFormData({ ...formData, amount: numValue });
                             }}
@@ -622,7 +645,7 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                     {/* 2. Category Select */}
                     <div className="space-y-2">
                         <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                            <Tag className="w-4 h-4 text-primary" /> Category
+                            <Tag className="w-4 h-4 text-primary" /> {t('transactions.category')}
                         </Label>
                         <div className="relative">
                             <select
@@ -632,7 +655,7 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                                 onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
                                 required
                             >
-                                <option value={0} disabled>Select Category</option>
+                                <option value={0} disabled>{t('transactions.select_category')}</option>
                                 {categories?.map((c: any) => (
                                     <option key={c.id} value={c.id}>{c.icon || '🔹'} {c.name} ({c.type})</option>
                                 ))}
@@ -644,7 +667,7 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                     {/* 3. Date Input */}
                     <div className="space-y-2">
                         <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                            <CalendarIcon className="w-4 h-4 text-primary" /> Date
+                            <CalendarIcon className="w-4 h-4 text-primary" /> {t('transactions.date')}
                         </Label>
                         <div className="relative">
                             <Input
@@ -667,14 +690,14 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                 {/* 4. Note Input */}
                 <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                        <AlignLeft className="w-4 h-4 text-primary" /> Note
+                        <AlignLeft className="w-4 h-4 text-primary" /> {t('transactions.note')}
                     </Label>
                     <Input
                         id="name"
                         className="h-12 rounded-xl border-input bg-card text-base shadow-sm"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="What is this for?"
+                        placeholder={t('transactions.note_placeholder')}
                         required
                     />
                 </div>
@@ -683,7 +706,7 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                 {categories?.find((c: any) => c.id === formData.category_id)?.type === 'saving' && (
                     <div className="animate-in fade-in slide-in-from-top-4 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-dashed border-blue-200 dark:border-blue-800">
                         <Label htmlFor="goal" className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-semibold mb-2">
-                            <Target className="w-4 h-4" /> Link to Savings Goal
+                            <Target className="w-4 h-4" /> {t('transactions.link_goal')}
                         </Label>
                         <div className="relative">
                             <select
@@ -696,11 +719,11 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                                     setFormData({
                                         ...formData,
                                         goal_id: goalId,
-                                        name: goal ? "Deposit to " + goal.name : formData.name
+                                        name: goal ? `${t('transactions.deposit_to')} ` + goal.name : formData.name
                                     });
                                 }}
                             >
-                                <option value={0}>-- Select a Goal (Optional) --</option>
+                                <option value={0}>{t('transactions.select_goal')}</option>
                                 {savings?.map((s: any) => (
                                     <option key={s.id} value={s.id}>{s.name} (Current: {Math.floor(Number(s.amount)).toLocaleString('id-ID')})</option>
                                 ))}
@@ -717,7 +740,7 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                     disabled={isSubmitting}
                     className="w-full h-12 sm:h-14 text-lg rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
-                    {isSubmitting ? 'Saving...' : 'Save Transaction'}
+                    {isSubmitting ? t('transactions.saving') : t('transactions.save')}
                 </Button>
             </div>
         </form>

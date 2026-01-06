@@ -14,7 +14,8 @@ class User(Base):
     picture = Column(String(500), nullable=True)
     given_name = Column(String(100), nullable=True)
     family_name = Column(String(100), nullable=True)
-    locale = Column(String(10), nullable=True)
+    locale = Column(String(10), nullable=True) # e.g. 'en', 'id'
+    currency = Column(String(3), nullable=True, default='IDR') # e.g. 'IDR', 'USD'
 
     # Relationships
     transactions = relationship("Transaction", back_populates="user")

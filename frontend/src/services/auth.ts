@@ -9,6 +9,7 @@ export interface User {
     given_name?: string;
     family_name?: string;
     locale?: string;
+    currency?: string;
 }
 
 export const authService = {

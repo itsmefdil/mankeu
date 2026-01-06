@@ -10,7 +10,6 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -18,11 +17,15 @@ import {
 import { Plus, Trash2, Pencil, Wallet, Rocket, TrendingUp, ChevronDown, Tag, Calendar, AlignLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/CurrencyDisplay';
+import { useTranslation } from 'react-i18next';
+import { usePreferencesStore } from '@/hooks/usePreferences';
 
 // Tab Types
 type TabType = 'budgets' | 'goals';
 
 export default function BudgetGoalsPage() {
+    const { t } = useTranslation();
+    const { currency, language } = usePreferencesStore();
     const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<TabType>('budgets');
 
@@ -213,7 +216,7 @@ export default function BudgetGoalsPage() {
     };
 
     const handleBudgetDelete = (id: number) => {
-        if (confirm("Are you sure you want to delete this budget?")) {
+        if (confirm(t('budget.delete_budget_confirm'))) {
             deleteBudgetMutation.mutate(id);
         }
     };
@@ -239,7 +242,7 @@ export default function BudgetGoalsPage() {
     };
 
     const handleGoalDelete = (id: number) => {
-        if (confirm("Are you sure you want to delete this goal?")) {
+        if (confirm(t('budget.delete_goal_confirm'))) {
             deleteGoalMutation.mutate(id);
         }
     };
@@ -261,8 +264,8 @@ export default function BudgetGoalsPage() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold">Budget & Goals</h1>
-                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage spending limits and savings targets</p>
+                        <h1 className="text-2xl sm:text-3xl font-display font-bold">{t('budget.title')}</h1>
+                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t('budget.description')}</p>
                     </div>
                 </div>
 
@@ -278,7 +281,7 @@ export default function BudgetGoalsPage() {
                         )}
                     >
                         <Wallet className="h-4 w-4 inline-block mr-2" />
-                        Budgets
+                        {t('budget.tab_budgets')}
                     </button>
                     <button
                         onClick={() => setActiveTab('goals')}
@@ -290,7 +293,7 @@ export default function BudgetGoalsPage() {
                         )}
                     >
                         <Rocket className="h-4 w-4 inline-block mr-2" />
-                        Goals
+                        {t('budget.tab_goals')}
                     </button>
                 </div>
 
@@ -303,21 +306,21 @@ export default function BudgetGoalsPage() {
                             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Remaining</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.remaining')}</p>
                                         <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
                                             <CurrencyDisplay value={Math.max(0, totalIncome - budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0))} />
                                         </p>
                                     </div>
                                     <div className="h-px bg-slate-100 dark:bg-slate-700" />
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Budget</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.total_budget')}</p>
                                         <p className="text-sm font-bold font-mono">
                                             <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0)} />
                                         </p>
                                     </div>
                                     <div className="h-px bg-slate-100 dark:bg-slate-700" />
                                     <div className="flex justify-between items-center">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Spent</p>
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.total_spent')}</p>
                                         <p className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400">
                                             <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + curr.spent, 0)} />
                                         </p>
@@ -335,7 +338,7 @@ export default function BudgetGoalsPage() {
                                         >
                                             {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                                                 <option key={m} value={m} className="bg-white dark:bg-slate-800 text-foreground py-2">
-                                                    {new Date(0, m - 1).toLocaleString('default', { month: 'long' })}
+                                                    {new Date(0, m - 1).toLocaleString(language || 'en-US', { month: 'long' })}
                                                 </option>
                                             ))}
                                         </select>
@@ -362,7 +365,7 @@ export default function BudgetGoalsPage() {
 
                                 <Dialog open={isBudgetAddOpen} onOpenChange={setIsBudgetAddOpen}>
                                     <DialogTrigger asChild>
-                                        <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 rounded-xl"><Plus className="mr-2 h-4 w-4" /> Set Budget</Button>
+                                        <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 rounded-xl"><Plus className="mr-2 h-4 w-4" /> {t('budget.set_budget')}</Button>
                                     </DialogTrigger>
                                     <DialogContent className={cn(
                                         "flex flex-col gap-0 p-0 overflow-hidden",
@@ -371,23 +374,23 @@ export default function BudgetGoalsPage() {
                                         "border-0 sm:border"
                                     )}>
                                         <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                                            <DialogTitle>Set Budget</DialogTitle>
-                                            <DialogDescription>Create a spending limit for a category.</DialogDescription>
+                                            <DialogTitle>{t('budget.set_budget_title')}</DialogTitle>
+                                            <DialogDescription>{t('budget.set_budget_desc')}</DialogDescription>
                                         </DialogHeader>
                                         <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
                                             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
                                                 {/* 1. Amount Input - Centerpiece */}
                                                 <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
+                                                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.limit_amount')}</Label>
                                                     <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
                                                         <Input
                                                             id="amount"
                                                             type="text"
                                                             inputMode="numeric"
                                                             className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
                                                             placeholder="0"
-                                                            value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
+                                                            value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString(language) : ''}
                                                             onKeyDown={(e) => {
                                                                 if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                                                                     e.preventDefault();
@@ -407,7 +410,7 @@ export default function BudgetGoalsPage() {
                                                 {/* 2. Category Select */}
                                                 <div className="space-y-2">
                                                     <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                        <Tag className="w-4 h-4 text-primary" /> Category
+                                                        <Tag className="w-4 h-4 text-primary" /> {t('budget.category_label')}
                                                     </Label>
                                                     <div className="relative">
                                                         <select
@@ -417,7 +420,7 @@ export default function BudgetGoalsPage() {
                                                             onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
                                                             required
                                                         >
-                                                            <option value={0} disabled>Select Category</option>
+                                                            <option value={0} disabled>{t('budget.select_category')}</option>
                                                             {categories?.filter(c => c.type === 'expense').map((c) => (
                                                                 <option key={c.id} value={c.id}>{c.name}</option>
                                                             ))}
@@ -429,7 +432,7 @@ export default function BudgetGoalsPage() {
 
                                             <div className="shrink-0 p-6 bg-background border-t border-border/50">
                                                 <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createBudgetMutation.isPending}>
-                                                    {createBudgetMutation.isPending ? 'Saving...' : 'Save Budget'}
+                                                    {createBudgetMutation.isPending ? t('budget.saving') : t('budget.save_budget_btn')}
                                                 </Button>
                                             </div>
                                         </form>
@@ -447,23 +450,23 @@ export default function BudgetGoalsPage() {
                                 "border-0 sm:border"
                             )}>
                                 <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                                    <DialogTitle>Edit Budget</DialogTitle>
-                                    <DialogDescription>Update the spending limit.</DialogDescription>
+                                    <DialogTitle>{t('budget.edit_budget_title')}</DialogTitle>
+                                    <DialogDescription>{t('budget.edit_budget_desc')}</DialogDescription>
                                 </DialogHeader>
                                 <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
                                     <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
                                         {/* 1. Amount Input - Centerpiece */}
                                         <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                            <Label htmlFor="edit-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
+                                            <Label htmlFor="edit-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.limit_amount')}</Label>
                                             <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
                                                 <Input
                                                     id="edit-amount"
                                                     type="text"
                                                     inputMode="numeric"
                                                     className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
                                                     placeholder="0"
-                                                    value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
+                                                    value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString(language) : ''}
                                                     onKeyDown={(e) => {
                                                         if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                                                             e.preventDefault();
@@ -483,7 +486,7 @@ export default function BudgetGoalsPage() {
                                         {/* 2. Category Select */}
                                         <div className="space-y-2">
                                             <Label htmlFor="edit-category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                <Tag className="w-4 h-4 text-primary" /> Category
+                                                <Tag className="w-4 h-4 text-primary" /> {t('budget.category_label')}
                                             </Label>
                                             <div className="relative">
                                                 <select
@@ -504,7 +507,7 @@ export default function BudgetGoalsPage() {
 
                                     <div className="shrink-0 p-6 bg-background border-t border-border/50">
                                         <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateBudgetMutation.isPending}>
-                                            {updateBudgetMutation.isPending ? 'Updating...' : 'Update Budget'}
+                                            {updateBudgetMutation.isPending ? t('budget.updating') : t('budget.update_budget_btn')}
                                         </Button>
                                     </div>
                                 </form>
@@ -513,7 +516,7 @@ export default function BudgetGoalsPage() {
 
                         {/* Budget List */}
                         <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                            {isLoading && <p className="text-muted-foreground">Loading budgets...</p>
+                            {isLoading && <p className="text-muted-foreground">{t('budget.loading_budgets')}</p>
                             }
 
                             {
@@ -526,7 +529,7 @@ export default function BudgetGoalsPage() {
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-base sm:text-lg tracking-tight">{item.categoryName}</h3>
-                                                    <p className="text-xs text-muted-foreground">{new Date(0, item.month - 1).toLocaleString('default', { month: 'short' })} {item.year}</p>
+                                                    <p className="text-xs text-muted-foreground">{new Date(0, item.month - 1).toLocaleString(language || 'en-US', { month: 'short' })} {item.year}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -541,7 +544,7 @@ export default function BudgetGoalsPage() {
 
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-baseline text-sm">
-                                                <span className="text-muted-foreground font-medium">Spent</span>
+                                                <span className="text-muted-foreground font-medium">{t('budget.spent')}</span>
                                                 <div className="text-right">
                                                     <span className="font-bold text-base"><CurrencyDisplay value={item.spent} /></span>
                                                     <span className="text-muted-foreground ml-1">/ <CurrencyDisplay value={item.budget_amount} /></span>
@@ -553,10 +556,10 @@ export default function BudgetGoalsPage() {
                                             />
                                             <div className="flex justify-between text-xs font-medium">
                                                 <span className={item.percentage > 100 ? "text-rose-500" : "text-primary"}>
-                                                    {item.percentage}% used
+                                                    {item.percentage}% {t('budget.used')}
                                                 </span>
                                                 <span className="text-muted-foreground">
-                                                    <CurrencyDisplay value={Math.max(0, item.budget_amount - item.spent)} /> {item.percentage > 100 ? 'over' : 'left'}
+                                                    <CurrencyDisplay value={Math.max(0, item.budget_amount - item.spent)} /> {item.percentage > 100 ? t('budget.over') : t('budget.left')}
                                                 </span>
                                             </div>
                                         </div>
@@ -569,9 +572,9 @@ export default function BudgetGoalsPage() {
                             <div className="text-center py-12 border border-dashed border-border rounded-xl">
                                 <div className="flex flex-col items-center gap-2">
                                     <Wallet className="h-10 w-10 text-muted-foreground/50" />
-                                    <h3 className="text-lg font-semibold">No budgets set</h3>
-                                    <p className="text-muted-foreground text-sm">Create a budget for this month to track spending.</p>
-                                    <Button variant="outline" className="mt-4" onClick={() => setIsBudgetAddOpen(true)}>Create Budget</Button>
+                                    <h3 className="text-lg font-semibold">{t('budget.no_budgets')}</h3>
+                                    <p className="text-muted-foreground text-sm">{t('budget.no_budgets_desc')}</p>
+                                    <Button variant="outline" className="mt-4" onClick={() => setIsBudgetAddOpen(true)}>{t('budget.create_budget')}</Button>
                                 </div>
                             </div>
                         )}
@@ -592,7 +595,7 @@ export default function BudgetGoalsPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Saved</p>
+                                        <p className="text-xs sm:text-sm text-muted-foreground font-medium">{t('budget.total_saved')}</p>
                                         <p className="text-lg sm:text-xl font-bold font-mono tracking-tight">
                                             <CurrencyDisplay value={totalSavings} />
                                         </p>
@@ -602,7 +605,7 @@ export default function BudgetGoalsPage() {
 
                             <Dialog open={isGoalAddOpen} onOpenChange={setIsGoalAddOpen}>
                                 <DialogTrigger asChild>
-                                    <Button onClick={resetGoalForm} className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Add Goal</span><span className="sm:hidden">Add</span></Button>
+                                    <Button onClick={resetGoalForm} className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">{t('budget.add_goal')}</span><span className="sm:hidden">{t('common.add', { defaultValue: 'Add' })}</span></Button>
                                 </DialogTrigger>
                                 <DialogContent className={cn(
                                     "flex flex-col gap-0 p-0 overflow-hidden",
@@ -611,23 +614,23 @@ export default function BudgetGoalsPage() {
                                     "border-0 sm:border"
                                 )}>
                                     <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                                        <DialogTitle>Add Savings Goal</DialogTitle>
-                                        <DialogDescription>Set a new financial goal to save towards.</DialogDescription>
+                                        <DialogTitle>{t('budget.add_goal_title')}</DialogTitle>
+                                        <DialogDescription>{t('budget.add_goal_desc')}</DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleGoalSubmit} className="flex flex-col h-full bg-background">
                                         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
                                             {/* 1. Amount Input - Centerpiece */}
                                             <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                <Label htmlFor="goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Target Amount</Label>
+                                                <Label htmlFor="goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.target_amount')}</Label>
                                                 <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
                                                     <Input
                                                         id="goal-amount"
                                                         type="text"
                                                         inputMode="numeric"
                                                         className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
                                                         placeholder="0"
-                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString('id-ID') : ''}
+                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString(language) : ''}
                                                         onKeyDown={(e) => {
                                                             if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                                                                 e.preventDefault();
@@ -647,14 +650,14 @@ export default function BudgetGoalsPage() {
                                             {/* 2. Goal Name */}
                                             <div className="space-y-2">
                                                 <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <AlignLeft className="w-4 h-4 text-primary" /> Goal Name
+                                                    <AlignLeft className="w-4 h-4 text-primary" /> {t('budget.goal_name_label')}
                                                 </Label>
                                                 <Input
                                                     id="name"
                                                     className="h-12 rounded-xl border-input bg-background/50 text-base shadow-sm"
                                                     value={goalFormData.name}
                                                     onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                                                    placeholder="e.g. New Car"
+                                                    placeholder={t('budget.goal_name_placeholder')}
                                                     required
                                                 />
                                             </div>
@@ -662,7 +665,7 @@ export default function BudgetGoalsPage() {
                                             {/* 3. Target Date */}
                                             <div className="space-y-2">
                                                 <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <Calendar className="w-4 h-4 text-primary" /> Target Date
+                                                    <Calendar className="w-4 h-4 text-primary" /> {t('budget.target_date_label')}
                                                 </Label>
                                                 <div className="relative">
                                                     <Input
@@ -684,7 +687,7 @@ export default function BudgetGoalsPage() {
 
                                         <div className="shrink-0 p-6 bg-background border-t border-border/50">
                                             <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createGoalMutation.isPending}>
-                                                {createGoalMutation.isPending ? 'Saving...' : 'Save Goal'}
+                                                {createGoalMutation.isPending ? t('budget.saving') : t('budget.save_goal_btn')}
                                             </Button>
                                         </div>
                                     </form>
@@ -701,23 +704,23 @@ export default function BudgetGoalsPage() {
                                     "border-0 sm:border"
                                 )}>
                                     <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                                        <DialogTitle>Edit Goal</DialogTitle>
-                                        <DialogDescription>Update your savings goal details.</DialogDescription>
+                                        <DialogTitle>{t('budget.edit_goal_title')}</DialogTitle>
+                                        <DialogDescription>{t('budget.edit_goal_desc')}</DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleGoalSubmit} className="flex flex-col h-full bg-background">
                                         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
                                             {/* 1. Amount Input - Centerpiece */}
                                             <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                <Label htmlFor="edit-goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Target Amount</Label>
+                                                <Label htmlFor="edit-goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.target_amount')}</Label>
                                                 <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
                                                     <Input
                                                         id="edit-goal-amount"
                                                         type="text"
                                                         inputMode="numeric"
                                                         className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
                                                         placeholder="0"
-                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString('id-ID') : ''}
+                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString(language) : ''}
                                                         onKeyDown={(e) => {
                                                             if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                                                                 e.preventDefault();
@@ -737,14 +740,14 @@ export default function BudgetGoalsPage() {
                                             {/* 2. Goal Name */}
                                             <div className="space-y-2">
                                                 <Label htmlFor="edit-name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <AlignLeft className="w-4 h-4 text-primary" /> Goal Name
+                                                    <AlignLeft className="w-4 h-4 text-primary" /> {t('budget.goal_name_label')}
                                                 </Label>
                                                 <Input
                                                     id="edit-name"
                                                     className="h-12 rounded-xl border-input bg-background/50 text-base shadow-sm"
                                                     value={goalFormData.name}
                                                     onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                                                    placeholder="e.g. New Car"
+                                                    placeholder={t('budget.goal_name_placeholder')}
                                                     required
                                                 />
                                             </div>
@@ -752,7 +755,7 @@ export default function BudgetGoalsPage() {
                                             {/* 3. Target Date */}
                                             <div className="space-y-2">
                                                 <Label htmlFor="edit-date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <Calendar className="w-4 h-4 text-primary" /> Target Date
+                                                    <Calendar className="w-4 h-4 text-primary" /> {t('budget.target_date_label')}
                                                 </Label>
                                                 <div className="relative">
                                                     <Input
@@ -774,7 +777,7 @@ export default function BudgetGoalsPage() {
 
                                         <div className="shrink-0 p-6 bg-background border-t border-border/50">
                                             <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateGoalMutation.isPending}>
-                                                {updateGoalMutation.isPending ? 'Updating...' : 'Update Goal'}
+                                                {updateGoalMutation.isPending ? t('budget.updating') : t('budget.update_goal_btn')}
                                             </Button>
                                         </div>
                                     </form>
@@ -783,7 +786,7 @@ export default function BudgetGoalsPage() {
 
                             {/* Goals List */}
                             <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {isLoading && <p className="text-muted-foreground">Loading goals...</p>
+                                {isLoading && <p className="text-muted-foreground">{t('budget.loading_goals')}</p>
                                 }
 
                                 {
@@ -810,8 +813,8 @@ export default function BudgetGoalsPage() {
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between items-center pt-4 border-t border-border/50 text-xs font-medium text-muted-foreground">
-                                                    <span>Target Date</span>
-                                                    <span className="bg-secondary px-2 py-1 rounded-md">{new Date(goal.saving_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                    <span>{t('budget.target_date_label')}</span>
+                                                    <span className="bg-secondary px-2 py-1 rounded-md">{new Date(goal.saving_date).toLocaleDateString(language || 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -823,9 +826,9 @@ export default function BudgetGoalsPage() {
                                 <div className="text-center py-12 border border-dashed border-border rounded-xl">
                                     <div className="flex flex-col items-center gap-2">
                                         <Rocket className="h-10 w-10 text-muted-foreground/50" />
-                                        <h3 className="text-lg font-semibold">No goals yet</h3>
-                                        <p className="text-muted-foreground text-sm">Set a savings goal to start tracking.</p>
-                                        <Button variant="outline" className="mt-4" onClick={() => setIsGoalAddOpen(true)}>Add Goal</Button>
+                                        <h3 className="text-lg font-semibold">{t('budget.no_goals')}</h3>
+                                        <p className="text-muted-foreground text-sm">{t('budget.no_goals_desc')}</p>
+                                        <Button variant="outline" className="mt-4" onClick={() => setIsGoalAddOpen(true)}>{t('budget.add_goal')}</Button>
                                     </div>
                                 </div>
                             )}

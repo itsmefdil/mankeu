@@ -23,9 +23,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Plus, Trash2, Tags, ChevronDown, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 
 export default function CategoriesPage() {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
 
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -119,13 +121,13 @@ export default function CategoriesPage() {
 
                 {/* 1. Category Name Input - Centerpiece */}
                 <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                    <Label htmlFor="cat-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Category Name</Label>
+                    <Label htmlFor="cat-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">{t('categories.name_label')}</Label>
                     <div className="w-full px-4 sm:px-8">
                         <input
                             id="cat-name"
                             type="text"
                             className="text-2xl sm:text-3xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none hover:outline-none"
-                            placeholder="Enter name..."
+                            placeholder={t('categories.enter_name')}
                             value={formData.name || ''}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
@@ -137,7 +139,7 @@ export default function CategoriesPage() {
                 {/* 2. Type Select - Custom Styled */}
                 <div className="space-y-2">
                     <Label htmlFor="cat-type" className="text-sm font-medium flex items-center gap-2">
-                        <Type className="w-4 h-4 text-primary" /> Category Type
+                        <Type className="w-4 h-4 text-primary" /> {t('categories.type_label')}
                     </Label>
                     <div className="relative">
                         <select
@@ -147,9 +149,9 @@ export default function CategoriesPage() {
                             onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
                             required
                         >
-                            <option value="expense">💸 Expense</option>
-                            <option value="income">💰 Income</option>
-                            <option value="saving">🏦 Saving</option>
+                            <option value="expense">💸 {t('categories.expense')}</option>
+                            <option value="income">💰 {t('categories.income')}</option>
+                            <option value="saving">🏦 {t('categories.saving')}</option>
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
                         <div className="absolute inset-0 rounded-xl bg-card border border-input pointer-events-none -z-10" />
@@ -166,8 +168,8 @@ export default function CategoriesPage() {
                     disabled={isEditing ? updateMutation.isPending : createMutation.isPending}
                 >
                     {isEditing
-                        ? (updateMutation.isPending ? 'Updating...' : 'Update Category')
-                        : (createMutation.isPending ? 'Saving...' : 'Save Category')
+                        ? (updateMutation.isPending ? t('categories.updating') : t('categories.update_btn'))
+                        : (createMutation.isPending ? t('categories.saving_btn') : t('categories.save_btn'))
                     }
                 </Button>
 
@@ -181,7 +183,7 @@ export default function CategoriesPage() {
                         disabled={deleteMutation.isPending}
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        {deleteMutation.isPending ? 'Deleting...' : 'Delete Category'}
+                        {deleteMutation.isPending ? t('categories.deleting') : t('categories.delete_btn')}
                     </Button>
                 )}
             </div>
@@ -209,11 +211,11 @@ export default function CategoriesPage() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold">Categories</h1>
-                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Manage expense and income categories</p>
+                        <h1 className="text-2xl sm:text-3xl font-display font-bold">{t('categories.title')}</h1>
+                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t('categories.description')}</p>
                     </div>
                     <Button onClick={() => { resetForm(); setEditingCategory(null); setIsAddOpen(true); }} className="w-full sm:w-auto">
-                        <Plus className="mr-2 h-4 w-4" /> Add Category
+                        <Plus className="mr-2 h-4 w-4" /> {t('categories.add_category')}
                     </Button>
                 </div>
 
@@ -226,8 +228,8 @@ export default function CategoriesPage() {
                         "border-0 sm:border"
                     )}>
                         <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                            <DialogTitle>Add Category</DialogTitle>
-                            <DialogDescription>Create a new category.</DialogDescription>
+                            <DialogTitle>{t('categories.add_category')}</DialogTitle>
+                            <DialogDescription>{t('categories.create_desc')}</DialogDescription>
                         </DialogHeader>
                         <CategoryForm />
                     </DialogContent>
@@ -242,8 +244,8 @@ export default function CategoriesPage() {
                         "border-0 sm:border"
                     )}>
                         <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
-                            <DialogTitle>Edit Category</DialogTitle>
-                            <DialogDescription>Update or delete this category.</DialogDescription>
+                            <DialogTitle>{t('categories.edit_category')}</DialogTitle>
+                            <DialogDescription>{t('categories.update_desc')}</DialogDescription>
                         </DialogHeader>
                         <CategoryForm isEditing />
                     </DialogContent>
@@ -251,7 +253,7 @@ export default function CategoriesPage() {
 
                 {/* Loading State */}
                 {isLoading && (
-                    <div className="text-center py-8 text-muted-foreground">Loading categories...</div>
+                    <div className="text-center py-8 text-muted-foreground">{t('categories.loading')}</div>
                 )}
 
                 {/* Categories by Type */}
@@ -261,7 +263,7 @@ export default function CategoriesPage() {
                         {categories.filter(c => c.type === 'expense').length > 0 && (
                             <div>
                                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                                    Expenses ({categories.filter(c => c.type === 'expense').length})
+                                    {t('categories.expenses_header')} ({categories.filter(c => c.type === 'expense').length})
                                 </h2>
                                 <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                     {categories.filter(c => c.type === 'expense').map((cat) => (
@@ -279,7 +281,7 @@ export default function CategoriesPage() {
                         {categories.filter(c => c.type === 'income').length > 0 && (
                             <div>
                                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                                    Income ({categories.filter(c => c.type === 'income').length})
+                                    {t('categories.income_header')} ({categories.filter(c => c.type === 'income').length})
                                 </h2>
                                 <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                     {categories.filter(c => c.type === 'income').map((cat) => (
@@ -297,7 +299,7 @@ export default function CategoriesPage() {
                         {categories.filter(c => c.type === 'saving').length > 0 && (
                             <div>
                                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                                    Savings ({categories.filter(c => c.type === 'saving').length})
+                                    {t('categories.savings_header')} ({categories.filter(c => c.type === 'saving').length})
                                 </h2>
                                 <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                     {categories.filter(c => c.type === 'saving').map((cat) => (
@@ -318,9 +320,9 @@ export default function CategoriesPage() {
                     <div className="text-center py-12 border border-dashed border-border rounded-xl">
                         <div className="flex flex-col items-center gap-2">
                             <Tags className="h-10 w-10 text-muted-foreground/50" />
-                            <h3 className="text-lg font-semibold">No categories yet</h3>
-                            <p className="text-muted-foreground text-sm">Create your first category to organize transactions.</p>
-                            <Button variant="outline" className="mt-4" onClick={() => setIsAddOpen(true)}>Add Category</Button>
+                            <h3 className="text-lg font-semibold">{t('categories.no_categories')}</h3>
+                            <p className="text-muted-foreground text-sm">{t('categories.no_categories_desc')}</p>
+                            <Button variant="outline" className="mt-4" onClick={() => setIsAddOpen(true)}>{t('categories.add_category')}</Button>
                         </div>
                     </div>
                 )}
@@ -333,19 +335,19 @@ export default function CategoriesPage() {
                                 <div className="p-2 bg-destructive/10 rounded-lg">
                                     <Trash2 className="h-5 w-5 text-destructive" />
                                 </div>
-                                Delete Category
+                                {t('categories.delete_title')}
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-base">
-                                Are you sure you want to delete "{editingCategory?.name}"? This action cannot be undone.
+                                {t('categories.delete_confirm', { name: editingCategory?.name })}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="gap-2 sm:gap-0">
-                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                            <AlertDialogCancel className="rounded-xl">{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={confirmDelete}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
                             >
-                                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                {deleteMutation.isPending ? t('categories.deleting') : 'Delete'}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

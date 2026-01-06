@@ -7,9 +7,13 @@ import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
 import { Loader2, TrendingUp, TrendingDown, Activity, Filter, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { usePreferencesStore } from '@/hooks/usePreferences';
 
 
 export default function AnalyticsPage() {
+    const { t } = useTranslation();
+    const { language } = usePreferencesStore();
     const currentDate = new Date();
     const [viewMode, setViewMode] = useState<'month' | 'year' | 'all'>('month');
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
@@ -136,8 +140,8 @@ export default function AnalyticsPage() {
                 icon: TrendingDown,
                 color: "text-rose-500",
                 bg: "bg-rose-500/10",
-                title: "Top Expense",
-                desc: `Most spending in ${top.name} (${((top.value / stats.expense) * 100).toFixed(0)}%)`
+                title: t('analytics.insights.top_expense'),
+                desc: t('analytics.insights.top_expense_desc', { category: top.name, percent: ((top.value / stats.expense) * 100).toFixed(0) })
             });
         }
 
@@ -148,8 +152,8 @@ export default function AnalyticsPage() {
                 icon: Activity,
                 color: "text-blue-500",
                 bg: "bg-blue-500/10",
-                title: "Saving Rate",
-                desc: `You saved ${rate.toFixed(1)}% of income`
+                title: t('analytics.insights.saving_rate'),
+                desc: t('analytics.insights.saving_rate_desc', { percent: rate.toFixed(1) })
             });
         }
 
@@ -160,12 +164,12 @@ export default function AnalyticsPage() {
             icon: stats.income >= stats.expense ? TrendingUp : TrendingDown,
             color: cashFlowColor,
             bg: cashFlowBg,
-            title: "Cash Flow",
-            desc: stats.income >= stats.expense ? "Positive cash flow this month" : "Expenses exceeded income"
+            title: t('analytics.insights.cash_flow'),
+            desc: stats.income >= stats.expense ? t('analytics.insights.positive_flow') : t('analytics.insights.negative_flow')
         });
 
         return list;
-    }, [expenseByCategory, stats]);
+    }, [expenseByCategory, stats, t]);
 
 
 
@@ -187,7 +191,7 @@ export default function AnalyticsPage() {
                 sortDate = date.getDate();
             } else {
                 key = `${date.getMonth()}-${date.getFullYear()}`;
-                name = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+                name = date.toLocaleString(language || 'en-US', { month: 'short', year: '2-digit' });
                 sortDate = date.getTime();
             }
 
@@ -223,8 +227,8 @@ export default function AnalyticsPage() {
                 {/* Header & Controls */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold">Analytics</h1>
-                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">Deep dive into your transaction history</p>
+                        <h1 className="text-2xl sm:text-3xl font-display font-bold">{t('analytics.title')}</h1>
+                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t('analytics.description')}</p>
                     </div>
                     <div className="flex bg-secondary/50 p-1 rounded-xl self-start sm:self-auto w-full sm:w-auto overflow-x-auto">
                         <div className="flex w-full sm:w-auto gap-1">
@@ -239,7 +243,7 @@ export default function AnalyticsPage() {
                                         viewMode === mode && "bg-white dark:bg-slate-800 shadow-sm"
                                     )}
                                 >
-                                    {mode === 'all' ? 'All Time' : `${mode}ly`}
+                                    {mode === 'all' ? t('analytics.all_time') : mode === 'month' ? t('analytics.monthly') : t('analytics.yearly')}
                                 </Button>
                             ))}
                         </div>
@@ -257,7 +261,7 @@ export default function AnalyticsPage() {
                                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
                             >
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                    <option key={m} value={m}>{new Date(0, m - 1).toLocaleString('default', { month: 'long' })}</option>
+                                    <option key={m} value={m}>{new Date(0, m - 1).toLocaleString(language || 'default', { month: 'long' })}</option>
                                 ))}
                             </select>
                         )}
@@ -303,7 +307,7 @@ export default function AnalyticsPage() {
                                     <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
-                                    Income
+                                    {t('analytics.income')}
                                 </span>
                             </div>
                             <div>
@@ -311,7 +315,7 @@ export default function AnalyticsPage() {
                                     <CurrencyDisplay value={stats.income} />
                                 </h3>
                                 <div className="flex items-center gap-2 mt-0.5 sm:mt-1.5">
-                                    <p className="text-muted-foreground text-[10px] sm:text-sm">Total Income</p>
+                                    <p className="text-muted-foreground text-[10px] sm:text-sm">{t('analytics.total_income')}</p>
                                     {viewMode === 'month' && (
                                         <span className={cn(
                                             "text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
@@ -335,7 +339,7 @@ export default function AnalyticsPage() {
                                     <TrendingDown className="h-4 w-4 sm:h-6 sm:w-6 text-rose-500" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-rose-500/20">
-                                    Expense
+                                    {t('analytics.expense')}
                                 </span>
                             </div>
                             <div>
@@ -343,7 +347,7 @@ export default function AnalyticsPage() {
                                     <CurrencyDisplay value={stats.expense} />
                                 </h3>
                                 <div className="flex items-center gap-2 mt-0.5 sm:mt-1.5">
-                                    <p className="text-muted-foreground text-[10px] sm:text-sm">Total Expense</p>
+                                    <p className="text-muted-foreground text-[10px] sm:text-sm">{t('analytics.total_expense')}</p>
                                     {viewMode === 'month' && (
                                         <span className={cn(
                                             "text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
@@ -367,7 +371,7 @@ export default function AnalyticsPage() {
                                     <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-blue-500" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-blue-500/20">
-                                    Saving
+                                    {t('analytics.saving')}
                                 </span>
                             </div>
                             <div>
@@ -375,7 +379,7 @@ export default function AnalyticsPage() {
                                     <CurrencyDisplay value={stats.saving || 0} />
                                 </h3>
                                 <div className="flex items-center gap-2 mt-0.5 sm:mt-1.5">
-                                    <p className="text-muted-foreground text-[10px] sm:text-sm">Total Saved</p>
+                                    <p className="text-muted-foreground text-[10px] sm:text-sm">{t('analytics.total_saved')}</p>
                                     {viewMode === 'month' && (
                                         <span className={cn(
                                             "text-[10px] sm:text-xs font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5",
@@ -401,7 +405,7 @@ export default function AnalyticsPage() {
                                     <Activity className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                                 </div>
                                 <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold bg-white/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-                                    Net
+                                    {t('analytics.net')}
                                 </div>
                             </div>
                             <div>
@@ -409,7 +413,7 @@ export default function AnalyticsPage() {
                                     <CurrencyDisplay value={stats.net} className="text-white" />
                                 </h3>
                                 <p className="text-white/80 text-[10px] sm:text-sm mt-1 sm:mt-2">
-                                    Net Result
+                                    {t('analytics.net_result')}
                                 </p>
                             </div>
                         </div>
@@ -419,8 +423,8 @@ export default function AnalyticsPage() {
                 {/* Main Trend Chart */}
                 <div className="p-4 sm:p-6 rounded-2xl border border-border bg-card shadow-sm">
                     <div className="mb-4 sm:mb-6">
-                        <h3 className="font-semibold text-base sm:text-lg">Financial Trend</h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground">{viewMode === 'month' ? 'Daily' : 'Monthly'} breakdown</p>
+                        <h3 className="font-semibold text-base sm:text-lg">{t('analytics.financial_trend')}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{viewMode === 'month' ? t('analytics.daily_breakdown') : t('analytics.monthly_breakdown')}</p>
                     </div>
                     <div className="h-[250px] sm:h-[300px] lg:h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -479,8 +483,8 @@ export default function AnalyticsPage() {
                     {/* Expense Breakdown */}
                     <div className="p-4 sm:p-6 rounded-2xl border border-border bg-card shadow-sm">
                         <div className="mb-4 sm:mb-6">
-                            <h3 className="font-semibold text-base sm:text-lg">Expense Breakdown</h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground">Where your money goes</p>
+                            <h3 className="font-semibold text-base sm:text-lg">{t('analytics.expense_breakdown')}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{t('analytics.expense_desc')}</p>
                         </div>
                         <div className="h-[240px] sm:h-[280px] lg:h-[300px] w-full">
                             {expenseByCategory.length > 0 ? (
@@ -540,8 +544,8 @@ export default function AnalyticsPage() {
                     {/* Income Breakdown */}
                     <div className="p-4 sm:p-6 rounded-2xl border border-border bg-card shadow-sm">
                         <div className="mb-4 sm:mb-6">
-                            <h3 className="font-semibold text-base sm:text-lg">Income Sources</h3>
-                            <p className="text-xs sm:text-sm text-muted-foreground">Where your money comes from</p>
+                            <h3 className="font-semibold text-base sm:text-lg">{t('analytics.income_sources')}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{t('analytics.income_desc')}</p>
                         </div>
                         <div className="h-[240px] sm:h-[280px] lg:h-[300px] w-full">
                             {incomeByCategory.length > 0 ? (
@@ -602,8 +606,8 @@ export default function AnalyticsPage() {
                 {/* Top Transactions - Mobile Card Layout */}
                 <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
                     <div className="p-4 sm:p-6 border-b border-border">
-                        <h3 className="font-semibold text-base sm:text-lg">Top Transactions</h3>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Highest value transactions</p>
+                        <h3 className="font-semibold text-base sm:text-lg">{t('analytics.top_transactions')}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">{t('analytics.top_desc')}</p>
                     </div>
 
                     {/* Desktop Table */}
@@ -611,10 +615,10 @@ export default function AnalyticsPage() {
                         <table className="w-full text-sm">
                             <thead className="bg-secondary/50 text-muted-foreground">
                                 <tr>
-                                    <th className="px-4 sm:px-6 py-3 text-left font-medium">Date</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left font-medium">Description</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left font-medium">Category</th>
-                                    <th className="px-4 sm:px-6 py-3 text-right font-medium">Amount</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left font-medium">{t('analytics.date_header')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left font-medium">{t('analytics.desc_header')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left font-medium">{t('analytics.category_header')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-right font-medium">{t('analytics.amount_header')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -625,7 +629,7 @@ export default function AnalyticsPage() {
                                         const cat = categoryMap.get(tx.category_id);
                                         return (
                                             <tr key={tx.id} className="group hover:bg-surface/50 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap">{new Date(tx.transaction_date).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">{new Date(tx.transaction_date).toLocaleDateString(language || 'en-US')}</td>
                                                 <td className="px-6 py-4 font-medium">{tx.name}</td>
                                                 <td className="px-6 py-4">
                                                     <span className={cn(
@@ -639,14 +643,14 @@ export default function AnalyticsPage() {
                                                     "px-6 py-4 text-right font-mono font-medium",
                                                     cat?.type === 'income' ? "text-green-600 dark:text-green-400" : "text-foreground"
                                                 )}>
-                                                    {cat?.type === 'income' ? '+' : '-'} Rp {Number(tx.amount).toLocaleString('id-ID')}
+                                                    {cat?.type === 'income' ? '+' : '-'} <CurrencyDisplay value={tx.amount} />
                                                 </td>
                                             </tr>
                                         )
                                     })}
                                 {filteredTransactions.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">No transactions found.</td>
+                                        <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">{t('analytics.no_transactions')}</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -672,7 +676,7 @@ export default function AnalyticsPage() {
                                                     {cat?.name || 'N/A'}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">
-                                                    {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                                    {new Date(tx.transaction_date).toLocaleDateString(language || 'en-US', { day: 'numeric', month: 'short' })}
                                                 </span>
                                             </div>
                                         </div>
@@ -680,13 +684,13 @@ export default function AnalyticsPage() {
                                             "font-mono font-semibold text-sm whitespace-nowrap",
                                             cat?.type === 'income' ? "text-green-600 dark:text-green-400" : "text-foreground"
                                         )}>
-                                            {cat?.type === 'income' ? '+' : '-'}Rp {Number(tx.amount).toLocaleString('id-ID')}
+                                            {cat?.type === 'income' ? '+' : '-'} <CurrencyDisplay value={tx.amount} />
                                         </p>
                                     </div>
                                 )
                             })}
                         {filteredTransactions.length === 0 && (
-                            <div className="p-8 text-center text-muted-foreground text-sm">No transactions found.</div>
+                            <div className="p-8 text-center text-muted-foreground text-sm">{t('analytics.no_transactions')}</div>
                         )}
                     </div>
                 </div>

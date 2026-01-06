@@ -24,20 +24,23 @@ import { useQuery } from '@tanstack/react-query';
 import { financialService } from '@/services/financial';
 import { useAuthStore } from '@/hooks/useAuth';
 
-// Get greeting based on time of day
-const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-};
+import { useTranslation } from 'react-i18next';
+import { formatCurrency } from '@/lib/utils';
 
 export default function Dashboard() {
+    const { t } = useTranslation();
     const { user } = useAuthStore();
-    const { isAmountHidden } = usePreferencesStore();
+    const { isAmountHidden, currency, language } = usePreferencesStore();
     const currentDate = new Date();
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return t('greeting.morning');
+        if (hour < 17) return t('greeting.afternoon');
+        return t('greeting.evening');
+    };
 
     const { data: transactions, isLoading: loadingTx } = useQuery({
         queryKey: ['transactions'],
@@ -200,7 +203,7 @@ export default function Dashboard() {
                             <Loader2 className="h-12 w-12 animate-spin text-primary" />
                             <div className="absolute inset-0 h-12 w-12 animate-ping rounded-full bg-primary/20" />
                         </div>
-                        <p className="text-muted-foreground animate-pulse">Loading your dashboard...</p>
+                        <p className="text-muted-foreground animate-pulse">{t('common.loading')}</p>
                     </div>
                 </div>
             </DashboardLayout>
@@ -221,7 +224,7 @@ export default function Dashboard() {
                         </div>
                         <p className="text-muted-foreground text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
                             <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                            Overview for {new Date(0, selectedMonth - 1).toLocaleString('default', { month: 'long' })} {selectedYear}
+                            {t('dashboard.overview_for')} {new Date(0, selectedMonth - 1).toLocaleString(language, { month: 'long' })} {selectedYear}
                         </p>
                     </div>
 
@@ -236,7 +239,7 @@ export default function Dashboard() {
                                 >
                                     {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
                                         <option key={m} value={m} className="bg-white dark:bg-slate-800 text-foreground py-2">
-                                            {new Date(0, m - 1).toLocaleString('default', { month: 'long' })}
+                                            {new Date(0, m - 1).toLocaleString(language, { month: 'long' })}
                                         </option>
                                     ))}
                                 </select>
@@ -278,7 +281,7 @@ export default function Dashboard() {
                                 </div>
                                 <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold bg-white/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-sm border border-white/10">
                                     <Target className="h-3 w-3" />
-                                    Net
+                                    {t('dashboard.net')}
                                 </div>
                             </div>
                             <div>
@@ -287,7 +290,7 @@ export default function Dashboard() {
                                 </h3>
                                 <p className="text-white/80 text-[10px] sm:text-sm mt-1 sm:mt-2 flex items-center gap-1">
                                     <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                    Current
+                                    {t('dashboard.current')}
                                 </p>
                             </div>
                         </div>
@@ -306,14 +309,14 @@ export default function Dashboard() {
                                     <ArrowUpRight className="h-4 w-4 sm:h-6 sm:w-6 text-emerald-500" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
-                                    Income
+                                    {t('dashboard.income')}
                                 </span>
                             </div>
                             <div>
                                 <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
                                     <CurrencyDisplay value={stats.income} />
                                 </h3>
-                                <p className="text-muted-foreground text-[10px] sm:text-sm mt-0.5 sm:mt-1.5">Total Income</p>
+                                <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 sm:mt-1.5">{t('dashboard.total_income')}</p>
                             </div>
                         </div>
                     </div>
@@ -328,14 +331,14 @@ export default function Dashboard() {
                                     <ArrowDownRight className="h-4 w-4 sm:h-6 sm:w-6 text-rose-500" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-rose-500/20">
-                                    Expense
+                                    {t('dashboard.expense')}
                                 </span>
                             </div>
                             <div>
                                 <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
                                     <CurrencyDisplay value={stats.expense} />
                                 </h3>
-                                <p className="text-muted-foreground text-[10px] sm:text-sm mt-0.5 sm:mt-1.5">Total Expense</p>
+                                <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 sm:mt-1.5">{t('dashboard.total_expense')}</p>
                             </div>
                         </div>
                     </div>
@@ -349,14 +352,14 @@ export default function Dashboard() {
                                     <PiggyBank className="h-4 w-4 sm:h-6 sm:w-6 text-blue-500" />
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 sm:px-3 py-0.5 sm:py-1.5 rounded-full border border-blue-500/20">
-                                    Saving
+                                    {t('dashboard.saving')}
                                 </span>
                             </div>
                             <div>
                                 <h3 className="text-sm sm:text-2xl lg:text-3xl font-bold font-display text-foreground animate-value truncate">
                                     <CurrencyDisplay value={stats.saving || 0} />
                                 </h3>
-                                <p className="text-muted-foreground text-[10px] sm:text-sm mt-0.5 sm:mt-1.5">Total Saved</p>
+                                <p className="text-muted-foreground text-xs sm:text-sm mt-0.5 sm:mt-1.5">{t('dashboard.total_saved')}</p>
                             </div>
                         </div>
                     </div>
@@ -374,11 +377,11 @@ export default function Dashboard() {
                                         <BarChart3 className="h-5 w-5 text-primary" />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-lg">Cash Flow Trend</h3>
-                                        <p className="text-xs text-muted-foreground hidden sm:block">Income vs Expense Analysis</p>
+                                        <h3 className="font-semibold text-lg">{t('dashboard.cash_flow_trend')}</h3>
+                                        <p className="text-xs text-muted-foreground hidden sm:block">{t('dashboard.income_vs_expense')}</p>
                                     </div>
                                 </div>
-                                <span className="text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">Last 6 Months</span>
+                                <span className="text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">{t('dashboard.last_6_months')}</span>
                             </div>
                             <div className="chart-container">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -419,15 +422,15 @@ export default function Dashboard() {
                                                 padding: '12px 16px',
                                                 boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                                             }}
-                                            formatter={(value) => [
-                                                isAmountHidden ? '•••••••' : `Rp ${Number(value || 0).toLocaleString('id-ID')}`,
+                                            formatter={(value: any) => [
+                                                isAmountHidden ? '•••••••' : formatCurrency(value || 0, currency, language),
                                                 ''
                                             ]}
                                             labelStyle={{ color: '#ffffff', marginBottom: '8px', fontWeight: 600 }}
                                             itemStyle={{ color: '#ffffff' }}
                                         />
-                                        <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={3} name="Income" />
-                                        <Area type="monotone" dataKey="expense" stroke="#f43f5e" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={3} name="Expense" />
+                                        <Area type="monotone" dataKey="income" stroke="#10b981" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={3} name={t('dashboard.income')} />
+                                        <Area type="monotone" dataKey="expense" stroke="#f43f5e" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={3} name={t('dashboard.expense')} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
@@ -435,11 +438,11 @@ export default function Dashboard() {
                             <div className="flex items-center justify-center gap-6 mt-4">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                                    <span className="text-sm text-muted-foreground">Income</span>
+                                    <span className="text-sm text-muted-foreground">{t('dashboard.income')}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full bg-rose-500" />
-                                    <span className="text-sm text-muted-foreground">Expense</span>
+                                    <span className="text-sm text-muted-foreground">{t('dashboard.expense')}</span>
                                 </div>
                             </div>
                         </div>
@@ -452,11 +455,11 @@ export default function Dashboard() {
                                         <BarChart3 className="h-5 w-5 text-amber-500" />
                                     </div>
                                     <div>
-                                        <h3 className="font-semibold text-lg">Daily Activity</h3>
-                                        <p className="text-xs text-muted-foreground hidden sm:block">Transaction frequency by day</p>
+                                        <h3 className="font-semibold text-lg">{t('dashboard.daily_activity')}</h3>
+                                        <p className="text-xs text-muted-foreground hidden sm:block">{t('dashboard.transaction_frequency')}</p>
                                     </div>
                                 </div>
-                                <span className="text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">This Month</span>
+                                <span className="text-xs text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg">{t('dashboard.this_month')}</span>
                             </div>
                             <div className="chart-container">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -488,17 +491,17 @@ export default function Dashboard() {
                                                 padding: '12px 16px',
                                                 boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                                             }}
-                                            formatter={(value) => [
-                                                isAmountHidden ? '•••••••' : `Rp ${Number(value || 0).toLocaleString('id-ID')}`,
+                                            formatter={(value: any) => [
+                                                isAmountHidden ? '•••••••' : formatCurrency(value || 0, currency, language),
                                                 ''
                                             ]}
-                                            labelFormatter={(label) => `Day ${label}`}
+                                            labelFormatter={(label) => `${t('dashboard.day')} ${label}`}
                                             labelStyle={{ color: '#ffffff', fontWeight: 600 }}
                                             itemStyle={{ color: '#ffffff' }}
                                             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                         />
-                                        <Bar dataKey="income" name="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="expense" name="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="income" name={t('dashboard.income')} fill="#10b981" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="expense" name={t('dashboard.expense')} fill="#f43f5e" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
@@ -511,10 +514,10 @@ export default function Dashboard() {
                                     <div className="p-2 bg-primary/10 rounded-xl">
                                         <CreditCard className="h-5 w-5 text-primary" />
                                     </div>
-                                    <h2 className="text-lg font-bold font-display">Recent Transactions</h2>
+                                    <h2 className="text-lg font-bold font-display">{t('dashboard.recent_transactions')}</h2>
                                 </div>
                                 <Button variant="ghost" className="text-primary hover:text-primary/80 hover:bg-primary/10 gap-1 hidden sm:flex" size="sm">
-                                    View All <ArrowUpRight className="h-3 w-3" />
+                                    {t('dashboard.view_all')} <ArrowUpRight className="h-3 w-3" />
                                 </Button>
                             </div>
                             <div className="space-y-2 sm:space-y-3">
@@ -539,7 +542,7 @@ export default function Dashboard() {
                                                     <p className="font-semibold text-sm sm:text-base truncate">{tx.name}</p>
                                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                         <span className={cn("font-medium", cat?.type === 'income' ? "text-emerald-500/80" : "text-rose-500/80")}>
-                                                            {cat?.name || 'Uncategorized'}
+                                                            {cat?.name || t('common.uncategorized')}
                                                         </span>
                                                         <span className="hidden sm:inline">•</span>
                                                         <span className="hidden sm:inline">{new Date(tx.transaction_date).toLocaleDateString()}</span>
@@ -563,14 +566,14 @@ export default function Dashboard() {
                                             <CreditCard className="h-8 w-8 opacity-30" />
                                         </div>
                                         <div className="text-center">
-                                            <p className="font-medium">No recent transactions</p>
-                                            <p className="text-sm opacity-70">Start tracking your finances</p>
+                                            <p className="font-medium">{t('dashboard.no_transactions')}</p>
+                                            <p className="text-sm opacity-70">{t('dashboard.start_tracking')}</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
                             <Button variant="ghost" className="w-full mt-4 text-primary hover:text-primary/80 hover:bg-primary/10 gap-1 sm:hidden" size="sm">
-                                View All <ArrowUpRight className="h-3 w-3" />
+                                {t('dashboard.view_all')} <ArrowUpRight className="h-3 w-3" />
                             </Button>
                         </div>
                     </div>
@@ -584,7 +587,7 @@ export default function Dashboard() {
                                     <div className="p-2 bg-rose-500/10 rounded-xl">
                                         <PieChartIcon className="h-5 w-5 text-rose-500" />
                                     </div>
-                                    <h3 className="font-semibold text-lg">Expense Breakdown</h3>
+                                    <h3 className="font-semibold text-lg">{t('dashboard.expense_breakdown')}</h3>
                                 </div>
                             </div>
                             <div className="h-[280px] sm:h-[320px] w-full">
@@ -624,8 +627,8 @@ export default function Dashboard() {
                                                     marginBottom: '4px'
                                                 }}
                                                 itemStyle={{ color: '#ffffff' }}
-                                                formatter={(value) => [
-                                                    isAmountHidden ? '•••••••' : `Rp ${Number(value || 0).toLocaleString('id-ID')}`,
+                                                formatter={(value: any) => [
+                                                    isAmountHidden ? '•••••••' : formatCurrency(value || 0, currency, language),
                                                     ''
                                                 ]}
                                             />
@@ -654,8 +657,8 @@ export default function Dashboard() {
                                             <PieChartIcon className="h-10 w-10 opacity-30" />
                                         </div>
                                         <div className="text-center">
-                                            <p className="font-medium">No expenses yet</p>
-                                            <p className="text-sm opacity-70">Start tracking to see breakdown</p>
+                                            <p className="font-medium">{t('dashboard.no_expenses')}</p>
+                                            <p className="text-sm opacity-70">{t('dashboard.start_tracking_breakdown')}</p>
                                         </div>
                                     </div>
                                 )}
@@ -669,7 +672,7 @@ export default function Dashboard() {
                                     <div className="p-2 bg-primary/10 rounded-xl">
                                         <Wallet className="h-5 w-5 text-primary" />
                                     </div>
-                                    <h2 className="text-lg font-bold font-display">Budget Status</h2>
+                                    <h2 className="text-lg font-bold font-display">{t('dashboard.budget_status')}</h2>
                                 </div>
                             </div>
                             <div className="space-y-5 flex-1 overflow-y-auto pr-1 custom-scrollbar max-h-[400px]">
@@ -693,9 +696,9 @@ export default function Dashboard() {
                                                     <span className="font-semibold text-base truncate">{cat?.name || 'Unknown'}</span>
                                                     <span className="text-xs text-muted-foreground truncate">
                                                         {isOver ? (
-                                                            <span className="text-rose-500 font-medium">Over <CurrencyDisplay value={Math.abs(remaining)} /></span>
+                                                            <span className="text-rose-500 font-medium">{t('dashboard.over')} <CurrencyDisplay value={Math.abs(remaining)} /></span>
                                                         ) : (
-                                                            <span><CurrencyDisplay value={remaining} /> left</span>
+                                                            <span><CurrencyDisplay value={remaining} /> {t('dashboard.left')}</span>
                                                         )}
                                                     </span>
                                                 </div>
@@ -734,10 +737,10 @@ export default function Dashboard() {
                                             <Wallet className="h-7 w-7 opacity-30" />
                                         </div>
                                         <div className="text-center">
-                                            <p className="font-medium">No budgets for this month</p>
+                                            <p className="font-medium">{t('dashboard.no_budgets')}</p>
                                             <Button variant="link" className="px-0 h-auto text-primary mt-2 font-semibold">
                                                 <Sparkles className="h-4 w-4 mr-1" />
-                                                Create Budget
+                                                {t('dashboard.create_budget')}
                                             </Button>
                                         </div>
                                     </div>

@@ -9,19 +9,26 @@ interface CurrencyDisplayProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const CurrencyDisplay = ({
     value,
-    currency = 'Rp',
-    locale = 'id-ID',
+    currency: propCurrency,
+    locale: propLocale,
     className,
     ...props
 }: CurrencyDisplayProps) => {
-    const { isAmountHidden } = usePreferencesStore();
+    const { isAmountHidden, currency: storeCurrency, language } = usePreferencesStore();
+
+    // Use props if provided, otherwise use store
+    const currency = propCurrency || storeCurrency;
+    const locale = propLocale || language;
+
+    const symbol = currency === 'USD' ? '$' : 'Rp';
+    const validLocale = locale === 'id' ? 'id-ID' : 'en-US';
 
     return (
         <span className={cn("", className)} {...props}>
             {isAmountHidden ? (
                 <span className="tracking-widest">•••••••</span>
             ) : (
-                <>{currency} {Number(value).toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
+                <>{symbol} {Number(value).toLocaleString(validLocale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</>
             )}
         </span>
     );

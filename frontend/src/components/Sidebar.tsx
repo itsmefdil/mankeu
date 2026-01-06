@@ -2,18 +2,20 @@ import { Link, useLocation } from 'react-router-dom';
 import { ArrowRightLeft, Settings, Tags, LayoutGrid, PlusCircle, PieChart, Coins, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 export const NAV_ITEMS = [
-    { label: 'Dashboard', icon: LayoutGrid, href: '/' },
-    { label: 'Transactions', icon: ArrowRightLeft, href: '/transactions' },
-    { label: 'Analytics', icon: PieChart, href: '/analytics' },
-    { label: 'Categories', icon: Tags, href: '/categories' },
-    { label: 'Budget & Goals', icon: Target, href: '/budget' },
-    { label: 'Settings', icon: Settings, href: '/settings' },
+    { label: 'nav.dashboard', icon: LayoutGrid, href: '/' },
+    { label: 'nav.transactions', icon: ArrowRightLeft, href: '/transactions' },
+    { label: 'nav.analytics', icon: PieChart, href: '/analytics' },
+    { label: 'nav.categories', icon: Tags, href: '/categories' },
+    { label: 'nav.budget', icon: Target, href: '/budget' },
+    { label: 'nav.settings', icon: Settings, href: '/settings' },
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
     const location = useLocation();
+    const { t } = useTranslation();
 
     return (
         <div className="flex flex-col h-full">
@@ -24,7 +26,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                     </div>
                     <div>
                         <span className="block font-display font-bold text-lg bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Mankeu</span>
-                        <span className="block text-[0.65rem] text-muted-foreground uppercase tracking-widest font-medium">Finance</span>
+                        <span className="block text-[0.65rem] text-muted-foreground uppercase tracking-widest font-medium">{t('nav.finance')}</span>
                     </div>
                 </Link>
             </div>
@@ -45,7 +47,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                                 )}
                             >
                                 <item.icon className={cn("h-4 w-4 transition-colors", isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground group-hover:text-foreground")} />
-                                {item.label}
+                                {t(item.label)}
                                 {isActive && (
                                     <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
                                 )}
@@ -57,7 +59,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             <div className="p-4 border-t border-slate-200 dark:border-slate-700">
                 <Button className="w-full gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300" size="lg" asChild>
                     <Link to="/transactions" onClick={onNavigate}>
-                        <PlusCircle className="h-4 w-4" /> <span>Add Transaction</span>
+                        <PlusCircle className="h-4 w-4" /> <span>{t('nav.add_transaction')}</span>
                     </Link>
                 </Button>
             </div>
@@ -72,3 +74,4 @@ export const Sidebar = () => {
         </aside>
     );
 };
+

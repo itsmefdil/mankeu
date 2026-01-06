@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { NAV_ITEMS } from '@/components/Sidebar';
+import { useTranslation } from 'react-i18next';
 
 export const BottomNav = () => {
     const location = useLocation();
+    const { t } = useTranslation();
 
     return (
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 z-50 pt-2 px-6 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
@@ -14,6 +16,7 @@ export const BottomNav = () => {
                         <Link
                             key={item.href}
                             to={item.href}
+                            title={t(item.label)}
                             className={cn(
                                 "flex flex-col items-center justify-center gap-1 w-12 h-12 rounded-xl transition-all duration-300 outline-none relative group",
                                 isActive

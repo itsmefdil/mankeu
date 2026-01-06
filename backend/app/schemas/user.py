@@ -9,8 +9,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+    locale: Optional[str] = 'id'
+    currency: Optional[str] = 'IDR'
+
 class UserUpdate(UserBase):
     password: Optional[str] = None
+    locale: Optional[str] = None
+    currency: Optional[str] = None
 
 class UserResponse(UserBase):
     id: int
@@ -19,6 +24,7 @@ class UserResponse(UserBase):
     given_name: Optional[str] = None
     family_name: Optional[str] = None
     locale: Optional[str] = None
+    currency: Optional[str] = None
 
     class Config:
         from_attributes = True

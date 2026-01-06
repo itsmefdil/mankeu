@@ -1,4 +1,4 @@
-import { Search, Sun, Moon, LogOut, Settings, User, Coins, Eye, EyeOff } from 'lucide-react';
+import { Search, Sun, Moon, LogOut, Settings, Coins, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -12,11 +12,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export const TopBar = () => {
     const { user, logout } = useAuthStore();
     const { toggleTheme } = useTheme();
     const { isAmountHidden, toggleAmountVisibility } = usePreferencesStore();
+    const { t } = useTranslation();
 
 
     return (
@@ -33,7 +35,7 @@ export const TopBar = () => {
                                 Mankeu
                             </span>
                             <span className="text-[10px] font-medium text-emerald-100 dark:text-muted-foreground tracking-widest uppercase scale-90 origin-left">
-                                Finance
+                                {t('nav.finance')}
                             </span>
                         </div>
                     </div>
@@ -44,7 +46,7 @@ export const TopBar = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <input
                                 type="search"
-                                placeholder="Search..."
+                                placeholder={t('nav.search_placeholder')}
                                 className="w-full bg-muted/40 border border-transparent rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/70"
                             />
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
@@ -106,20 +108,14 @@ export const TopBar = () => {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild>
                                 <Link to="/settings" className="cursor-pointer">
-                                    <User className="mr-2 h-4 w-4" />
-                                    <span>Profile</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link to="/settings" className="cursor-pointer">
                                     <Settings className="mr-2 h-4 w-4" />
-                                    <span>Settings</span>
+                                    <span>{t('nav.settings')}</span>
                                 </Link>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer">
                                 <LogOut className="mr-2 h-4 w-4" />
-                                <span>Log out</span>
+                                <span>{t('nav.logout')}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

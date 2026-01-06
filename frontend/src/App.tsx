@@ -15,6 +15,8 @@ import { BackButtonHandler } from '@/components/BackButtonHandler';
 import SettingsPage from '@/pages/Settings';
 import ServerConfig from '@/pages/ServerConfig';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuthStore } from '@/hooks/useAuth';
+import { usePreferencesStore } from '@/hooks/usePreferences';
 
 const queryClient = new QueryClient();
 
@@ -55,7 +57,17 @@ const App = () => {
     };
 
     checkConnection();
+    checkConnection();
   }, []);
+
+  const { user } = useAuthStore();
+  const { syncWithUser } = usePreferencesStore();
+
+  useEffect(() => {
+    if (user) {
+      syncWithUser();
+    }
+  }, [user, syncWithUser]);
 
 
   return (
