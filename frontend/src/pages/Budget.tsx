@@ -280,110 +280,151 @@ export default function BudgetGoalsPage() {
                 {activeTab === 'budgets' && (
                     <>
                         {/* Budget Controls */}
-                        <div className="w-full lg:w-auto">
-                            <div className="grid grid-cols-2 lg:flex gap-2">
-                                <div className="relative">
-                                    <select
-                                        className="w-full lg:w-40 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
-                                        value={selectedMonth}
-                                        onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                                    >
-                                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                            <option key={m} value={m} className="bg-white dark:bg-slate-800 text-foreground py-2">
-                                                {new Date(0, m - 1).toLocaleString('default', { month: 'long' })}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                                        <ChevronDown className="h-4 w-4" />
+                        <div className="flex flex-col gap-4">
+                            {/* Budget Summary Cards */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                                <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/10">
+                                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                        <div className="p-1.5 sm:p-2 bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
+                                            <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        </div>
+                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">Remaining</span>
                                     </div>
+                                    <p className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+                                        <CurrencyDisplay value={Math.max(0, budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0) - budgetStats.reduce((acc, curr) => acc + curr.spent, 0))} />
+                                    </p>
                                 </div>
 
-                                <div className="relative">
-                                    <select
-                                        className="w-full lg:w-28 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
-                                        value={selectedYear}
-                                        onChange={(e) => setSelectedYear(Number(e.target.value))}
-                                    >
-                                        {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(y => (
-                                            <option key={y} value={y} className="bg-white dark:bg-slate-800 text-foreground py-2">{y}</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                                        <ChevronDown className="h-4 w-4" />
+                                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/10">
+                                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                        <div className="p-1.5 sm:p-2 bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400">
+                                            <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        </div>
+                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Budget</span>
                                     </div>
+                                    <p className="text-lg sm:text-2xl font-bold font-mono tracking-tight">
+                                        <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0)} />
+                                    </p>
+                                </div>
+
+                                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-red-500/5 border border-rose-500/10">
+                                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
+                                        <div className="p-1.5 sm:p-2 bg-rose-500/20 rounded-lg text-rose-600 dark:text-rose-400">
+                                            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                        </div>
+                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Spent</span>
+                                    </div>
+                                    <p className="text-lg sm:text-2xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
+                                        <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + curr.spent, 0)} />
+                                    </p>
                                 </div>
                             </div>
+
+                            <div className="flex sm:items-center justify-between gap-4 flex-col sm:flex-row">
+                                <div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">
+                                    <div className="relative">
+                                        <select
+                                            className="w-full lg:w-40 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
+                                            value={selectedMonth}
+                                            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                                        >
+                                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                                <option key={m} value={m} className="bg-white dark:bg-slate-800 text-foreground py-2">
+                                                    {new Date(0, m - 1).toLocaleString('default', { month: 'long' })}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                            <ChevronDown className="h-4 w-4" />
+                                        </div>
+                                    </div>
+
+                                    <div className="relative">
+                                        <select
+                                            className="w-full lg:w-28 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
+                                            value={selectedYear}
+                                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                        >
+                                            {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(y => (
+                                                <option key={y} value={y} className="bg-white dark:bg-slate-800 text-foreground py-2">{y}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                            <ChevronDown className="h-4 w-4" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Dialog open={isBudgetAddOpen} onOpenChange={setIsBudgetAddOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40"><Plus className="mr-2 h-4 w-4" /> Set Budget</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Set Budget</DialogTitle>
+                                            <DialogDescription>Create a spending limit for a category.</DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full space-y-6 py-4">
+                                            {/* 1. Amount Input - Centerpiece */}
+                                            <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                                                <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
+                                                <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                    <Input
+                                                        id="amount"
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto"
+                                                        placeholder="0"
+                                                        value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
+                                                        onKeyDown={(e) => {
+                                                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                                                e.preventDefault();
+                                                            }
+                                                        }}
+                                                        onChange={(e) => {
+                                                            const rawValue = e.target.value.replace(/\./g, '');
+                                                            const numValue = parseInt(rawValue) || 0;
+                                                            setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
+                                                        }}
+                                                        required
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* 2. Category Select */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2">
+                                                    <Tag className="w-4 h-4 text-primary" /> Category
+                                                </Label>
+                                                <div className="relative">
+                                                    <select
+                                                        id="category"
+                                                        className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
+                                                        value={budgetFormData.category_id}
+                                                        onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
+                                                        required
+                                                    >
+                                                        <option value={0} disabled>Select Category</option>
+                                                        {categories?.filter(c => c.type === 'expense').map((c) => (
+                                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
+                                                </div>
+                                            </div>
+
+                                            <DialogFooter>
+                                                <Button type="submit" size="lg" className="w-full rounded-xl" disabled={createBudgetMutation.isPending}>
+                                                    {createBudgetMutation.isPending ? 'Saving...' : 'Save Budget'}
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
                         </div>
-
-                        <Dialog open={isBudgetAddOpen} onOpenChange={setIsBudgetAddOpen}>
-                            <DialogTrigger asChild>
-                                <Button onClick={resetBudgetForm} className="ml-auto w-full sm:w-auto mt-2 sm:mt-0 shadow-lg shadow-primary/25 hover:shadow-primary/40"><Plus className="mr-2 h-4 w-4" /> Set Budget</Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                    <DialogTitle>Set Budget</DialogTitle>
-                                    <DialogDescription>Create a spending limit for a category.</DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full space-y-6 py-4">
-                                    {/* 1. Amount Input - Centerpiece */}
-                                    <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                        <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
-                                        <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                            <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
-                                            <Input
-                                                id="amount"
-                                                type="text"
-                                                inputMode="numeric"
-                                                className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto"
-                                                placeholder="0"
-                                                value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
-                                                onKeyDown={(e) => {
-                                                    if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                        e.preventDefault();
-                                                    }
-                                                }}
-                                                onChange={(e) => {
-                                                    const rawValue = e.target.value.replace(/\./g, '');
-                                                    const numValue = parseInt(rawValue) || 0;
-                                                    setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
-                                                }}
-                                                required
-                                                autoFocus
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* 2. Category Select */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2">
-                                            <Tag className="w-4 h-4 text-primary" /> Category
-                                        </Label>
-                                        <div className="relative">
-                                            <select
-                                                id="category"
-                                                className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
-                                                value={budgetFormData.category_id}
-                                                onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
-                                                required
-                                            >
-                                                <option value={0} disabled>Select Category</option>
-                                                {categories?.filter(c => c.type === 'expense').map((c) => (
-                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
-                                        </div>
-                                    </div>
-
-                                    <DialogFooter>
-                                        <Button type="submit" size="lg" className="w-full rounded-xl" disabled={createBudgetMutation.isPending}>
-                                            {createBudgetMutation.isPending ? 'Saving...' : 'Save Budget'}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
 
                         {/* Budget Edit Dialog */}
                         <Dialog open={isBudgetEditOpen} onOpenChange={setIsBudgetEditOpen}>
