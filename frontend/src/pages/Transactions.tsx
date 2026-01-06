@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialService, type Transaction } from '@/services/financial';
@@ -266,53 +266,40 @@ export default function TransactionsPage() {
                                 <Trash2 className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Delete</span> ({selectedIds.length})
                             </Button>
                         )}
-                        {isDesktop ? (
-                            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                                <DialogTrigger asChild>
+                        {/* Add Transaction Dialog - Unified Responsive */}
+                        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                            <DialogTrigger asChild>
+                                {isDesktop ? (
                                     <Button className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> New Transaction</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col gap-4">
-                                    <DialogHeader>
-                                        <DialogTitle>Add Transaction</DialogTitle>
-                                        <DialogDescription>Add a new transaction to track your finances.</DialogDescription>
-                                    </DialogHeader>
-                                    <TransactionForm
-                                        categories={categories}
-                                        savings={savings}
-                                        onSubmit={handleSubmit}
-                                        isSubmitting={createMutation.isPending}
-                                        initialData={null}
-                                    />
-                                </DialogContent>
-                            </Dialog>
-                        ) : (
-                            <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-                                <SheetTrigger asChild>
+                                ) : (
                                     <Button className="shadow-lg shadow-primary/20 rounded-xl px-4 hidden">
                                         <Plus className="h-5 w-5 sm:mr-2" />
                                         <span className="sr-only sm:not-sr-only">New Transaction</span>
                                         <span className="sm:hidden font-semibold">New</span>
                                     </Button>
-                                </SheetTrigger>
-                                <SheetContent side="bottom" className="h-[85vh] sm:max-w-none rounded-t-2xl px-6 pt-6 pb-0 overflow-y-auto">
-                                    <SheetHeader className="mb-4 text-left">
-                                        <SheetTitle>Add Transaction</SheetTitle>
-                                        <SheetDescription>Add a new transaction to track your finances.</SheetDescription>
-                                    </SheetHeader>
-                                    <TransactionForm
-                                        categories={categories}
-                                        savings={savings}
-                                        onSubmit={handleSubmit}
-                                        isSubmitting={createMutation.isPending}
-                                        initialData={null}
-                                    />
-                                </SheetContent>
-                            </Sheet>
-                        )}
+                                )}
+                            </DialogTrigger>
+                            <DialogContent className={cn(
+                                "flex flex-col gap-0 p-0 overflow-hidden",
+                                "w-full sm:w-auto h-[100dvh] sm:h-auto", // Mobile: Fullscreen, Desktop: Auto height
+                                "sm:max-w-[600px] sm:rounded-2xl", // Desktop: Wider and rounded
+                                "border-0 sm:border" // Mobile: No border
+                            )}>
+                                <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                                    <DialogTitle>Add Transaction</DialogTitle>
+                                    <DialogDescription>Add a new transaction to track your finances.</DialogDescription>
+                                </DialogHeader>
+                                <TransactionForm
+                                    categories={categories}
+                                    savings={savings}
+                                    onSubmit={handleSubmit}
+                                    isSubmitting={createMutation.isPending}
+                                    initialData={null}
+                                />
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </div>
-
-
 
                 {/* Filters & Actions */}
                 {/* Daily Expense Summary */}
@@ -518,38 +505,26 @@ export default function TransactionsPage() {
                     </div>
                 </PullToRefresh>
 
-                {/* Edit Dialog - Responsive */}
-                {isDesktop ? (
-                    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                        <DialogContent className="sm:max-w-[425px] max-h-[85vh] flex flex-col gap-4">
-                            <DialogHeader>
-                                <DialogTitle>Edit Transaction</DialogTitle>
-                            </DialogHeader>
-                            <TransactionForm
-                                categories={categories}
-                                savings={savings}
-                                onSubmit={handleSubmit}
-                                isSubmitting={updateMutation.isPending}
-                                initialData={editingTx}
-                            />
-                        </DialogContent>
-                    </Dialog>
-                ) : (
-                    <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-                        <SheetContent side="bottom" className="h-[85vh] sm:max-w-none rounded-t-2xl px-6 pt-6 pb-0 overflow-y-auto">
-                            <SheetHeader className="mb-4 text-left">
-                                <SheetTitle>Edit Transaction</SheetTitle>
-                            </SheetHeader>
-                            <TransactionForm
-                                categories={categories}
-                                savings={savings}
-                                onSubmit={handleSubmit}
-                                isSubmitting={updateMutation.isPending}
-                                initialData={editingTx}
-                            />
-                        </SheetContent>
-                    </Sheet>
-                )}
+                {/* Edit Dialog - Unified Responsive */}
+                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogContent className={cn(
+                        "flex flex-col gap-0 p-0 overflow-hidden",
+                        "w-full sm:w-auto h-[100dvh] sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
+                        "sm:max-w-[600px] sm:rounded-2xl", // Desktop styling
+                        "border-0 sm:border"
+                    )}>
+                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                            <DialogTitle>Edit Transaction</DialogTitle>
+                        </DialogHeader>
+                        <TransactionForm
+                            categories={categories}
+                            savings={savings}
+                            onSubmit={handleSubmit}
+                            isSubmitting={updateMutation.isPending}
+                            initialData={editingTx}
+                        />
+                    </DialogContent>
+                </Dialog>
 
                 {/* Delete Confirmation Modal */}
                 <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
@@ -594,10 +569,7 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
         goal_id: 0
     });
 
-    // Sync initialData
-    // We can't easily use hooks inside conditional rendering for initialization in parent comfortably without effects
-    // but here we are in a child component
-    useMemo(() => {
+    useEffect(() => {
         if (initialData) {
             setFormData({
                 name: initialData.name,
@@ -609,69 +581,33 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
         }
     }, [initialData]);
 
-    // Handle local submit and pass to parent
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Pass data up, BUT we need to update the parent's formData state 
-        // because parent's handleSubmit uses parent's state... 
-        // WAIT. The parent handleSubmit uses PARENT STATE 'formData'.
-        // Refactoring to 'TransactionForm' broke the link to parent state.
-
-        // CORRECTION: Parent handleSubmit expects to use its own state.
-        // We need to change the parent to accept data arguments or update state.
-        // EASIER: Let this form just call onSubmit(formData) and let parent handle it.
-        // BUT parent handleSubmit is currently designed to read 'formData' state variable.
-        // I need to refactor parent handleSubmit to accept data from argument!
-
-        // Or simpler: pass 'setFormData' to this child? No, parent state is used for both create and edit modals...
-
-        // Let's make parent listen to child? No.
-
-        // Let's refactor parent handleSubmit to NOT read state, but expect args? 
-        // No, parent handleSubmit is used by existing code in parent... wait, I removed the existing code form parent!
-        // So I can redefine how parent handleSubmit works!
-
-        // Actually, I am replacing the JSX that triggers handleSubmit.
-        // So I can just pass 'handleSubmit' that takes (e) -> and inside it calls parent logic?
-        // Parent logic reads 'formData'.
-        // If I move the form fields here, I move the state here.
-        // So 'formData' in parent is now UNUSED/STALE.
-        // I should DELETE 'formData' in parent and move it here?
-        // But parent handles mutation...
-
-        // Let's fix this properly:
-        // 1. Child (TransactionForm) manages its own state.
-        // 2. Child calls props.onSubmit(childState).
-        // 3. Parent's handleSubmit needs to be refactored to accept 'data'.
-
         onSubmit(e, formData);
     };
 
     return (
+        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-background">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
 
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto px-1 py-2 space-y-6">
-
-                {/* 1. Amount Input - Centerpiece */}
-                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Total Amount</Label>
+                {/* 1. Amount Input */}
+                <div className="relative py-8 bg-muted/20 rounded-3xl border border-dashed border-border flex flex-col items-center justify-center">
+                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">Total Amount</Label>
                     <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                        <span className="text-2xl sm:text-3xl font-bold text-muted-foreground mr-2">Rp</span>
                         <input
                             id="amount"
                             type="text"
                             inputMode="numeric"
-                            className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/20 p-0 outline-none hover:outline-none"
+                            className="text-4xl sm:text-5xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/20 p-0 outline-none hover:outline-none"
                             placeholder="0"
                             value={formData.amount ? Math.floor(Number(formData.amount)).toLocaleString('id-ID') : ''}
                             onKeyDown={(e) => {
-                                // Only allow numbers and control keys
                                 if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
                                     e.preventDefault();
                                 }
                             }}
                             onChange={(e) => {
-                                // Remove all dots and parse as integer
                                 const rawValue = e.target.value.replace(/\./g, '');
                                 const numValue = parseInt(rawValue) || 0;
                                 setFormData({ ...formData, amount: numValue });
@@ -682,43 +618,41 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                     </div>
                 </div>
 
-                {/* 2. Category Select - Custom Styled */}
-                <div className="space-y-2">
-                    <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2">
-                        <Tag className="w-4 h-4 text-primary" /> Category
-                    </Label>
-                    <div className="relative">
-                        <select
-                            id="category"
-                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
-                            value={formData.category_id}
-                            onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
-                            required
-                        >
-                            <option value={0} disabled>Select a Category</option>
-                            {categories?.map((c: any) => (
-                                <option key={c.id} value={c.id}>{c.icon || '🔹'} {c.name} ({c.type})</option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
-                        <div className="absolute inset-0 rounded-xl bg-card border border-input pointer-events-none -z-10" />
-                    </div>
-                </div>
-
-                {/* 3. Date & Description Grid */}
-                <div className="grid gap-6">
+                <div className="grid gap-6 sm:grid-cols-2">
+                    {/* 2. Category Select */}
                     <div className="space-y-2">
-                        <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2">
+                        <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                            <Tag className="w-4 h-4 text-primary" /> Category
+                        </Label>
+                        <div className="relative">
+                            <select
+                                id="category"
+                                className="appearance-none flex h-12 w-full items-center justify-between rounded-xl border border-input bg-card px-4 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10"
+                                value={formData.category_id}
+                                onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
+                                required
+                            >
+                                <option value={0} disabled>Select Category</option>
+                                {categories?.map((c: any) => (
+                                    <option key={c.id} value={c.id}>{c.icon || '🔹'} {c.name} ({c.type})</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* 3. Date Input */}
+                    <div className="space-y-2">
+                        <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
                             <CalendarIcon className="w-4 h-4 text-primary" /> Date
                         </Label>
                         <div className="relative">
                             <Input
                                 id="date"
                                 type="date"
-                                className="h-14 rounded-xl border-input bg-background/50 text-lg font-medium cursor-pointer"
+                                className="h-12 rounded-xl border-input bg-card text-base font-medium cursor-pointer shadow-sm"
                                 value={formData.transaction_date}
                                 onClick={(e: any) => {
-                                    // Auto-open native date picker on mobile
                                     if (e.currentTarget.showPicker) {
                                         e.currentTarget.showPicker();
                                     }
@@ -728,23 +662,24 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                             />
                         </div>
                     </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-                            <AlignLeft className="w-4 h-4 text-primary" /> Note
-                        </Label>
-                        <Input
-                            id="name"
-                            className="h-12 rounded-xl border-input bg-background/50 text-base"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="What is this for?"
-                            required
-                        />
-                    </div>
                 </div>
 
-                {/* 4. Goal Link (Optional) */}
+                {/* 4. Note Input */}
+                <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                        <AlignLeft className="w-4 h-4 text-primary" /> Note
+                    </Label>
+                    <Input
+                        id="name"
+                        className="h-12 rounded-xl border-input bg-card text-base shadow-sm"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="What is this for?"
+                        required
+                    />
+                </div>
+
+                {/* 5. Goal Link (Optional) */}
                 {categories?.find((c: any) => c.id === formData.category_id)?.type === 'saving' && (
                     <div className="animate-in fade-in slide-in-from-top-4 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-dashed border-blue-200 dark:border-blue-800">
                         <Label htmlFor="goal" className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-semibold mb-2">
@@ -776,11 +711,11 @@ function TransactionForm({ categories, savings, onSubmit, isSubmitting, initialD
                 )}
             </div>
 
-            <div className="sticky bottom-0 left-0 right-0 pt-4 pb-2 bg-background/95 backdrop-blur-sm border-t border-border/50 mt-6">
+            <div className="shrink-0 p-6 bg-background border-t border-border/50">
                 <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full h-14 text-lg rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                    className="w-full h-12 sm:h-14 text-lg rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                     {isSubmitting ? 'Saving...' : 'Save Transaction'}
                 </Button>

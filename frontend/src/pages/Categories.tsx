@@ -9,6 +9,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
 } from "@/components/ui/dialog"
 import {
     AlertDialog,
@@ -20,19 +21,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-} from "@/components/ui/sheet"
 import { Plus, Trash2, Tags, ChevronDown, Type } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+
 
 export default function CategoriesPage() {
     const queryClient = useQueryClient();
-    const isDesktop = useMediaQuery('(min-width: 640px)');
 
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -120,8 +114,8 @@ export default function CategoriesPage() {
 
     // Form Content Component (shared between Dialog and Sheet)
     const CategoryForm = ({ isEditing = false }: { isEditing?: boolean }) => (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto px-1 py-2 space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-background">
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
 
                 {/* 1. Category Name Input - Centerpiece */}
                 <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
@@ -130,7 +124,7 @@ export default function CategoriesPage() {
                         <input
                             id="cat-name"
                             type="text"
-                            className="text-xl sm:text-2xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none"
+                            className="text-2xl sm:text-3xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none hover:outline-none"
                             placeholder="Enter name..."
                             value={formData.name || ''}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -157,7 +151,7 @@ export default function CategoriesPage() {
                             <option value="income">💰 Income</option>
                             <option value="saving">🏦 Saving</option>
                         </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
                         <div className="absolute inset-0 rounded-xl bg-card border border-input pointer-events-none -z-10" />
                     </div>
                 </div>
@@ -168,7 +162,7 @@ export default function CategoriesPage() {
             <div className="pt-4 pb-2 border-t border-border mt-auto space-y-3">
                 <Button
                     type="submit"
-                    className="w-full h-12 text-base font-semibold shadow-lg"
+                    className="w-full h-12 text-base font-semibold shadow-lg rounded-xl"
                     disabled={isEditing ? updateMutation.isPending : createMutation.isPending}
                 >
                     {isEditing
@@ -181,8 +175,8 @@ export default function CategoriesPage() {
                 {isEditing && (
                     <Button
                         type="button"
-                        variant="outline"
-                        className="w-full h-12 text-base font-semibold text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        variant="ghost"
+                        className="w-full h-12 text-base font-semibold text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
                         onClick={handleDelete}
                         disabled={deleteMutation.isPending}
                     >
@@ -223,51 +217,37 @@ export default function CategoriesPage() {
                     </Button>
                 </div>
 
-                {/* Add Category Modal/Sheet */}
-                {isDesktop ? (
-                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>Add Category</DialogTitle>
-                            </DialogHeader>
-                            <CategoryForm />
-                        </DialogContent>
-                    </Dialog>
-                ) : (
-                    <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
-                            <SheetHeader className="pb-4 border-b border-border">
-                                <SheetTitle>Add Category</SheetTitle>
-                            </SheetHeader>
-                            <div className="pt-4 h-[calc(100%-60px)]">
-                                <CategoryForm />
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                )}
+                {/* Unified Add Category Dialog */}
+                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <DialogContent className={cn(
+                        "flex flex-col gap-0 p-0 overflow-hidden",
+                        "w-full sm:w-auto h-[100dvh] sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
+                        "sm:max-w-[425px] sm:rounded-2xl", // Desktop styling
+                        "border-0 sm:border"
+                    )}>
+                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                            <DialogTitle>Add Category</DialogTitle>
+                            <DialogDescription>Create a new category.</DialogDescription>
+                        </DialogHeader>
+                        <CategoryForm />
+                    </DialogContent>
+                </Dialog>
 
-                {/* Edit Category Modal/Sheet */}
-                {isDesktop ? (
-                    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>Edit Category</DialogTitle>
-                            </DialogHeader>
-                            <CategoryForm isEditing />
-                        </DialogContent>
-                    </Dialog>
-                ) : (
-                    <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-                        <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
-                            <SheetHeader className="pb-4 border-b border-border">
-                                <SheetTitle>Edit Category</SheetTitle>
-                            </SheetHeader>
-                            <div className="pt-4 h-[calc(100%-60px)]">
-                                <CategoryForm isEditing />
-                            </div>
-                        </SheetContent>
-                    </Sheet>
-                )}
+                {/* Unified Edit Category Dialog */}
+                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogContent className={cn(
+                        "flex flex-col gap-0 p-0 overflow-hidden",
+                        "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                        "sm:max-w-[425px] sm:rounded-2xl",
+                        "border-0 sm:border"
+                    )}>
+                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                            <DialogTitle>Edit Category</DialogTitle>
+                            <DialogDescription>Update or delete this category.</DialogDescription>
+                        </DialogHeader>
+                        <CategoryForm isEditing />
+                    </DialogContent>
+                </Dialog>
 
                 {/* Loading State */}
                 {isLoading && (

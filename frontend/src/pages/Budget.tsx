@@ -362,69 +362,76 @@ export default function BudgetGoalsPage() {
 
                                 <Dialog open={isBudgetAddOpen} onOpenChange={setIsBudgetAddOpen}>
                                     <DialogTrigger asChild>
-                                        <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40"><Plus className="mr-2 h-4 w-4" /> Set Budget</Button>
+                                        <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 rounded-xl"><Plus className="mr-2 h-4 w-4" /> Set Budget</Button>
                                     </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px]">
-                                        <DialogHeader>
+                                    <DialogContent className={cn(
+                                        "flex flex-col gap-0 p-0 overflow-hidden",
+                                        "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                        "sm:max-w-[425px] sm:rounded-2xl",
+                                        "border-0 sm:border"
+                                    )}>
+                                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
                                             <DialogTitle>Set Budget</DialogTitle>
                                             <DialogDescription>Create a spending limit for a category.</DialogDescription>
                                         </DialogHeader>
-                                        <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full space-y-6 py-4">
-                                            {/* 1. Amount Input - Centerpiece */}
-                                            <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
-                                                <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
-                                                    <Input
-                                                        id="amount"
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto"
-                                                        placeholder="0"
-                                                        value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
-                                                        onKeyDown={(e) => {
-                                                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                                e.preventDefault();
-                                                            }
-                                                        }}
-                                                        onChange={(e) => {
-                                                            const rawValue = e.target.value.replace(/\./g, '');
-                                                            const numValue = parseInt(rawValue) || 0;
-                                                            setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
-                                                        }}
-                                                        required
-                                                        autoFocus
-                                                    />
+                                        <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
+                                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                                                {/* 1. Amount Input - Centerpiece */}
+                                                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                                                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
+                                                    <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                                                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                        <Input
+                                                            id="amount"
+                                                            type="text"
+                                                            inputMode="numeric"
+                                                            className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
+                                                            placeholder="0"
+                                                            value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
+                                                            onKeyDown={(e) => {
+                                                                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                                                    e.preventDefault();
+                                                                }
+                                                            }}
+                                                            onChange={(e) => {
+                                                                const rawValue = e.target.value.replace(/\./g, '');
+                                                                const numValue = parseInt(rawValue) || 0;
+                                                                setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
+                                                            }}
+                                                            required
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* 2. Category Select */}
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                                        <Tag className="w-4 h-4 text-primary" /> Category
+                                                    </Label>
+                                                    <div className="relative">
+                                                        <select
+                                                            id="category"
+                                                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
+                                                            value={budgetFormData.category_id}
+                                                            onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
+                                                            required
+                                                        >
+                                                            <option value={0} disabled>Select Category</option>
+                                                            {categories?.filter(c => c.type === 'expense').map((c) => (
+                                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                                            ))}
+                                                        </select>
+                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            {/* 2. Category Select */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2">
-                                                    <Tag className="w-4 h-4 text-primary" /> Category
-                                                </Label>
-                                                <div className="relative">
-                                                    <select
-                                                        id="category"
-                                                        className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
-                                                        value={budgetFormData.category_id}
-                                                        onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
-                                                        required
-                                                    >
-                                                        <option value={0} disabled>Select Category</option>
-                                                        {categories?.filter(c => c.type === 'expense').map((c) => (
-                                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                                        ))}
-                                                    </select>
-                                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
-                                                </div>
-                                            </div>
-
-                                            <DialogFooter>
-                                                <Button type="submit" size="lg" className="w-full rounded-xl" disabled={createBudgetMutation.isPending}>
+                                            <div className="shrink-0 p-6 bg-background border-t border-border/50">
+                                                <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createBudgetMutation.isPending}>
                                                     {createBudgetMutation.isPending ? 'Saving...' : 'Save Budget'}
                                                 </Button>
-                                            </DialogFooter>
+                                            </div>
                                         </form>
                                     </DialogContent>
                                 </Dialog>
@@ -433,65 +440,73 @@ export default function BudgetGoalsPage() {
 
                         {/* Budget Edit Dialog */}
                         <Dialog open={isBudgetEditOpen} onOpenChange={setIsBudgetEditOpen}>
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
+                            <DialogContent className={cn(
+                                "flex flex-col gap-0 p-0 overflow-hidden",
+                                "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                "sm:max-w-[425px] sm:rounded-2xl",
+                                "border-0 sm:border"
+                            )}>
+                                <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
                                     <DialogTitle>Edit Budget</DialogTitle>
+                                    <DialogDescription>Update the spending limit.</DialogDescription>
                                 </DialogHeader>
-                                <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full space-y-6 py-4">
-                                    {/* 1. Amount Input - Centerpiece */}
-                                    <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                        <Label htmlFor="edit-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
-                                        <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                            <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
-                                            <Input
-                                                id="edit-amount"
-                                                type="text"
-                                                inputMode="numeric"
-                                                className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto"
-                                                placeholder="0"
-                                                value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
-                                                onKeyDown={(e) => {
-                                                    if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                        e.preventDefault();
-                                                    }
-                                                }}
-                                                onChange={(e) => {
-                                                    const rawValue = e.target.value.replace(/\./g, '');
-                                                    const numValue = parseInt(rawValue) || 0;
-                                                    setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
-                                                }}
-                                                required
-                                                autoFocus
-                                            />
+                                <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
+                                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                                        {/* 1. Amount Input - Centerpiece */}
+                                        <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                                            <Label htmlFor="edit-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Limit Amount</Label>
+                                            <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                                                <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                <Input
+                                                    id="edit-amount"
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
+                                                    placeholder="0"
+                                                    value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString('id-ID') : ''}
+                                                    onKeyDown={(e) => {
+                                                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                                            e.preventDefault();
+                                                        }
+                                                    }}
+                                                    onChange={(e) => {
+                                                        const rawValue = e.target.value.replace(/\./g, '');
+                                                        const numValue = parseInt(rawValue) || 0;
+                                                        setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
+                                                    }}
+                                                    required
+                                                    autoFocus
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* 2. Category Select */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                                <Tag className="w-4 h-4 text-primary" /> Category
+                                            </Label>
+                                            <div className="relative">
+                                                <select
+                                                    id="edit-category"
+                                                    className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
+                                                    value={budgetFormData.category_id}
+                                                    onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
+                                                    required
+                                                >
+                                                    {categories?.filter(c => c.type === 'expense').map((c) => (
+                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    {/* 2. Category Select */}
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-category" className="text-sm font-medium flex items-center gap-2">
-                                            <Tag className="w-4 h-4 text-primary" /> Category
-                                        </Label>
-                                        <div className="relative">
-                                            <select
-                                                id="edit-category"
-                                                className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
-                                                value={budgetFormData.category_id}
-                                                onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
-                                                required
-                                            >
-                                                {categories?.filter(c => c.type === 'expense').map((c) => (
-                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0" />
-                                        </div>
-                                    </div>
-
-                                    <DialogFooter>
-                                        <Button type="submit" size="lg" className="w-full rounded-xl" disabled={updateBudgetMutation.isPending}>
+                                    <div className="shrink-0 p-6 bg-background border-t border-border/50">
+                                        <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateBudgetMutation.isPending}>
                                             {updateBudgetMutation.isPending ? 'Updating...' : 'Update Budget'}
                                         </Button>
-                                    </DialogFooter>
+                                    </div>
                                 </form>
                             </DialogContent>
                         </Dialog>
@@ -587,84 +602,91 @@ export default function BudgetGoalsPage() {
 
                             <Dialog open={isGoalAddOpen} onOpenChange={setIsGoalAddOpen}>
                                 <DialogTrigger asChild>
-                                    <Button onClick={resetGoalForm}><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Add Goal</span><span className="sm:hidden">Add</span></Button>
+                                    <Button onClick={resetGoalForm} className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">Add Goal</span><span className="sm:hidden">Add</span></Button>
                                 </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
-                                    <DialogHeader>
+                                <DialogContent className={cn(
+                                    "flex flex-col gap-0 p-0 overflow-hidden",
+                                    "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                    "sm:max-w-[425px] sm:rounded-2xl",
+                                    "border-0 sm:border"
+                                )}>
+                                    <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
                                         <DialogTitle>Add Savings Goal</DialogTitle>
                                         <DialogDescription>Set a new financial goal to save towards.</DialogDescription>
                                     </DialogHeader>
-                                    <form onSubmit={handleGoalSubmit} className="flex flex-col h-full space-y-6 py-4">
-                                        {/* 1. Amount Input - Centerpiece */}
-                                        <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                            <Label htmlFor="goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Target Amount</Label>
-                                            <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
-                                                <Input
-                                                    id="goal-amount"
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto"
-                                                    placeholder="0"
-                                                    value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString('id-ID') : ''}
-                                                    onKeyDown={(e) => {
-                                                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                            e.preventDefault();
-                                                        }
-                                                    }}
-                                                    onChange={(e) => {
-                                                        const rawValue = e.target.value.replace(/\./g, '');
-                                                        const numValue = parseInt(rawValue) || 0;
-                                                        setGoalFormData({ ...goalFormData, amount: numValue });
-                                                    }}
-                                                    required
-                                                    autoFocus
-                                                />
+                                    <form onSubmit={handleGoalSubmit} className="flex flex-col h-full bg-background">
+                                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                                            {/* 1. Amount Input - Centerpiece */}
+                                            <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                                                <Label htmlFor="goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Target Amount</Label>
+                                                <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                    <Input
+                                                        id="goal-amount"
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
+                                                        placeholder="0"
+                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString('id-ID') : ''}
+                                                        onKeyDown={(e) => {
+                                                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                                                e.preventDefault();
+                                                            }
+                                                        }}
+                                                        onChange={(e) => {
+                                                            const rawValue = e.target.value.replace(/\./g, '');
+                                                            const numValue = parseInt(rawValue) || 0;
+                                                            setGoalFormData({ ...goalFormData, amount: numValue });
+                                                        }}
+                                                        required
+                                                        autoFocus
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* 2. Goal Name */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-                                                <AlignLeft className="w-4 h-4 text-primary" /> Goal Name
-                                            </Label>
-                                            <Input
-                                                id="name"
-                                                className="h-12 rounded-xl border-input bg-background/50 text-base"
-                                                value={goalFormData.name}
-                                                onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                                                placeholder="e.g. New Car"
-                                                required
-                                            />
-                                        </div>
-
-                                        {/* 3. Target Date */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2">
-                                                <Calendar className="w-4 h-4 text-primary" /> Target Date
-                                            </Label>
-                                            <div className="relative">
+                                            {/* 2. Goal Name */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                                    <AlignLeft className="w-4 h-4 text-primary" /> Goal Name
+                                                </Label>
                                                 <Input
-                                                    id="date"
-                                                    type="date"
-                                                    className="h-14 rounded-xl border-input bg-background/50 text-lg font-medium cursor-pointer"
-                                                    value={goalFormData.saving_date}
-                                                    onClick={(e: any) => {
-                                                        if (e.currentTarget.showPicker) {
-                                                            e.currentTarget.showPicker();
-                                                        }
-                                                    }}
-                                                    onChange={(e) => setGoalFormData({ ...goalFormData, saving_date: e.target.value })}
+                                                    id="name"
+                                                    className="h-12 rounded-xl border-input bg-background/50 text-base shadow-sm"
+                                                    value={goalFormData.name}
+                                                    onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
+                                                    placeholder="e.g. New Car"
                                                     required
                                                 />
                                             </div>
+
+                                            {/* 3. Target Date */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                                    <Calendar className="w-4 h-4 text-primary" /> Target Date
+                                                </Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        id="date"
+                                                        type="date"
+                                                        className="h-12 rounded-xl border-input bg-background/50 text-base font-medium cursor-pointer shadow-sm"
+                                                        value={goalFormData.saving_date}
+                                                        onClick={(e: any) => {
+                                                            if (e.currentTarget.showPicker) {
+                                                                e.currentTarget.showPicker();
+                                                            }
+                                                        }}
+                                                        onChange={(e) => setGoalFormData({ ...goalFormData, saving_date: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <DialogFooter>
-                                            <Button type="submit" size="lg" className="w-full rounded-xl" disabled={createGoalMutation.isPending}>
+                                        <div className="shrink-0 p-6 bg-background border-t border-border/50">
+                                            <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createGoalMutation.isPending}>
                                                 {createGoalMutation.isPending ? 'Saving...' : 'Save Goal'}
                                             </Button>
-                                        </DialogFooter>
+                                        </div>
                                     </form>
                                 </DialogContent>
                             </Dialog>
@@ -672,81 +694,89 @@ export default function BudgetGoalsPage() {
 
                             {/* Goal Edit Dialog */}
                             <Dialog open={isGoalEditOpen} onOpenChange={setIsGoalEditOpen}>
-                                <DialogContent className="sm:max-w-[425px]">
-                                    <DialogHeader>
+                                <DialogContent className={cn(
+                                    "flex flex-col gap-0 p-0 overflow-hidden",
+                                    "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                    "sm:max-w-[425px] sm:rounded-2xl",
+                                    "border-0 sm:border"
+                                )}>
+                                    <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
                                         <DialogTitle>Edit Goal</DialogTitle>
+                                        <DialogDescription>Update your savings goal details.</DialogDescription>
                                     </DialogHeader>
-                                    <form onSubmit={handleGoalSubmit} className="flex flex-col h-full space-y-6 py-4">
-                                        {/* 1. Amount Input - Centerpiece */}
-                                        <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                            <Label htmlFor="edit-goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Target Amount</Label>
-                                            <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
-                                                <Input
-                                                    id="edit-goal-amount"
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto"
-                                                    placeholder="0"
-                                                    value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString('id-ID') : ''}
-                                                    onKeyDown={(e) => {
-                                                        if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                            e.preventDefault();
-                                                        }
-                                                    }}
-                                                    onChange={(e) => {
-                                                        const rawValue = e.target.value.replace(/\./g, '');
-                                                        const numValue = parseInt(rawValue) || 0;
-                                                        setGoalFormData({ ...goalFormData, amount: numValue });
-                                                    }}
-                                                    required
-                                                    autoFocus
-                                                />
+                                    <form onSubmit={handleGoalSubmit} className="flex flex-col h-full bg-background">
+                                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                                            {/* 1. Amount Input - Centerpiece */}
+                                            <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                                                <Label htmlFor="edit-goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Target Amount</Label>
+                                                <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">Rp</span>
+                                                    <Input
+                                                        id="edit-goal-amount"
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
+                                                        placeholder="0"
+                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString('id-ID') : ''}
+                                                        onKeyDown={(e) => {
+                                                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                                                e.preventDefault();
+                                                            }
+                                                        }}
+                                                        onChange={(e) => {
+                                                            const rawValue = e.target.value.replace(/\./g, '');
+                                                            const numValue = parseInt(rawValue) || 0;
+                                                            setGoalFormData({ ...goalFormData, amount: numValue });
+                                                        }}
+                                                        required
+                                                        autoFocus
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* 2. Goal Name */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-name" className="text-sm font-medium flex items-center gap-2">
-                                                <AlignLeft className="w-4 h-4 text-primary" /> Goal Name
-                                            </Label>
-                                            <Input
-                                                id="edit-name"
-                                                className="h-12 rounded-xl border-input bg-background/50 text-base"
-                                                value={goalFormData.name}
-                                                onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                                                placeholder="e.g. New Car"
-                                                required
-                                            />
-                                        </div>
-
-                                        {/* 3. Target Date */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-date" className="text-sm font-medium flex items-center gap-2">
-                                                <Calendar className="w-4 h-4 text-primary" /> Target Date
-                                            </Label>
-                                            <div className="relative">
+                                            {/* 2. Goal Name */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                                    <AlignLeft className="w-4 h-4 text-primary" /> Goal Name
+                                                </Label>
                                                 <Input
-                                                    id="edit-date"
-                                                    type="date"
-                                                    className="h-14 rounded-xl border-input bg-background/50 text-lg font-medium cursor-pointer"
-                                                    value={goalFormData.saving_date}
-                                                    onClick={(e: any) => {
-                                                        if (e.currentTarget.showPicker) {
-                                                            e.currentTarget.showPicker();
-                                                        }
-                                                    }}
-                                                    onChange={(e) => setGoalFormData({ ...goalFormData, saving_date: e.target.value })}
+                                                    id="edit-name"
+                                                    className="h-12 rounded-xl border-input bg-background/50 text-base shadow-sm"
+                                                    value={goalFormData.name}
+                                                    onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
+                                                    placeholder="e.g. New Car"
                                                     required
                                                 />
                                             </div>
+
+                                            {/* 3. Target Date */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                                    <Calendar className="w-4 h-4 text-primary" /> Target Date
+                                                </Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        id="edit-date"
+                                                        type="date"
+                                                        className="h-12 rounded-xl border-input bg-background/50 text-base font-medium cursor-pointer shadow-sm"
+                                                        value={goalFormData.saving_date}
+                                                        onClick={(e: any) => {
+                                                            if (e.currentTarget.showPicker) {
+                                                                e.currentTarget.showPicker();
+                                                            }
+                                                        }}
+                                                        onChange={(e) => setGoalFormData({ ...goalFormData, saving_date: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        <DialogFooter>
-                                            <Button type="submit" size="lg" className="w-full rounded-xl" disabled={updateGoalMutation.isPending}>
+                                        <div className="shrink-0 p-6 bg-background border-t border-border/50">
+                                            <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateGoalMutation.isPending}>
                                                 {updateGoalMutation.isPending ? 'Updating...' : 'Update Goal'}
                                             </Button>
-                                        </DialogFooter>
+                                        </div>
                                     </form>
                                 </DialogContent>
                             </Dialog>
