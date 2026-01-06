@@ -3,6 +3,6 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 
 # Build
 cd frontend
-npm run android:sync      # Sync perubahan JS ke Android
+bun run android:sync      # Sync perubahan JS ke Android
 cd android
 ./gradlew assembleDebug   # Build APK

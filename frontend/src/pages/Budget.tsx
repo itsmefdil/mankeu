@@ -110,6 +110,24 @@ export default function BudgetGoalsPage() {
     // Computed Data - Goals
     const totalSavings = savings?.reduce((sum, s) => sum + Number(s.amount), 0) || 0;
 
+    // Computed Data - Incomes
+    const totalIncome = useMemo(() => {
+        if (!transactions || !categories) return 0;
+
+        return transactions
+            .filter(tx => {
+                const txDate = new Date(tx.transaction_date);
+                return txDate.getMonth() + 1 === selectedMonth && txDate.getFullYear() === selectedYear;
+            })
+            .reduce((sum, tx) => {
+                const category = categories.find(c => c.id === tx.category_id);
+                if (category?.type === 'income') {
+                    return sum + Number(tx.amount);
+                }
+                return sum;
+            }, 0);
+    }, [transactions, categories, selectedMonth, selectedYear]);
+
     // Budget Mutations
     const createBudgetMutation = useMutation({
         mutationFn: financialService.createBudget,
@@ -281,42 +299,29 @@ export default function BudgetGoalsPage() {
                     <>
                         {/* Budget Controls */}
                         <div className="flex flex-col gap-4">
-                            {/* Budget Summary Cards */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                                <div className="col-span-2 sm:col-span-1 p-3 sm:p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/10">
-                                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                        <div className="p-1.5 sm:p-2 bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
-                                            <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                        </div>
-                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">Remaining</span>
+                            {/* Budget Summary Compact Card - Vertical */}
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Remaining</p>
+                                        <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                                            <CurrencyDisplay value={Math.max(0, totalIncome - budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0))} />
+                                        </p>
                                     </div>
-                                    <p className="text-xl sm:text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
-                                        <CurrencyDisplay value={Math.max(0, budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0) - budgetStats.reduce((acc, curr) => acc + curr.spent, 0))} />
-                                    </p>
-                                </div>
-
-                                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border border-blue-500/10">
-                                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                        <div className="p-1.5 sm:p-2 bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400">
-                                            <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                        </div>
-                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Budget</span>
+                                    <div className="h-px bg-slate-100 dark:bg-slate-700" />
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Budget</p>
+                                        <p className="text-sm font-bold font-mono">
+                                            <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0)} />
+                                        </p>
                                     </div>
-                                    <p className="text-lg sm:text-2xl font-bold font-mono tracking-tight">
-                                        <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0)} />
-                                    </p>
-                                </div>
-
-                                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-rose-500/10 to-red-500/5 border border-rose-500/10">
-                                    <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                                        <div className="p-1.5 sm:p-2 bg-rose-500/20 rounded-lg text-rose-600 dark:text-rose-400">
-                                            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                        </div>
-                                        <span className="text-xs sm:text-sm font-medium text-muted-foreground">Total Spent</span>
+                                    <div className="h-px bg-slate-100 dark:bg-slate-700" />
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Spent</p>
+                                        <p className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400">
+                                            <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + curr.spent, 0)} />
+                                        </p>
                                     </div>
-                                    <p className="text-lg sm:text-2xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
-                                        <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + curr.spent, 0)} />
-                                    </p>
                                 </div>
                             </div>
 
