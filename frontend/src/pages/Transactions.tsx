@@ -432,91 +432,89 @@ export default function TransactionsPage() {
                             </div>
                         ) : (
                             Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((date) => (
-                                <div key={date} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                    <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-3 px-1 border-b border-border/50 flex items-center justify-between">
-                                        <h3 className="font-semibold text-sm text-foreground/80 flex items-center gap-2">
-                                            <CalendarIcon className="w-4 h-4" />
-                                            {formatDateHeader(date)}
-                                        </h3>
-                                        <span className="text-xs text-muted-foreground">
-                                            {groupedTransactions[date].length} {t('transactions.count_suffix')}
-                                        </span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                        {groupedTransactions[date].map((tx) => {
-                                            const cat = categories?.find(c => c.id === tx.category_id);
-                                            const isIncome = cat?.type === 'income';
+                                <div key={date} className="relative pl-8 border-l-2 border-slate-100 dark:border-slate-800 ml-3">
+                                    {/* Timeline Dot */}
+                                    <div className="absolute -left-[9px] top-6 h-4 w-4 rounded-full border-4 border-background bg-slate-300 dark:bg-slate-600 z-10" />
 
-                                            return (
-                                                <SwipeableItem
-                                                    key={tx.id}
-                                                    onSwipeLeft={() => handleDelete(tx.id)}
-                                                    onSwipeRight={() => handleEdit(tx)}
-                                                    vibrate={() => vibrate(10)}
-                                                    leftContent={<Trash2 className="w-6 h-6 text-white" />}
-                                                    rightContent={<Pencil className="w-6 h-6 text-white" />}
-                                                    className={cn(
-                                                        "group flex items-center justify-between p-4 border-b border-border/40 bg-background hover:bg-muted/30 transition-all duration-200 last:border-0 cursor-pointer",
-                                                        selectedIds.includes(tx.id) && "bg-primary/5",
-                                                    )}
-                                                >
-                                                    <div className="flex items-center gap-4 min-w-0 flex-1" onClick={() => toggleSelectOne(tx.id)}>
-                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted/50 group-hover:bg-background border border-transparent group-hover:border-border transition-colors">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer pointer-events-none"
-                                                                checked={selectedIds.includes(tx.id)}
-                                                                onChange={() => { }}
-                                                                readOnly
-                                                            />
-                                                        </div>
-                                                        <div className="grid gap-0.5 min-w-0">
-                                                            <div className="font-medium text-base flex items-center gap-2 truncate">
-                                                                <span className="truncate">{tx.name}</span>
-                                                                {tx.goal_id && (
-                                                                    <span className="inline-flex shrink-0 items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                                                                        <Target className="w-3 h-3 mr-1" /> Goal
-                                                                    </span>
+                                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 mb-2 flex items-center justify-between group">
+                                            <h3 className="font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
+                                                {formatDateHeader(date)}
+                                            </h3>
+                                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/50 text-muted-foreground group-hover:bg-secondary transition-colors">
+                                                {groupedTransactions[date].length} {t('transactions.count_suffix')}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-col gap-3 pb-6">
+                                            {groupedTransactions[date].map((tx) => {
+                                                const cat = categories?.find(c => c.id === tx.category_id);
+                                                const isIncome = cat?.type === 'income';
+
+                                                return (
+                                                    <SwipeableItem
+                                                        key={tx.id}
+                                                        onSwipeLeft={() => handleDelete(tx.id)}
+                                                        onSwipeRight={() => handleEdit(tx)}
+                                                        vibrate={() => vibrate(10)}
+                                                        leftContent={<Trash2 className="w-5 h-5 text-white" />}
+                                                        rightContent={<Pencil className="w-5 h-5 text-white" />}
+                                                        className={cn(
+                                                            "group relative flex items-center justify-between p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden",
+                                                            selectedIds.includes(tx.id) && "ring-2 ring-primary bg-primary/5",
+                                                        )}
+                                                    >
+                                                        {/* Selection Indicator Bar */}
+                                                        {selectedIds.includes(tx.id) && (
+                                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+                                                        )}
+
+                                                        <div className="flex items-center gap-4 min-w-0 flex-1 z-10" onClick={() => toggleSelectOne(tx.id)}>
+                                                            <div className={cn(
+                                                                "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all duration-300",
+                                                                selectedIds.includes(tx.id)
+                                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110"
+                                                                    : "bg-secondary/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110"
+                                                            )}>
+                                                                {selectedIds.includes(tx.id) ? (
+                                                                    <div className="h-3 w-3 rounded-sm bg-current" />
+                                                                ) : (
+                                                                    // Use category icon here if available, else first letter
+                                                                    <span className="text-sm font-bold uppercase">{cat?.name?.[0] || '?'}</span>
                                                                 )}
                                                             </div>
-                                                            <div className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-                                                                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isIncome ? "bg-emerald-500" : "bg-rose-500")} />
-                                                                <span className="truncate">{cat?.name || 'Uncategorized'}</span>
+                                                            <div className="grid gap-1 min-w-0">
+                                                                <div className="font-semibold text-base flex items-center gap-2 truncate">
+                                                                    <span className="truncate">{tx.name}</span>
+                                                                    {tx.goal_id && (
+                                                                        <span className="inline-flex shrink-0 items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 ring-1 ring-inset ring-blue-500/20">
+                                                                            <Target className="w-2.5 h-2.5 mr-1" /> {t('transactions.goal')}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground flex items-center gap-2 truncate">
+                                                                    <span className={cn(
+                                                                        "inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset",
+                                                                        isIncome
+                                                                            ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/20 dark:text-emerald-400 dark:ring-emerald-900/30"
+                                                                            : "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-900/20 dark:text-rose-400 dark:ring-rose-900/30"
+                                                                    )}>
+                                                                        {cat?.name || 'Uncategorized'}
+                                                                    </span>
+                                                                    {tx.notes && <span className="truncate opacity-70">• {tx.notes}</span>}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-4 shrink-0 ml-2" onClick={() => toggleSelectOne(tx.id)}>
-                                                        <div className={cn("text-base font-bold tabular-nums text-right", isIncome ? "text-emerald-600" : "text-rose-600")}>
-                                                            {isIncome ? '+' : '-'}<CurrencyDisplay value={tx.amount} />
+                                                        <div className="flex items-center gap-3 shrink-0 ml-4 z-10" onClick={() => toggleSelectOne(tx.id)}>
+                                                            <div className="flex flex-col items-end">
+                                                                <span className={cn("text-base font-bold tabular-nums tracking-tight", isIncome ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>
+                                                                    {isIncome ? '+' : '-'}<CurrencyDisplay value={tx.amount} />
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleEdit(tx);
-                                                                }}
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDelete(tx.id);
-                                                                }}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </SwipeableItem>
-                                            );
-                                        })}
+                                                    </SwipeableItem>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             ))
