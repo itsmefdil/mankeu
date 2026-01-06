@@ -369,11 +369,11 @@ export default function BudgetGoalsPage() {
                                     </DialogTrigger>
                                     <DialogContent className={cn(
                                         "flex flex-col gap-0 p-0 overflow-hidden",
-                                        "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                        "w-full sm:w-auto h-full sm:h-auto",
                                         "sm:max-w-[425px] sm:rounded-2xl",
                                         "border-0 sm:border"
                                     )}>
-                                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                                             <DialogTitle>{t('budget.set_budget_title')}</DialogTitle>
                                             <DialogDescription>{t('budget.set_budget_desc')}</DialogDescription>
                                         </DialogHeader>
@@ -445,11 +445,11 @@ export default function BudgetGoalsPage() {
                         <Dialog open={isBudgetEditOpen} onOpenChange={setIsBudgetEditOpen}>
                             <DialogContent className={cn(
                                 "flex flex-col gap-0 p-0 overflow-hidden",
-                                "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                "w-full sm:w-auto h-full sm:h-auto",
                                 "sm:max-w-[425px] sm:rounded-2xl",
                                 "border-0 sm:border"
                             )}>
-                                <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                                <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                                     <DialogTitle>{t('budget.edit_budget_title')}</DialogTitle>
                                     <DialogDescription>{t('budget.edit_budget_desc')}</DialogDescription>
                                 </DialogHeader>
@@ -609,11 +609,11 @@ export default function BudgetGoalsPage() {
                                 </DialogTrigger>
                                 <DialogContent className={cn(
                                     "flex flex-col gap-0 p-0 overflow-hidden",
-                                    "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                    "w-full sm:w-auto h-full sm:h-auto",
                                     "sm:max-w-[425px] sm:rounded-2xl",
                                     "border-0 sm:border"
                                 )}>
-                                    <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                                    <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                                         <DialogTitle>{t('budget.add_goal_title')}</DialogTitle>
                                         <DialogDescription>{t('budget.add_goal_desc')}</DialogDescription>
                                     </DialogHeader>
@@ -699,11 +699,11 @@ export default function BudgetGoalsPage() {
                             <Dialog open={isGoalEditOpen} onOpenChange={setIsGoalEditOpen}>
                                 <DialogContent className={cn(
                                     "flex flex-col gap-0 p-0 overflow-hidden",
-                                    "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                                    "w-full sm:w-auto h-full sm:h-auto",
                                     "sm:max-w-[425px] sm:rounded-2xl",
                                     "border-0 sm:border"
                                 )}>
-                                    <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                                    <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                                         <DialogTitle>{t('budget.edit_goal_title')}</DialogTitle>
                                         <DialogDescription>{t('budget.edit_goal_desc')}</DialogDescription>
                                     </DialogHeader>

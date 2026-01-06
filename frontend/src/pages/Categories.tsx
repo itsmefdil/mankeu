@@ -223,11 +223,11 @@ export default function CategoriesPage() {
                 <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogContent className={cn(
                         "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-[100dvh] sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
+                        "w-full sm:w-auto h-full sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
                         "sm:max-w-[425px] sm:rounded-2xl", // Desktop styling
                         "border-0 sm:border"
                     )}>
-                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                             <DialogTitle>{t('categories.add_category')}</DialogTitle>
                             <DialogDescription>{t('categories.create_desc')}</DialogDescription>
                         </DialogHeader>
@@ -239,11 +239,11 @@ export default function CategoriesPage() {
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogContent className={cn(
                         "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-[100dvh] sm:h-auto",
+                        "w-full sm:w-auto h-full sm:h-auto",
                         "sm:max-w-[425px] sm:rounded-2xl",
                         "border-0 sm:border"
                     )}>
-                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                             <DialogTitle>{t('categories.edit_category')}</DialogTitle>
                             <DialogDescription>{t('categories.update_desc')}</DialogDescription>
                         </DialogHeader>

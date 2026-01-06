@@ -301,11 +301,11 @@ export default function TransactionsPage() {
                             </DialogTrigger>
                             <DialogContent className={cn(
                                 "flex flex-col gap-0 p-0 overflow-hidden",
-                                "w-full sm:w-auto h-[100dvh] sm:h-auto", // Mobile: Fullscreen, Desktop: Auto height
+                                "w-full sm:w-auto h-full sm:h-auto", // Mobile: Fullscreen, Desktop: Auto height
                                 "sm:max-w-[600px] sm:rounded-2xl", // Desktop: Wider and rounded
                                 "border-0 sm:border" // Mobile: No border
                             )}>
-                                <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                                <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                                     <DialogTitle>{t('transactions.add_transaction')}</DialogTitle>
                                     <DialogDescription>{t('transactions.add_description')}</DialogDescription>
                                 </DialogHeader>
@@ -526,11 +526,11 @@ export default function TransactionsPage() {
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                     <DialogContent className={cn(
                         "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-[100dvh] sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
+                        "w-full sm:w-auto h-full sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
                         "sm:max-w-[600px] sm:rounded-2xl", // Desktop styling
                         "border-0 sm:border"
                     )}>
-                        <DialogHeader className="px-6 py-4 border-b border-border/50 shrink-0">
+                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
                             <DialogTitle>{t('transactions.edit_transaction')}</DialogTitle>
                         </DialogHeader>
                         <TransactionForm
