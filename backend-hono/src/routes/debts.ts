@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
-import { debts, debtStatusEnum } from '../db/schema';
+import { debts } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const debtSchema = z.object({
     name: z.string().min(1),
@@ -15,13 +15,12 @@ const debtSchema = z.object({
     due_date: z.string(), // ISO date
 });
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const limit = Number(c.req.query('limit')) || 100;
-    const skip = Number(c.req.query('skip')) || 0;
+router.get('/', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const limit = Number(req.query.limit) || 100;
+    const skip = Number(req.query.skip) || 0;
 
     const result = await db.select()
         .from(debts)
@@ -29,28 +28,26 @@ app.get('/', async (c) => {
         .limit(limit)
         .offset(skip);
 
-    return c.json(result);
+    res.json(result);
 });
 
-app.get('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [debt] = await db.select()
         .from(debts)
         .where(and(eq(debts.id, id), eq(debts.userId, userId)));
 
     if (!debt) {
-        return c.json({ detail: 'Debt not found' }, 404);
+        return res.status(404).json({ detail: 'Debt not found' });
     }
-    return c.json(debt);
+    res.json(debt);
 });
 
-app.post('/', zValidator('json', debtSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const body = c.req.valid('json');
+router.post('/', validate(debtSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     const [newDebt] = await db.insert(debts).values({
         userId,
@@ -60,14 +57,13 @@ app.post('/', zValidator('json', debtSchema), async (c) => {
         dueDate: body.due_date,
     }).returning();
 
-    return c.json(newDebt);
+    res.json(newDebt);
 });
 
-app.put('/:id', zValidator('json', debtSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(debtSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [updatedDebt] = await db.update(debts)
         .set({
@@ -80,24 +76,23 @@ app.put('/:id', zValidator('json', debtSchema), async (c) => {
         .returning();
 
     if (!updatedDebt) {
-        return c.json({ detail: 'Debt not found' }, 404);
+        return res.status(404).json({ detail: 'Debt not found' });
     }
-    return c.json(updatedDebt);
+    res.json(updatedDebt);
 });
 
-app.delete('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [deletedDebt] = await db.delete(debts)
         .where(and(eq(debts.id, id), eq(debts.userId, userId)))
         .returning();
 
     if (!deletedDebt) {
-        return c.json({ detail: 'Debt not found' }, 404);
+        return res.status(404).json({ detail: 'Debt not found' });
     }
-    return c.json(deletedDebt);
+    res.json(deletedDebt);
 });
 
-export default app;
+export default router;

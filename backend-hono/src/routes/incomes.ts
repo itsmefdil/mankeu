@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
 import { incomes } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const incomeSchema = z.object({
     source: z.string().min(1),
@@ -14,13 +14,12 @@ const incomeSchema = z.object({
     income_date: z.string(), // ISO date
 });
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const limit = Number(c.req.query('limit')) || 100;
-    const skip = Number(c.req.query('skip')) || 0;
+router.get('/', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const limit = Number(req.query.limit) || 100;
+    const skip = Number(req.query.skip) || 0;
 
     const result = await db.select()
         .from(incomes)
@@ -37,22 +36,21 @@ app.get('/', async (c) => {
         created_at: i.createdAt
     }));
 
-    return c.json(formattedResult);
+    res.json(formattedResult);
 });
 
-app.get('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [income] = await db.select()
         .from(incomes)
         .where(and(eq(incomes.id, id), eq(incomes.userId, userId)));
 
     if (!income) {
-        return c.json({ detail: 'Income not found' }, 404);
+        return res.status(404).json({ detail: 'Income not found' });
     }
-    return c.json({
+    res.json({
         id: income.id,
         user_id: income.userId,
         source: income.source,
@@ -62,10 +60,9 @@ app.get('/:id', async (c) => {
     });
 });
 
-app.post('/', zValidator('json', incomeSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const body = c.req.valid('json');
+router.post('/', validate(incomeSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     const [newIncome] = await db.insert(incomes).values({
         userId,
@@ -74,7 +71,7 @@ app.post('/', zValidator('json', incomeSchema), async (c) => {
         incomeDate: body.income_date,
     }).returning();
 
-    return c.json({
+    res.json({
         id: newIncome.id,
         user_id: newIncome.userId,
         source: newIncome.source,
@@ -84,11 +81,10 @@ app.post('/', zValidator('json', incomeSchema), async (c) => {
     });
 });
 
-app.put('/:id', zValidator('json', incomeSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(incomeSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [updatedIncome] = await db.update(incomes)
         .set({
@@ -100,9 +96,9 @@ app.put('/:id', zValidator('json', incomeSchema), async (c) => {
         .returning();
 
     if (!updatedIncome) {
-        return c.json({ detail: 'Income not found' }, 404);
+        return res.status(404).json({ detail: 'Income not found' });
     }
-    return c.json({
+    res.json({
         id: updatedIncome.id,
         user_id: updatedIncome.userId,
         source: updatedIncome.source,
@@ -112,19 +108,18 @@ app.put('/:id', zValidator('json', incomeSchema), async (c) => {
     });
 });
 
-app.delete('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [deletedIncome] = await db.delete(incomes)
         .where(and(eq(incomes.id, id), eq(incomes.userId, userId)))
         .returning();
 
     if (!deletedIncome) {
-        return c.json({ detail: 'Income not found' }, 404);
+        return res.status(404).json({ detail: 'Income not found' });
     }
-    return c.json({
+    res.json({
         id: deletedIncome.id,
         user_id: deletedIncome.userId,
         source: deletedIncome.source,
@@ -134,4 +129,4 @@ app.delete('/:id', async (c) => {
     });
 });
 
-export default app;
+export default router;

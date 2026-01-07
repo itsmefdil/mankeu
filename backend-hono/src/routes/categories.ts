@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
-import { categories, categoryTypeEnum } from '../db/schema';
+import { categories } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const categorySchema = z.object({
     name: z.string().min(1),
@@ -14,32 +14,32 @@ const categorySchema = z.object({
 });
 
 // Protect all routes
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
+router.get('/', async (req, res) => {
     const allCategories = await db.select().from(categories);
-    return c.json(allCategories);
+    res.json(allCategories);
 });
 
-app.get('/:id', async (c) => {
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const id = Number(req.params.id);
     const [category] = await db.select().from(categories).where(eq(categories.id, id));
 
     if (!category) {
-        return c.json({ detail: 'Category not found' }, 404);
+        return res.status(404).json({ detail: 'Category not found' });
     }
-    return c.json(category);
+    res.json(category);
 });
 
-app.post('/', zValidator('json', categorySchema), async (c) => {
-    const body = c.req.valid('json');
+router.post('/', validate(categorySchema), async (req, res) => {
+    const body = req.body;
     const [newCategory] = await db.insert(categories).values(body).returning();
-    return c.json(newCategory);
+    res.json(newCategory);
 });
 
-app.put('/:id', zValidator('json', categorySchema), async (c) => {
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(categorySchema), async (req, res) => {
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [updatedCategory] = await db.update(categories)
         .set(body)
@@ -47,21 +47,21 @@ app.put('/:id', zValidator('json', categorySchema), async (c) => {
         .returning();
 
     if (!updatedCategory) {
-        return c.json({ detail: 'Category not found' }, 404);
+        return res.status(404).json({ detail: 'Category not found' });
     }
-    return c.json(updatedCategory);
+    res.json(updatedCategory);
 });
 
-app.delete('/:id', async (c) => {
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const id = Number(req.params.id);
     const [deletedCategory] = await db.delete(categories)
         .where(eq(categories.id, id))
         .returning();
 
     if (!deletedCategory) {
-        return c.json({ detail: 'Category not found' }, 404);
+        return res.status(404).json({ detail: 'Category not found' });
     }
-    return c.json(deletedCategory);
+    res.json(deletedCategory);
 });
 
-export default app;
+export default router;

@@ -1,27 +1,26 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
 import { monthlyBudgets } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const budgetSchema = z.object({
     category_id: z.number(),
     month: z.number().min(1).max(12),
     year: z.number(),
-    budget_amount: z.number(), // or string from frontend
+    budget_amount: z.number(),
 });
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const limit = Number(c.req.query('limit')) || 100;
-    const skip = Number(c.req.query('skip')) || 0;
+router.get('/', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const limit = Number(req.query.limit) || 100;
+    const skip = Number(req.query.skip) || 0;
 
     const result = await db.select()
         .from(monthlyBudgets)
@@ -39,22 +38,21 @@ app.get('/', async (c) => {
         created_at: b.createdAt
     }));
 
-    return c.json(formattedResult);
+    res.json(formattedResult);
 });
 
-app.get('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [budget] = await db.select()
         .from(monthlyBudgets)
         .where(and(eq(monthlyBudgets.id, id), eq(monthlyBudgets.userId, userId)));
 
     if (!budget) {
-        return c.json({ detail: 'Budget not found' }, 404);
+        return res.status(404).json({ detail: 'Budget not found' });
     }
-    return c.json({
+    res.json({
         id: budget.id,
         user_id: budget.userId,
         category_id: budget.categoryId,
@@ -65,10 +63,9 @@ app.get('/:id', async (c) => {
     });
 });
 
-app.post('/', zValidator('json', budgetSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const body = c.req.valid('json');
+router.post('/', validate(budgetSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     const [newBudget] = await db.insert(monthlyBudgets).values({
         userId,
@@ -78,7 +75,7 @@ app.post('/', zValidator('json', budgetSchema), async (c) => {
         budgetAmount: String(body.budget_amount),
     }).returning();
 
-    return c.json({
+    res.json({
         id: newBudget.id,
         user_id: newBudget.userId,
         category_id: newBudget.categoryId,
@@ -89,11 +86,10 @@ app.post('/', zValidator('json', budgetSchema), async (c) => {
     });
 });
 
-app.put('/:id', zValidator('json', budgetSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(budgetSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [updatedBudget] = await db.update(monthlyBudgets)
         .set({
@@ -106,9 +102,9 @@ app.put('/:id', zValidator('json', budgetSchema), async (c) => {
         .returning();
 
     if (!updatedBudget) {
-        return c.json({ detail: 'Budget not found' }, 404);
+        return res.status(404).json({ detail: 'Budget not found' });
     }
-    return c.json({
+    res.json({
         id: updatedBudget.id,
         user_id: updatedBudget.userId,
         category_id: updatedBudget.categoryId,
@@ -119,19 +115,18 @@ app.put('/:id', zValidator('json', budgetSchema), async (c) => {
     });
 });
 
-app.delete('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [deletedBudget] = await db.delete(monthlyBudgets)
         .where(and(eq(monthlyBudgets.id, id), eq(monthlyBudgets.userId, userId)))
         .returning();
 
     if (!deletedBudget) {
-        return c.json({ detail: 'Budget not found' }, 404);
+        return res.status(404).json({ detail: 'Budget not found' });
     }
-    return c.json({
+    res.json({
         id: deletedBudget.id,
         user_id: deletedBudget.userId,
         category_id: deletedBudget.categoryId,
@@ -142,4 +137,4 @@ app.delete('/:id', async (c) => {
     });
 });
 
-export default app;
+export default router;

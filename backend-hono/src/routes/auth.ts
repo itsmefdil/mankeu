@@ -1,16 +1,16 @@
-import { Hono } from 'hono';
-import { sign } from 'hono/jwt';
+import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import { hash, compare } from 'bcryptjs';
 import { db } from '../lib/db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const loginSchema = z.object({
-    username: z.string(), // OAuth2PasswordRequestForm uses username for email
+    username: z.string(),
     password: z.string(),
 });
 
@@ -19,65 +19,43 @@ const googleLoginSchema = z.object({
 });
 
 // Helper to create token
-const createAccessToken = async (userId: number) => {
-    // 6 months expiration
-    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30 * 6;
-    return await sign({ sub: String(userId), exp }, process.env.SECRET_KEY || 'secret');
+const createAccessToken = (userId: number) => {
+    // 6 months expiration in seconds
+    const expiresIn = 60 * 60 * 24 * 30 * 6;
+    return jwt.sign({ sub: String(userId) }, process.env.SECRET_KEY || 'secret', { expiresIn });
 };
 
-app.post('/login', async (c) => {
-    console.log('[Login] Handler reached (no validator)');
-    let username, password;
-    try {
-        const bodyText = await c.req.text();
-        console.log('[Login] Body text length:', bodyText.length);
-        const body = JSON.parse(bodyText);
-        const parsed = loginSchema.parse(body);
-        username = parsed.username;
-        password = parsed.password;
-    } catch (e) {
-        console.error('[Login] parsing error:', e);
-        return c.json({ detail: 'Invalid request body' }, 400);
-    }
+router.post('/login', validate(loginSchema), async (req, res) => {
+    const { username, password } = req.body;
 
-    console.log('[Login] Searching user:', username);
     const [user] = await db.select().from(users).where(eq(users.email, username));
 
     if (!user) {
-        console.error('Login Failed: User not found for email', username);
-        return c.json({ detail: 'Incorrect email or password' }, 400);
+        return res.status(400).json({ detail: 'Incorrect email or password' });
     }
 
-    console.log('[Login] Verifying password...');
     const isValid = await compare(password, user.hashedPassword);
     if (!isValid) {
-        console.error('Login Failed: Invalid password for user', username);
-        // Fallback check for Python-generated bcrypt hashes (just in case Bun needs help, though it should handle it)
-        // bcrypt hashes start with $2b$ or $2a$. Bun supports them.
-        return c.json({ detail: 'Incorrect email or password' }, 400);
+        return res.status(400).json({ detail: 'Incorrect email or password' });
     }
 
-    console.log('[Login] Generating token...');
-    const token = await createAccessToken(user.id);
-    return c.json({
+    const token = createAccessToken(user.id);
+    res.json({
         access_token: token,
         token_type: 'bearer',
     });
 });
 
-app.post('/login/google', zValidator('json', googleLoginSchema), async (c) => {
-    console.log('[Google Login] Request received');
-    const { id_token } = c.req.valid('json');
+router.post('/login/google', validate(googleLoginSchema), async (req, res) => {
+    const { id_token } = req.body;
 
     // Verify Google Token
-    console.log('[Google Login] Verifying with Google...');
     const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`);
-    console.log('[Google Login] Google response status:', googleRes.status);
 
     if (!googleRes.ok) {
         const errText = await googleRes.text();
         console.error('Google Token Error:', errText);
-        return c.json({ detail: 'Invalid Google Token' }, 400);
+        return res.status(400).json({ detail: 'Invalid Google Token' });
     }
 
     const payload = await googleRes.json() as {
@@ -91,11 +69,10 @@ app.post('/login/google', zValidator('json', googleLoginSchema), async (c) => {
     const email = payload.email;
 
     if (!email) {
-        return c.json({ detail: 'Invalid Google Token: No email found' }, 400);
+        return res.status(400).json({ detail: 'Invalid Google Token: No email found' });
     }
 
     const [existingUser] = await db.select().from(users).where(eq(users.email, email));
-    console.log('[Google Login] DB Check existing:', !!existingUser);
 
     let userId: number;
 
@@ -123,16 +100,16 @@ app.post('/login/google', zValidator('json', googleLoginSchema), async (c) => {
         }).returning();
 
         if (!newUser) {
-            return c.json({ detail: 'Failed to create user' }, 500);
+            return res.status(500).json({ detail: 'Failed to create user' });
         }
         userId = newUser.id;
     }
 
-    const token = await createAccessToken(userId);
-    return c.json({
+    const token = createAccessToken(userId);
+    res.json({
         access_token: token,
         token_type: 'bearer',
     });
 });
 
-export default app;
+export default router;

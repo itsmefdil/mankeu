@@ -1,22 +1,31 @@
-import { createMiddleware } from 'hono/factory';
-import { verify } from 'hono/jwt';
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-export const authMiddleware = createMiddleware(async (c, next) => {
-    const authHeader = c.req.header('Authorization');
+// Extend Express Request interface to include user
+declare global {
+    namespace Express {
+        interface Request {
+            user?: any;
+        }
+    }
+}
+
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.header('Authorization');
     if (!authHeader) {
-        return c.json({ detail: 'Not authenticated' }, 401);
+        return res.status(401).json({ detail: 'Not authenticated' });
     }
 
     const token = authHeader.split(' ')[1];
     if (!token) {
-        return c.json({ detail: 'Not authenticated' }, 401);
+        return res.status(401).json({ detail: 'Not authenticated' });
     }
 
     try {
-        const payload = await verify(token, process.env.SECRET_KEY || 'secret');
-        c.set('jwtPayload', payload);
-        await next();
+        const payload = jwt.verify(token, process.env.SECRET_KEY || 'secret');
+        req.user = payload;
+        next();
     } catch (e) {
-        return c.json({ detail: 'Invalid token' }, 401);
+        return res.status(401).json({ detail: 'Invalid token' });
     }
-});
+};

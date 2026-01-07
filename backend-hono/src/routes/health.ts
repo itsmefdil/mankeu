@@ -1,21 +1,20 @@
-import { Hono } from 'hono';
-
-const app = new Hono();
-
-app.get('/', (c) => {
-    return c.json({ status: 'ok' });
-});
-
+import { Router } from 'express';
 import { db } from '../lib/db';
 import { sql } from 'drizzle-orm';
 
-app.get('/connection', async (c) => {
+const router = Router();
+
+router.get('/', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+router.get('/connection', async (req, res) => {
     try {
         await db.execute(sql`SELECT 1`);
-        return c.json({ status: 'ok', database: 'connected' });
+        res.json({ status: 'ok', database: 'connected' });
     } catch (e) {
-        return c.json({ status: 'error', database: 'disconnected', detail: String(e) }, 500);
+        res.status(500).json({ status: 'error', database: 'disconnected', detail: String(e) });
     }
 });
 
-export default app;
+export default router;

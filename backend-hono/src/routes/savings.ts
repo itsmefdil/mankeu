@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
 import { savings } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const savingSchema = z.object({
     name: z.string().min(1),
@@ -14,13 +14,12 @@ const savingSchema = z.object({
     saving_date: z.string(), // ISO date
 });
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const limit = Number(c.req.query('limit')) || 100;
-    const skip = Number(c.req.query('skip')) || 0;
+router.get('/', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const limit = Number(req.query.limit) || 100;
+    const skip = Number(req.query.skip) || 0;
 
     const result = await db.select()
         .from(savings)
@@ -37,22 +36,21 @@ app.get('/', async (c) => {
         created_at: s.createdAt
     }));
 
-    return c.json(formattedResult);
+    res.json(formattedResult);
 });
 
-app.get('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [saving] = await db.select()
         .from(savings)
         .where(and(eq(savings.id, id), eq(savings.userId, userId)));
 
     if (!saving) {
-        return c.json({ detail: 'Saving not found' }, 404);
+        return res.status(404).json({ detail: 'Saving not found' });
     }
-    return c.json({
+    res.json({
         id: saving.id,
         user_id: saving.userId,
         name: saving.name,
@@ -62,10 +60,9 @@ app.get('/:id', async (c) => {
     });
 });
 
-app.post('/', zValidator('json', savingSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const body = c.req.valid('json');
+router.post('/', validate(savingSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     const [newSaving] = await db.insert(savings).values({
         userId,
@@ -74,7 +71,7 @@ app.post('/', zValidator('json', savingSchema), async (c) => {
         savingDate: body.saving_date,
     }).returning();
 
-    return c.json({
+    res.json({
         id: newSaving.id,
         user_id: newSaving.userId,
         name: newSaving.name,
@@ -84,11 +81,10 @@ app.post('/', zValidator('json', savingSchema), async (c) => {
     });
 });
 
-app.put('/:id', zValidator('json', savingSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(savingSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [updatedSaving] = await db.update(savings)
         .set({
@@ -100,9 +96,9 @@ app.put('/:id', zValidator('json', savingSchema), async (c) => {
         .returning();
 
     if (!updatedSaving) {
-        return c.json({ detail: 'Saving not found' }, 404);
+        return res.status(404).json({ detail: 'Saving not found' });
     }
-    return c.json({
+    res.json({
         id: updatedSaving.id,
         user_id: updatedSaving.userId,
         name: updatedSaving.name,
@@ -112,19 +108,18 @@ app.put('/:id', zValidator('json', savingSchema), async (c) => {
     });
 });
 
-app.delete('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [deletedSaving] = await db.delete(savings)
         .where(and(eq(savings.id, id), eq(savings.userId, userId)))
         .returning();
 
     if (!deletedSaving) {
-        return c.json({ detail: 'Saving not found' }, 404);
+        return res.status(404).json({ detail: 'Saving not found' });
     }
-    return c.json({
+    res.json({
         id: deletedSaving.id,
         user_id: deletedSaving.userId,
         name: deletedSaving.name,
@@ -134,4 +129,4 @@ app.delete('/:id', async (c) => {
     });
 });
 
-export default app;
+export default router;

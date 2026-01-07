@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
-import { transactions, savings, categories, users, categoryTypeEnum } from '../db/schema';
+import { transactions, savings, categories } from '../db/schema';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const transactionSchema = z.object({
     category_id: z.coerce.number(),
@@ -21,13 +21,12 @@ const bulkDeleteSchema = z.object({
     ids: z.array(z.number()),
 });
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const limit = Number(c.req.query('limit')) || 100;
-    const skip = Number(c.req.query('skip')) || 0;
+router.get('/', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const limit = Number(req.query.limit) || 100;
+    const skip = Number(req.query.skip) || 0;
 
     const result = await db.select()
         .from(transactions)
@@ -35,8 +34,6 @@ app.get('/', async (c) => {
         .orderBy(desc(transactions.transactionDate))
         .limit(limit)
         .offset(skip);
-
-    console.log(`[DEBUG] GET /transactions - userId: ${userId}, count: ${result.length}`);
 
     const formattedResult = result.map(t => ({
         id: t.id,
@@ -50,33 +47,26 @@ app.get('/', async (c) => {
         created_at: t.createdAt
     }));
 
-    return c.json(formattedResult);
+    res.json(formattedResult);
 });
 
-app.get('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [transaction] = await db.select()
         .from(transactions)
         .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
 
     if (!transaction) {
-        return c.json({ detail: 'Transaction not found' }, 404);
+        return res.status(404).json({ detail: 'Transaction not found' });
     }
-    return c.json(transaction);
+    res.json(transaction);
 });
 
-app.post('/', zValidator('json', transactionSchema, (result, c) => {
-    if (!result.success) {
-        console.log('Validation Error (POST):', result.error);
-        return c.json({ detail: 'Validation failed', error: result.error }, 400);
-    }
-}), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const body = c.req.valid('json');
+router.post('/', validate(transactionSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     // Create transaction
     const [newTransaction] = await db.insert(transactions).values({
@@ -93,8 +83,6 @@ app.post('/', zValidator('json', transactionSchema, (result, c) => {
     if (body.goal_id) {
         const [category] = await db.select().from(categories).where(eq(categories.id, body.category_id));
 
-        // Check if category type is saving
-        // Using string comparison because Drizzle enum might be just string
         if (category && category.type === 'saving') {
             const [saving] = await db.select().from(savings).where(eq(savings.id, body.goal_id));
             if (saving) {
@@ -106,10 +94,10 @@ app.post('/', zValidator('json', transactionSchema, (result, c) => {
     }
 
     if (!newTransaction) {
-        return c.json({ detail: 'Failed to create transaction' }, 500);
+        return res.status(500).json({ detail: 'Failed to create transaction' });
     }
 
-    return c.json({
+    res.json({
         id: newTransaction.id,
         user_id: newTransaction.userId,
         category_id: newTransaction.categoryId,
@@ -122,23 +110,17 @@ app.post('/', zValidator('json', transactionSchema, (result, c) => {
     });
 });
 
-app.put('/:id', zValidator('json', transactionSchema, (result, c) => {
-    if (!result.success) {
-        console.log('Validation Error (PUT):', result.error);
-        return c.json({ detail: 'Validation failed', error: result.error }, 400);
-    }
-}), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(transactionSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [oldTransaction] = await db.select()
         .from(transactions)
         .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
 
     if (!oldTransaction) {
-        return c.json({ detail: 'Transaction not found' }, 404);
+        return res.status(404).json({ detail: 'Transaction not found' });
     }
 
     const oldGoalId = oldTransaction.goalId;
@@ -181,10 +163,10 @@ app.put('/:id', zValidator('json', transactionSchema, (result, c) => {
     }
 
     if (!updatedTransaction) {
-        return c.json({ detail: 'Failed to update transaction' }, 500);
+        return res.status(500).json({ detail: 'Failed to update transaction' });
     }
 
-    return c.json({
+    res.json({
         id: updatedTransaction.id,
         user_id: updatedTransaction.userId,
         category_id: updatedTransaction.categoryId,
@@ -197,17 +179,16 @@ app.put('/:id', zValidator('json', transactionSchema, (result, c) => {
     });
 });
 
-app.delete('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [transaction] = await db.select()
         .from(transactions)
         .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
 
     if (!transaction) {
-        return c.json({ detail: 'Transaction not found' }, 404);
+        return res.status(404).json({ detail: 'Transaction not found' });
     }
 
     // Handle Goal Sync (Revert)
@@ -221,7 +202,7 @@ app.delete('/:id', async (c) => {
     }
 
     await db.delete(transactions).where(eq(transactions.id, id));
-    return c.json({
+    res.json({
         id: transaction.id,
         user_id: transaction.userId,
         category_id: transaction.categoryId,
@@ -234,17 +215,16 @@ app.delete('/:id', async (c) => {
     });
 });
 
-app.post('/bulk-delete', zValidator('json', bulkDeleteSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const { ids } = c.req.valid('json');
+router.post('/bulk-delete', validate(bulkDeleteSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const { ids } = req.body;
 
     const transactionsToDelete = await db.select()
         .from(transactions)
         .where(and(inArray(transactions.id, ids), eq(transactions.userId, userId)));
 
     if (transactionsToDelete.length === 0) {
-        return c.json({ detail: 'No transactions found to delete' }, 404);
+        return res.status(404).json({ detail: 'No transactions found to delete' });
     }
 
     for (const transaction of transactionsToDelete) {
@@ -259,7 +239,7 @@ app.post('/bulk-delete', zValidator('json', bulkDeleteSchema), async (c) => {
         await db.delete(transactions).where(eq(transactions.id, transaction.id));
     }
 
-    return c.newResponse(null, 204);
+    res.status(204).send();
 });
 
-export default app;
+export default router;

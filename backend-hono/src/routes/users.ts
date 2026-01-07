@@ -1,28 +1,27 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/me', async (c) => {
-    const userPayload = c.get('jwtPayload');
-    const userId = Number(userPayload.sub);
+router.get('/me', async (req, res) => {
+    const userId = Number(req.user.sub);
 
     const [user] = await db.select().from(users).where(eq(users.id, userId));
 
     if (!user) {
-        return c.json({ detail: 'User not found' }, 404);
+        return res.status(404).json({ detail: 'User not found' });
     }
 
     // Remove password from response
     const { hashedPassword, ...userWithoutPassword } = user;
-    return c.json(userWithoutPassword);
+    res.json(userWithoutPassword);
 });
 
 const userUpdateSchema = z.object({
@@ -31,10 +30,9 @@ const userUpdateSchema = z.object({
     currency: z.string().optional(),
 });
 
-app.put('/me', zValidator('json', userUpdateSchema), async (c) => {
-    const userPayload = c.get('jwtPayload');
-    const userId = Number(userPayload.sub);
-    const body = c.req.valid('json');
+router.put('/me', validate(userUpdateSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     const updateData: Record<string, any> = {};
     if (body.name !== undefined) updateData.name = body.name;
@@ -45,10 +43,10 @@ app.put('/me', zValidator('json', userUpdateSchema), async (c) => {
         // No fields to update, return current user
         const [currentUser] = await db.select().from(users).where(eq(users.id, userId));
         if (!currentUser) {
-            return c.json({ detail: 'User not found' }, 404);
+            return res.status(404).json({ detail: 'User not found' });
         }
         const { hashedPassword, ...userWithoutPassword } = currentUser;
-        return c.json(userWithoutPassword);
+        return res.json(userWithoutPassword);
     }
 
     const [updatedUser] = await db.update(users)
@@ -57,11 +55,11 @@ app.put('/me', zValidator('json', userUpdateSchema), async (c) => {
         .returning();
 
     if (!updatedUser) {
-        return c.json({ detail: 'User not found' }, 404);
+        return res.status(404).json({ detail: 'User not found' });
     }
 
     const { hashedPassword, ...userWithoutPassword } = updatedUser;
-    return c.json(userWithoutPassword);
+    res.json(userWithoutPassword);
 });
 
-export default app;
+export default router;

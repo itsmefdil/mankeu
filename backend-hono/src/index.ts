@@ -1,6 +1,5 @@
-import { Hono } from 'hono';
-import { logger } from 'hono/logger';
-import { cors } from 'hono/cors';
+import express from 'express';
+import cors from 'cors';
 import auth from './routes/auth';
 import categories from './routes/categories';
 import transactions from './routes/transactions';
@@ -12,73 +11,64 @@ import incomes from './routes/incomes';
 import savings from './routes/savings';
 import health from './routes/health';
 
-export const app = new Hono();
+export const app = express();
 
-app.use('*', logger());
-app.use('*', logger());
-app.use('*', cors());
+// Global Middleware
+app.use(cors());
+app.use(express.json());
 
-app.use('*', async (c, next) => {
-    console.log(`[Incoming] ${c.req.method} ${c.req.path}`);
-    await next();
+// Request Logger
+app.use((req, res, next) => {
+    console.log(`[Incoming] ${req.method} ${req.path}`);
+    next();
 });
 
 // Default home route
-app.get('/', (c) => {
-    return c.json({ message: 'Welcome to Mankeu API (Hono)' });
+app.get('/', (req, res) => {
+    res.json({ message: 'Welcome to Mankeu API (Express)' });
 });
 
 // Define all routes
-const routes = {
-    '/auth': auth,
-    '/categories': categories,
-    '/transactions': transactions,
-    '/budgets': budgets,
-    '/users': users,
-    '/fixed-expenses': fixedExpenses,
-    '/debts': debts,
-    '/incomes': incomes,
-    '/savings': savings,
-    '/health': health,
-};
-
-// Group all API routes
-const api = new Hono();
-
-// Mount routes normally
-Object.entries(routes).forEach(([path, route]) => {
-    api.route(path, route);
-    // Mount with trailing slash to avoid 301 redirects which some clients don't handle well
-    api.route(path + '/', route);
-});
-
-// Mount with configurable prefix
 const apiPrefix = process.env.API_PREFIX || '/api/v1';
-app.route(apiPrefix, api);
+const router = express.Router();
 
-// Optional: Mount at root for backward compatibility if configured
+router.use('/auth', auth);
+router.use('/categories', categories);
+router.use('/transactions', transactions);
+router.use('/budgets', budgets);
+router.use('/users', users);
+router.use('/fixed-expenses', fixedExpenses);
+router.use('/debts', debts);
+router.use('/incomes', incomes);
+router.use('/savings', savings);
+router.use('/health', health);
+
+// Mount API
+app.use(apiPrefix, router);
+
+// API Root Fallback
 if (process.env.API_ROOT_FALLBACK === 'true') {
-    // Mount root routes similarly
-    Object.entries(routes).forEach(([path, route]) => {
-        app.route(path, route);
-        app.route(path + '/', route);
-    });
+    app.use('/', router);
     console.log('🔄 API Root Fallback enabled: Routes also mounted at /');
 }
 
 console.log(`🚀 API mounted at ${apiPrefix}`);
 
-app.notFound((c) => {
-    return c.json({
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({
         message: 'Not Found',
-        path: c.req.path,
-        method: c.req.method,
-        availableRoutes: [
-            '/',
-            `${apiPrefix}/auth/login`,
-            '...'
-        ]
-    }, 404);
+        path: req.path,
+        method: req.method
+    });
 });
+
+// Start server if not running in various serverless environments
+if (!process.env.VERCEL) {
+    const port = process.env.PORT || 8000;
+    app.listen(port, () => {
+        console.log(`Server is running on port ${port}`);
+    });
+}
 
 export default app;

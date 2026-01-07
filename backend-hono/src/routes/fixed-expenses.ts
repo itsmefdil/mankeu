@@ -1,12 +1,12 @@
-import { Hono } from 'hono';
+import { Router } from 'express';
 import { db } from '../lib/db';
 import { fixedExpenses } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
 import { authMiddleware } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
-const app = new Hono();
+const router = Router();
 
 const fixedExpenseSchema = z.object({
     name: z.string().min(1),
@@ -14,13 +14,12 @@ const fixedExpenseSchema = z.object({
     due_day: z.number().min(1).max(31),
 });
 
-app.use('*', authMiddleware);
+router.use(authMiddleware);
 
-app.get('/', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const limit = Number(c.req.query('limit')) || 100;
-    const skip = Number(c.req.query('skip')) || 0;
+router.get('/', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const limit = Number(req.query.limit) || 100;
+    const skip = Number(req.query.skip) || 0;
 
     const result = await db.select()
         .from(fixedExpenses)
@@ -37,22 +36,21 @@ app.get('/', async (c) => {
         created_at: e.createdAt
     }));
 
-    return c.json(formattedResult);
+    res.json(formattedResult);
 });
 
-app.get('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.get('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [expense] = await db.select()
         .from(fixedExpenses)
         .where(and(eq(fixedExpenses.id, id), eq(fixedExpenses.userId, userId)));
 
     if (!expense) {
-        return c.json({ detail: 'Fixed Expense not found' }, 404);
+        return res.status(404).json({ detail: 'Fixed Expense not found' });
     }
-    return c.json({
+    res.json({
         id: expense.id,
         user_id: expense.userId,
         name: expense.name,
@@ -62,10 +60,9 @@ app.get('/:id', async (c) => {
     });
 });
 
-app.post('/', zValidator('json', fixedExpenseSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const body = c.req.valid('json');
+router.post('/', validate(fixedExpenseSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const body = req.body;
 
     const [newExpense] = await db.insert(fixedExpenses).values({
         userId,
@@ -74,7 +71,7 @@ app.post('/', zValidator('json', fixedExpenseSchema), async (c) => {
         dueDay: body.due_day,
     }).returning();
 
-    return c.json({
+    res.json({
         id: newExpense.id,
         user_id: newExpense.userId,
         name: newExpense.name,
@@ -84,11 +81,10 @@ app.post('/', zValidator('json', fixedExpenseSchema), async (c) => {
     });
 });
 
-app.put('/:id', zValidator('json', fixedExpenseSchema), async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
-    const body = c.req.valid('json');
+router.put('/:id', validate(fixedExpenseSchema), async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
+    const body = req.body;
 
     const [updatedExpense] = await db.update(fixedExpenses)
         .set({
@@ -100,9 +96,9 @@ app.put('/:id', zValidator('json', fixedExpenseSchema), async (c) => {
         .returning();
 
     if (!updatedExpense) {
-        return c.json({ detail: 'Fixed Expense not found' }, 404);
+        return res.status(404).json({ detail: 'Fixed Expense not found' });
     }
-    return c.json({
+    res.json({
         id: updatedExpense.id,
         user_id: updatedExpense.userId,
         name: updatedExpense.name,
@@ -112,19 +108,18 @@ app.put('/:id', zValidator('json', fixedExpenseSchema), async (c) => {
     });
 });
 
-app.delete('/:id', async (c) => {
-    const user = c.get('jwtPayload');
-    const userId = Number(user.sub);
-    const id = Number(c.req.param('id'));
+router.delete('/:id', async (req, res) => {
+    const userId = Number(req.user.sub);
+    const id = Number(req.params.id);
 
     const [deletedExpense] = await db.delete(fixedExpenses)
         .where(and(eq(fixedExpenses.id, id), eq(fixedExpenses.userId, userId)))
         .returning();
 
     if (!deletedExpense) {
-        return c.json({ detail: 'Fixed Expense not found' }, 404);
+        return res.status(404).json({ detail: 'Fixed Expense not found' });
     }
-    return c.json({
+    res.json({
         id: deletedExpense.id,
         user_id: deletedExpense.userId,
         name: deletedExpense.name,
@@ -134,4 +129,4 @@ app.delete('/:id', async (c) => {
     });
 });
 
-export default app;
+export default router;
