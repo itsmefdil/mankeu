@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
     const result = await db.select()
         .from(transactions)
         .where(eq(transactions.userId, userId))
-        .orderBy(desc(transactions.transactionDate))
+        .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
         .limit(limit)
         .offset(skip);
 
