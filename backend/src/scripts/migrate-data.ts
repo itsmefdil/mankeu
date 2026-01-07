@@ -59,6 +59,7 @@ const run = async () => {
         for (const row of categories) {
             await db.insert(schema.categories).values({
                 id: row.id,
+                userId: row.user_id || 1,
                 name: row.name,
                 type: row.type,
                 createdAt: new Date(row.created_at),
