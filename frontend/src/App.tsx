@@ -46,13 +46,9 @@ const App = () => {
         console.log('Successfully connected to backend');
       } catch (err) {
         console.error('Failed to connect to backend', err);
-        // If connection fails and we are not on config page, redirect
-        // This ensures "broken" apps don't get stuck on a loading screen
-        if (window.location.pathname !== '/server-config') {
-          // Only redirect if it's a critical failure (like 404 or network error), 401 is fine (needs login)
-          // simplified: just redirect for now as "server first" implies we need a working server
-          window.location.replace('/server-config');
-        }
+        // We do NOT redirect here relative to the previous behavior.
+        // If the server is down, the user might still be logged in locally or we want to show a proper error screen
+        // instead of forcing re-configuration.
       }
     };
 
