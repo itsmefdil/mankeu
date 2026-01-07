@@ -1,9 +1,7 @@
 import { pgTable, text, serial, numeric, timestamp, date, integer, pgEnum } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// Enums
 export const categoryTypeEnum = pgEnum('category_type', ['expense', 'income', 'saving']);
-export const debtStatusEnum = pgEnum('debt_status', ['unpaid', 'paid']);
 
 // Users
 export const users = pgTable('users', {
@@ -23,8 +21,6 @@ export const usersRelations = relations(users, ({ many }) => ({
     transactions: many(transactions),
     incomes: many(incomes),
     savings: many(savings),
-    debts: many(debts),
-    fixedExpenses: many(fixedExpenses),
     monthlyBudgets: many(monthlyBudgets),
 }));
 
@@ -105,41 +101,6 @@ export const monthlyBudgetsRelations = relations(monthlyBudgets, ({ one }) => ({
     category: one(categories, {
         fields: [monthlyBudgets.categoryId],
         references: [categories.id],
-    }),
-}));
-
-// Fixed Expenses
-export const fixedExpenses = pgTable('fixed_expenses', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id).notNull(),
-    name: text('name').notNull(),
-    amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
-    dueDay: integer('due_day').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
-
-export const fixedExpensesRelations = relations(fixedExpenses, ({ one }) => ({
-    user: one(users, {
-        fields: [fixedExpenses.userId],
-        references: [users.id],
-    }),
-}));
-
-// Debts
-export const debts = pgTable('debts', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id).notNull(),
-    name: text('name').notNull(),
-    amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
-    status: debtStatusEnum('status').default('unpaid').notNull(),
-    dueDate: date('due_date').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
-
-export const debtsRelations = relations(debts, ({ one }) => ({
-    user: one(users, {
-        fields: [debts.userId],
-        references: [users.id],
     }),
 }));
 

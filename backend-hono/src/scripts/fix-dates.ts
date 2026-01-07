@@ -1,6 +1,6 @@
 
 import { db } from '../lib/db';
-import { transactions, incomes, savings, debts } from '../db/schema';
+import { transactions, incomes, savings } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 const INCORRECT_DATE = '2025-12-31';
@@ -40,15 +40,7 @@ async function fixDates() {
         console.log('Savings updated.');
     }
 
-    // Fix Debts
-    const affectedDebts = await db.select().from(debts).where(eq(debts.dueDate, INCORRECT_DATE));
-    console.log(`Found ${affectedDebts.length} debts (dueDate) to update.`);
-    if (affectedDebts.length > 0) {
-        await db.update(debts)
-            .set({ dueDate: CORRECT_DATE })
-            .where(eq(debts.dueDate, INCORRECT_DATE));
-        console.log('Debts updated.');
-    }
+
 
     console.log('Date fix completed.');
     process.exit(0);

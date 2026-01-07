@@ -81,36 +81,8 @@ const run = async () => {
         }
         console.log(`✓ Migrated ${savings.length} savings`);
 
-        // 4. Fixed Expenses
-        console.log('Migrating Fixed Expenses...');
-        const fixedExpenses = await fetchRows('fixed_expenses');
-        for (const row of fixedExpenses) {
-            await db.insert(schema.fixedExpenses).values({
-                id: row.id,
-                userId: row.user_id,
-                name: row.name,
-                amount: String(row.amount),
-                dueDay: row.due_day,
-                createdAt: new Date(row.created_at),
-            }).onConflictDoNothing().execute();
-        }
-        console.log(`✓ Migrated ${fixedExpenses.length} fixed expenses`);
 
-        // 5. Debts
-        console.log('Migrating Debts...');
-        const debts = await fetchRows('debts');
-        for (const row of debts) {
-            await db.insert(schema.debts).values({
-                id: row.id,
-                userId: row.user_id,
-                name: row.name,
-                amount: String(row.amount),
-                status: row.status,
-                dueDate: toDate(row.due_date), // Converted
-                createdAt: new Date(row.created_at),
-            }).onConflictDoNothing().execute();
-        }
-        console.log(`✓ Migrated ${debts.length} debts`);
+
 
         // 6. Incomes
         console.log('Migrating Incomes...');
@@ -166,8 +138,7 @@ const run = async () => {
         await db.execute(sql`SELECT setval('users_id_seq', (SELECT MAX(id) FROM users) + 1)`);
         await db.execute(sql`SELECT setval('categories_id_seq', (SELECT MAX(id) FROM categories) + 1)`);
         await db.execute(sql`SELECT setval('savings_id_seq', (SELECT MAX(id) FROM savings) + 1)`);
-        await db.execute(sql`SELECT setval('fixed_expenses_id_seq', (SELECT MAX(id) FROM fixed_expenses) + 1)`);
-        await db.execute(sql`SELECT setval('debts_id_seq', (SELECT MAX(id) FROM debts) + 1)`);
+
         await db.execute(sql`SELECT setval('incomes_id_seq', (SELECT MAX(id) FROM incomes) + 1)`);
         await db.execute(sql`SELECT setval('monthly_budgets_id_seq', (SELECT MAX(id) FROM monthly_budgets) + 1)`);
         await db.execute(sql`SELECT setval('transactions_id_seq', (SELECT MAX(id) FROM transactions) + 1)`);

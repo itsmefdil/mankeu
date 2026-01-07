@@ -6,7 +6,40 @@ import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 
+import { hash } from 'bcryptjs';
+
 const router = Router();
+
+const registerSchema = z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    password: z.string().min(6),
+});
+
+router.post('/register', validate(registerSchema), async (req, res) => {
+    const { name, email, password } = req.body;
+
+    const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+
+    if (existingUser) {
+        return res.status(400).json({ detail: 'Email already registered' });
+    }
+
+    const hashedPassword = await hash(password, 10);
+
+    const [newUser] = await db.insert(users).values({
+        name,
+        email,
+        hashedPassword,
+    }).returning();
+
+    if (!newUser) {
+        return res.status(500).json({ detail: 'Failed to create user' });
+    }
+
+    const { hashedPassword: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+});
 
 router.use(authMiddleware);
 
