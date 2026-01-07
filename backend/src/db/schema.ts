@@ -27,12 +27,17 @@ export const usersRelations = relations(users, ({ many }) => ({
 // Categories
 export const categories = pgTable('categories', {
     id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
     name: text('name').notNull(),
     type: categoryTypeEnum('type').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const categoriesRelations = relations(categories, ({ one, many }) => ({
+    user: one(users, {
+        fields: [categories.userId],
+        references: [users.id],
+    }),
     transactions: many(transactions),
     monthlyBudgets: many(monthlyBudgets),
 }));

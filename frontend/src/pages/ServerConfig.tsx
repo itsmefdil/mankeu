@@ -18,7 +18,7 @@ export default function ServerConfig() {
     useEffect(() => {
         const loadUrl = async () => {
             const { value: savedUrl } = await Preferences.get({ key: 'api_url' });
-            const currentUrl = savedUrl || import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+            const currentUrl = savedUrl || import.meta.env.VITE_API_URL || "https://mankeu.vercel.app/api/v1";
             setUrl(currentUrl);
         };
         loadUrl();
@@ -83,7 +83,7 @@ export default function ServerConfig() {
                                 </div>
                                 <Input
                                     id="url"
-                                    placeholder="e.g. http://192.168.1.5:8000"
+                                    placeholder=""
                                     value={url}
                                     onChange={(e) => setUrl(e.target.value)}
                                     disabled={loading || success}
@@ -91,7 +91,7 @@ export default function ServerConfig() {
                                 />
                             </div>
                             <p className="text-[11px] sm:text-xs text-muted-foreground px-2 leading-relaxed">
-                                Tip: Use your computer's local IP address (e.g. 192.168.x.x) if running on the same Wi-Fi.
+                                Tip: Use your computer's local IP address ( e.g. http://localhost:8888/api/v1 ) if running on the same Wi-Fi.
                             </p>
                         </div>
 

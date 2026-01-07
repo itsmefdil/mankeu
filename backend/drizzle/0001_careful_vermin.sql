@@ -1,3 +1,3 @@
-DROP TABLE "debts" CASCADE;--> statement-breakpoint
-DROP TABLE "fixed_expenses" CASCADE;--> statement-breakpoint
-DROP TYPE "public"."debt_status";
+DROP TABLE IF EXISTS "debts" CASCADE;--> statement-breakpoint
+DROP TABLE IF EXISTS "fixed_expenses" CASCADE;--> statement-breakpoint
+DROP TYPE IF EXISTS "public"."debt_status";
