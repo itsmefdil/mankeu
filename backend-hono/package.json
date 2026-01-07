@@ -9,7 +9,8 @@
     "db:migrate": "drizzle-kit migrate",
     "migrate": "bun run src/db/migrate.ts",
     "data:migrate": "bun run src/scripts/migrate-data.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "start": "bun run dist/index.js"
   },
   "keywords": [],
   "author": "",

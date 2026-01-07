@@ -1,5 +1,5 @@
 import { db } from '../lib/db';
-import { users, transactions, categories, budgets } from '../db/schema';
+import { users, transactions, categories } from '../db/schema';
 import { sql } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 
