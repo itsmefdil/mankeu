@@ -15,8 +15,8 @@ if (!MYSQL_URL) {
 
 // Helper to format date for Postgres (YYYY-MM-DD)
 // This is critical because postgres.js + Drizzle expects a string for 'date' columns, not a JS Date object.
-const toDate = (d: any) => {
-    if (!d) return null;
+const toDate = (d: any): string => {
+    if (!d) return new Date().toISOString().split('T')[0];
     return new Date(d).toISOString().split('T')[0];
 };
 
