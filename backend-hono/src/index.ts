@@ -62,4 +62,17 @@ if (process.env.API_ROOT_FALLBACK === 'true') {
 
 console.log(`🚀 API mounted at ${apiPrefix}`);
 
+app.notFound((c) => {
+    return c.json({
+        message: 'Not Found',
+        path: c.req.path,
+        method: c.req.method,
+        availableRoutes: [
+            '/',
+            `${apiPrefix}/auth/login`,
+            '...'
+        ]
+    }, 404);
+});
+
 export default app;
