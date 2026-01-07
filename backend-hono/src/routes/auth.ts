@@ -25,9 +25,20 @@ const createAccessToken = async (userId: number) => {
     return await sign({ sub: String(userId), exp }, process.env.SECRET_KEY || 'secret');
 };
 
-app.post('/login', zValidator('json', loginSchema), async (c) => {
-    console.log('[Login] Attempting login...');
-    const { username, password } = c.req.valid('json');
+app.post('/login', async (c) => {
+    console.log('[Login] Handler reached (no validator)');
+    let username, password;
+    try {
+        const bodyText = await c.req.text();
+        console.log('[Login] Body text length:', bodyText.length);
+        const body = JSON.parse(bodyText);
+        const parsed = loginSchema.parse(body);
+        username = parsed.username;
+        password = parsed.password;
+    } catch (e) {
+        console.error('[Login] parsing error:', e);
+        return c.json({ detail: 'Invalid request body' }, 400);
+    }
 
     console.log('[Login] Searching user:', username);
     const [user] = await db.select().from(users).where(eq(users.email, username));
