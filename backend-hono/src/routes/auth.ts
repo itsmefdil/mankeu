@@ -26,8 +26,10 @@ const createAccessToken = async (userId: number) => {
 };
 
 app.post('/login', zValidator('form', loginSchema), async (c) => {
+    console.log('[Login] Attempting login...');
     const { username, password } = c.req.valid('form');
 
+    console.log('[Login] Searching user:', username);
     const [user] = await db.select().from(users).where(eq(users.email, username));
 
     if (!user) {
@@ -35,6 +37,7 @@ app.post('/login', zValidator('form', loginSchema), async (c) => {
         return c.json({ detail: 'Incorrect email or password' }, 400);
     }
 
+    console.log('[Login] Verifying password...');
     const isValid = await compare(password, user.hashedPassword);
     if (!isValid) {
         console.error('Login Failed: Invalid password for user', username);
@@ -43,6 +46,7 @@ app.post('/login', zValidator('form', loginSchema), async (c) => {
         return c.json({ detail: 'Incorrect email or password' }, 400);
     }
 
+    console.log('[Login] Generating token...');
     const token = await createAccessToken(user.id);
     return c.json({
         access_token: token,
@@ -51,10 +55,13 @@ app.post('/login', zValidator('form', loginSchema), async (c) => {
 });
 
 app.post('/login/google', zValidator('json', googleLoginSchema), async (c) => {
+    console.log('[Google Login] Request received');
     const { id_token } = c.req.valid('json');
 
     // Verify Google Token
+    console.log('[Google Login] Verifying with Google...');
     const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`);
+    console.log('[Google Login] Google response status:', googleRes.status);
 
     if (!googleRes.ok) {
         const errText = await googleRes.text();
@@ -77,6 +84,7 @@ app.post('/login/google', zValidator('json', googleLoginSchema), async (c) => {
     }
 
     const [existingUser] = await db.select().from(users).where(eq(users.email, email));
+    console.log('[Google Login] DB Check existing:', !!existingUser);
 
     let userId: number;
 
