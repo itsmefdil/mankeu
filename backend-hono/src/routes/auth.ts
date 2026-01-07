@@ -25,9 +25,9 @@ const createAccessToken = async (userId: number) => {
     return await sign({ sub: String(userId), exp }, process.env.SECRET_KEY || 'secret');
 };
 
-app.post('/login', zValidator('form', loginSchema), async (c) => {
+app.post('/login', zValidator('json', loginSchema), async (c) => {
     console.log('[Login] Attempting login...');
-    const { username, password } = c.req.valid('form');
+    const { username, password } = c.req.valid('json');
 
     console.log('[Login] Searching user:', username);
     const [user] = await db.select().from(users).where(eq(users.email, username));

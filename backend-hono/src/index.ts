@@ -15,7 +15,13 @@ import health from './routes/health';
 export const app = new Hono();
 
 app.use('*', logger());
+app.use('*', logger());
 app.use('*', cors());
+
+app.use('*', async (c, next) => {
+    console.log(`[Incoming] ${c.req.method} ${c.req.path}`);
+    await next();
+});
 
 // Default home route
 app.get('/', (c) => {
