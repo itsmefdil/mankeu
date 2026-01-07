@@ -62,7 +62,4 @@ if (process.env.API_ROOT_FALLBACK === 'true') {
 
 console.log(`🚀 API mounted at ${apiPrefix}`);
 
-export default {
-    port: process.env.PORT || 8888,
-    fetch: app.fetch,
-};
+export default app;

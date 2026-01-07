@@ -10,7 +10,8 @@
     "migrate": "bun run src/db/migrate.ts",
     "data:migrate": "bun run src/scripts/migrate-data.ts",
     "build": "tsc",
-    "start": "bun run dist/index.js"
+    "start": "bun run dist/index.js",
+    "deploy": "wrangler deploy"
   },
   "keywords": [],
   "author": "",
