@@ -9,6 +9,9 @@ Mankeu is a modern, feature-rich personal finance management application designe
 - **📉 Analytics**: Visualise your spending habits with detailed charts and graphs.
 - **🎯 Budget & Goals**: Set monthly budgets and financial goals to stay on track.
 - **🏷️ Category Management**: Customize categories to fit your specific needs.
+- **🔐 Secure Authentication**: Google Login (GIS) support and secure session management.
+- **📱 Mobile Optimized**: Responsive design for a seamless experience on all devices.
+- **🔌 Flexible Database Connection**: Support for both standard fields and Connection URI strings.
 - **🌓 Dark Mode**: Fully supported dark mode for a comfortable viewing experience.
 
 ## Screenshots
@@ -47,23 +50,25 @@ Mankeu is a modern, feature-rich personal finance management application designe
 - **Styling**: TailwindCSS, Vanilla CSS (for custom animations/effects)
 - **Icons**: Lucide React
 - **Charts**: Recharts
-- **State Management**: Zustand (Auth/Theme), TanStack Query (Data types)
+- **Authentication**: Google Identity Services (GIS)
+- **State Management**: Zustand (Auth/Theme), TanStack Query (Data Sync)
 
 ### Backend
-- **Framework**: FastAPI (Python)
+- **Runtime**: [Bun](https://bun.sh)
+- **Framework**: Express (TypeScript)
 - **Database**: MySQL
-- **ORM**: SQLAlchemy
-- **Data Validation**: Pydantic
+- **ORM**: Drizzle ORM
+- **Validation**: Zod
+
 
 ## Getting Started
 
 ### 🚀 Quick Try
 For those who prefer to use a hosted server instead of setting up their own backend, you can use the following URL:
-**https://api-finance.noma.my.id**
+**[https://api-finance.noma.my.id](https://api-finance.noma.my.id)**
 
 ### Prerequisites
 - **Runtime**: [Bun](https://bun.sh) (v1.0+)
-- **Python Tooling**: [uv](https://github.com/astral-sh/uv) (v0.1+)
 - **Database**: MySQL Server
 - **Android Support**: Java SDK 21 (for building APKs)
 
@@ -78,27 +83,43 @@ cd mankeu
 ```
 
 #### 2. Backend Setup
-The backend uses **FastAPI** and manages dependencies with **uv**.
+The backend is built with **Express** and runs on **Bun**.
 
 ```bash
 cd backend
 
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-uv sync
+# Install dependencies
+bun install
 
 # Configure Environment
 cp .env.example .env
-# [Action Required] Edit .env with your MySQL credentials
-
-# Run Migrations & Start Server
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
-*Backend API Docs: `http://localhost:8000/docs`*
 
-#### 3. Frontend Setup
+#### 3. Key Generation & Configuration
+You need to generate secure keys for the application.
+
+```bash
+# Generate a random 32-byte hex string for SECRET_KEY and ENCRYPTION_KEY
+openssl rand -hex 32
+```
+
+Edit your `.env` file and update the following:
+- `MYSQL_DATABASE_URL`: Your MySQL connection string (e.g., `mysql+asyncmy://user:pass@localhost:3306/mankeu`)
+- `SECRET_KEY`: The generated hex string from above.
+- `ENCRYPTION_KEY`: Another generated hex string (must be 32 bytes hex).
+
+#### 4. Run Migrations & Start Server
+
+```bash
+# Push database schema changes
+bun run db:migrate
+
+# Start the development server
+bun dev
+```
+*Backend API URL: `http://localhost:8000`*
+
+#### 5. Frontend Setup
 The frontend uses **React (Vite)** and **Bun**.
 
 ```bash
@@ -106,6 +127,10 @@ cd frontend
 
 # Install dependencies
 bun install
+
+# Configure Environment
+cp .env.example .env
+# [Action Required] Edit .env and set VITE_GOOGLE_CLIENT_ID
 
 # Start Development Server
 bun dev

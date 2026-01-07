@@ -18,7 +18,7 @@ export default function ServerConfig() {
     useEffect(() => {
         const loadUrl = async () => {
             const { value: savedUrl } = await Preferences.get({ key: 'api_url' });
-            const currentUrl = savedUrl || import.meta.env.VITE_API_URL || "https://mankeu.vercel.app/api/v1";
+            const currentUrl = savedUrl || import.meta.env.VITE_API_URL || "https://mankeu-backend.vercel.app/api/v1";
             setUrl(currentUrl);
         };
         loadUrl();
@@ -30,11 +30,12 @@ export default function ServerConfig() {
         setSuccess(false);
 
         try {
-            // Temporarily update URL to test connection
-            updateApiBaseUrl(url);
+            // Check connection functionality First without updating global defaults yet
+            // This prevents race conditions and corrupted global state on failure
+            await checkBackendConnection(url);
 
-            // Simple health check or ping
-            await checkBackendConnection();
+            // If successful, commit the URL
+            await updateApiBaseUrl(url);
 
             setSuccess(true);
             setTimeout(() => {

@@ -22,6 +22,8 @@ const queryClient = new QueryClient();
 
 
 
+import { ConnectionErrorDialog } from '@/components/ConnectionErrorDialog';
+
 const App = () => {
   useTheme(); // Initialize theme on app load
 
@@ -69,6 +71,7 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <ConnectionErrorDialog />
         <BackButtonHandler />
         <Routes>
           <Route path="/server-config" element={<ServerConfig />} />

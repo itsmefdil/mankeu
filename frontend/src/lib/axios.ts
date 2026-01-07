@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useConnectionStore } from '@/hooks/useConnectionStore';
 
 const getBaseUrl = () => {
     return localStorage.getItem('api_url') || import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -13,6 +14,8 @@ const api = axios.create({
 
 export const updateApiBaseUrl = async (url: string) => {
     await Preferences.set({ key: 'api_url', value: url });
+    // Also set localStorage for synchronous access on reload (web fallback)
+    localStorage.setItem('api_url', url);
     api.defaults.baseURL = url;
 };
 
@@ -24,10 +27,9 @@ api.interceptors.request.use(
         const { value: token } = await Preferences.get({ key: 'token' });
         const { value: customUrl } = await Preferences.get({ key: 'api_url' });
 
-        // If there's a custom URL and it differs from the current baseURL (and isn't relative), use it
-        // Note: Changing baseURL in interceptor might be tricky, so we rely on defaults.baseURL
-        // But we can check if it needs update
-        if (customUrl && api.defaults.baseURL !== customUrl) {
+        // If there's a custom URL and it differs from the current baseURL
+        // Only override if the request is using the default baseURL (not explicitly set)
+        if (customUrl && config.baseURL === api.defaults.baseURL && api.defaults.baseURL !== customUrl) {
             api.defaults.baseURL = customUrl;
             config.baseURL = customUrl;
         }
@@ -51,6 +53,13 @@ api.interceptors.response.use(
         return response;
     },
     async (error) => {
+        const { setConnectionError } = useConnectionStore.getState();
+
+        // Handle network errors (offline or server down)
+        if (!error.response || error.code === 'ERR_NETWORK') {
+            setConnectionError(true);
+        }
+
         if (error.response?.status === 401) {
             await Preferences.remove({ key: 'token' });
             // window.location.href = '/login'; // Optional: Redirect to login

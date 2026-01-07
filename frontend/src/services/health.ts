@@ -1,8 +1,9 @@
 import api from '@/lib/axios';
 
-export const checkBackendConnection = async () => {
+export const checkBackendConnection = async (url?: string) => {
     try {
-        const response = await api.get('/health/connection');
+        const config = url ? { baseURL: url } : {};
+        const response = await api.get('/health/connection', config);
         console.log('Backend connection validated:', response.data);
         return response.data;
     } catch (error) {

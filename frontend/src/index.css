@@ -97,6 +97,11 @@
     @apply bg-background text-foreground min-h-screen relative overflow-x-hidden;
     background-color: hsl(var(--background));
     background-attachment: fixed;
+    overscroll-behavior-y: none;
+  }
+
+  html {
+    overscroll-behavior-y: none;
   }
 
   /* Light mode background gradient */

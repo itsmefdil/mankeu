@@ -8,9 +8,9 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
         <div className="flex min-h-screen w-full bg-background text-foreground font-sans selection:bg-primary/20">
             <Sidebar />
             <BottomNav />
-            <div className="flex flex-col flex-1 pl-0 md:pl-64 transition-all duration-300 pb-16 md:pb-0">
+            <div className="flex flex-col flex-1 pl-0 md:pl-64 transition-all duration-300 pb-16 md:pb-0 h-screen overflow-hidden">
                 <TopBar />
-                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-y-auto overscroll-y-contain custom-scrollbar">
                     {children}
                 </main>
             </div>
