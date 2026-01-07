@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { sign } from 'hono/jwt';
+import { hash, compare } from 'bcryptjs';
 import { db } from '../lib/db';
 import { users } from '../db/schema';
 import { eq } from 'drizzle-orm';
@@ -34,7 +35,7 @@ app.post('/login', zValidator('form', loginSchema), async (c) => {
         return c.json({ detail: 'Incorrect email or password' }, 400);
     }
 
-    const isValid = await Bun.password.verify(password, user.hashedPassword);
+    const isValid = await compare(password, user.hashedPassword);
     if (!isValid) {
         console.error('Login Failed: Invalid password for user', username);
         // Fallback check for Python-generated bcrypt hashes (just in case Bun needs help, though it should handle it)
@@ -95,7 +96,7 @@ app.post('/login/google', zValidator('json', googleLoginSchema), async (c) => {
         const [newUser] = await db.insert(users).values({
             email: email,
             name: payload.name || email.split('@')[0],
-            hashedPassword: await Bun.password.hash(randomPassword),
+            hashedPassword: await hash(randomPassword, 10),
             picture: payload.picture,
             givenName: payload.given_name,
             familyName: payload.family_name,
