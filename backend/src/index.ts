@@ -8,6 +8,10 @@ import users from './routes/users';
 import incomes from './routes/incomes';
 import savings from './routes/savings';
 import health from './routes/health';
+import debts from './routes/debts';
+
+import accounts from './routes/accounts';
+import transfers from './routes/transfers';
 
 export const app = express();
 
@@ -38,6 +42,9 @@ router.use('/users', users);
 router.use('/incomes', incomes);
 router.use('/savings', savings);
 router.use('/health', health);
+router.use('/debts', debts);
+router.use('/accounts', accounts);
+router.use('/transfers', transfers);
 
 // Mount API
 app.use(apiPrefix, router);
@@ -62,8 +69,8 @@ app.use((req, res) => {
 // Start server if not running in various serverless environments
 if (!process.env.VERCEL) {
     const port = process.env.PORT || 8000;
-    app.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
+    app.listen(Number(port), '0.0.0.0', () => {
+        console.log(`Server is running on port ${port} (0.0.0.0)`);
     });
 }
 
