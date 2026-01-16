@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { financialService, type Budget, type Saving } from '@/services/financial';
+import { financialService, type Budget } from '@/services/financial';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,30 +14,21 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Trash2, Pencil, Wallet, Rocket, TrendingUp, ChevronDown, Tag, Calendar, AlignLeft } from 'lucide-react';
+import { Plus, Trash2, Pencil, Wallet, ChevronDown, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { useTranslation } from 'react-i18next';
 import { usePreferencesStore } from '@/hooks/usePreferences';
 
-// Tab Types
-type TabType = 'budgets' | 'goals';
-
-export default function BudgetGoalsPage() {
+export default function BudgetPage() {
     const { t } = useTranslation();
     const { currency, language } = usePreferencesStore();
     const queryClient = useQueryClient();
-    const [activeTab, setActiveTab] = useState<TabType>('budgets');
 
     // Budget State
     const [isBudgetAddOpen, setIsBudgetAddOpen] = useState(false);
     const [isBudgetEditOpen, setIsBudgetEditOpen] = useState(false);
     const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
-
-    // Goals State
-    const [isGoalAddOpen, setIsGoalAddOpen] = useState(false);
-    const [isGoalEditOpen, setIsGoalEditOpen] = useState(false);
-    const [editingSaving, setEditingSaving] = useState<Saving | null>(null);
 
     // Filter State
     const currentDate = new Date();
@@ -50,12 +41,6 @@ export default function BudgetGoalsPage() {
         budget_amount: 0,
         month: currentDate.getMonth() + 1,
         year: currentDate.getFullYear(),
-    });
-
-    const [goalFormData, setGoalFormData] = useState<Partial<Saving>>({
-        name: '',
-        amount: 0,
-        saving_date: new Date().toISOString().split('T')[0],
     });
 
     // Queries
@@ -72,11 +57,6 @@ export default function BudgetGoalsPage() {
     const { data: categories } = useQuery({
         queryKey: ['categories'],
         queryFn: financialService.getCategories
-    });
-
-    const { data: savings, isLoading: loadingSavings } = useQuery({
-        queryKey: ['savings'],
-        queryFn: financialService.getSavings
     });
 
     // Computed Data - Budgets
@@ -109,9 +89,6 @@ export default function BudgetGoalsPage() {
             };
         });
     }, [filteredBudgets, transactions, categories]);
-
-    // Computed Data - Goals
-    const totalSavings = savings?.reduce((sum, s) => sum + Number(s.amount), 0) || 0;
 
     // Computed Data - Incomes
     const totalIncome = useMemo(() => {
@@ -158,33 +135,6 @@ export default function BudgetGoalsPage() {
         }
     });
 
-    // Goal Mutations
-    const createGoalMutation = useMutation({
-        mutationFn: financialService.createSaving,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['savings'] });
-            setIsGoalAddOpen(false);
-            resetGoalForm();
-        }
-    });
-
-    const updateGoalMutation = useMutation({
-        mutationFn: (data: { id: number, saving: Partial<Saving> }) => financialService.updateSaving(data.id, data.saving),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['savings'] });
-            setIsGoalEditOpen(false);
-            setEditingSaving(null);
-            resetGoalForm();
-        }
-    });
-
-    const deleteGoalMutation = useMutation({
-        mutationFn: financialService.deleteSaving,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['savings'] });
-        }
-    });
-
     // Reset Functions
     const resetBudgetForm = () => {
         setBudgetFormData({
@@ -192,14 +142,6 @@ export default function BudgetGoalsPage() {
             budget_amount: 0,
             month: selectedMonth,
             year: selectedYear,
-        });
-    };
-
-    const resetGoalForm = () => {
-        setGoalFormData({
-            name: '',
-            amount: 0,
-            saving_date: new Date().toISOString().split('T')[0],
         });
     };
 
@@ -230,33 +172,7 @@ export default function BudgetGoalsPage() {
         }
     };
 
-    // Goal Handlers
-    const handleGoalEdit = (saving: Saving) => {
-        setEditingSaving(saving);
-        setGoalFormData({
-            name: saving.name,
-            amount: saving.amount,
-            saving_date: saving.saving_date,
-        });
-        setIsGoalEditOpen(true);
-    };
-
-    const handleGoalDelete = (id: number) => {
-        if (confirm(t('budget.delete_goal_confirm'))) {
-            deleteGoalMutation.mutate(id);
-        }
-    };
-
-    const handleGoalSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (editingSaving) {
-            updateGoalMutation.mutate({ id: editingSaving.id, saving: goalFormData });
-        } else {
-            createGoalMutation.mutate(goalFormData);
-        }
-    };
-
-    const isLoading = loadingBudgets || loadingTx || loadingSavings;
+    const isLoading = loadingBudgets || loadingTx;
 
     return (
         <DashboardLayout>
@@ -269,180 +185,73 @@ export default function BudgetGoalsPage() {
                     </div>
                 </div>
 
-                {/* Tab Switcher */}
-                <div className="flex bg-secondary/50 p-1 rounded-xl w-full sm:w-auto sm:self-start">
-                    <button
-                        onClick={() => setActiveTab('budgets')}
-                        className={cn(
-                            "flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg text-sm font-medium transition-all",
-                            activeTab === 'budgets'
-                                ? "bg-white dark:bg-slate-800 shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        <Wallet className="h-4 w-4 inline-block mr-2" />
-                        {t('budget.tab_budgets')}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('goals')}
-                        className={cn(
-                            "flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-lg text-sm font-medium transition-all",
-                            activeTab === 'goals'
-                                ? "bg-white dark:bg-slate-800 shadow-sm text-foreground"
-                                : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        <Rocket className="h-4 w-4 inline-block mr-2" />
-                        {t('budget.tab_goals')}
-                    </button>
-                </div>
+                {/* Budget Controls */}
+                <div className="flex flex-col gap-4">
+                    {/* Budget Summary Compact Card - Vertical */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.remaining')}</p>
+                                <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                                    <CurrencyDisplay value={Math.max(0, totalIncome - budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0))} />
+                                </p>
+                            </div>
+                            <div className="h-px bg-slate-100 dark:bg-slate-700" />
+                            <div className="flex justify-between items-center">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.total_budget')}</p>
+                                <p className="text-sm font-bold font-mono">
+                                    <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0)} />
+                                </p>
+                            </div>
+                            <div className="h-px bg-slate-100 dark:bg-slate-700" />
+                            <div className="flex justify-between items-center">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.total_spent')}</p>
+                                <p className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400">
+                                    <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + curr.spent, 0)} />
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                {/* ===================== BUDGETS TAB ===================== */}
-                {activeTab === 'budgets' && (
-                    <>
-                        {/* Budget Controls */}
-                        <div className="flex flex-col gap-4">
-                            {/* Budget Summary Compact Card - Vertical */}
-                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.remaining')}</p>
-                                        <p className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                                            <CurrencyDisplay value={Math.max(0, totalIncome - budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0))} />
-                                        </p>
-                                    </div>
-                                    <div className="h-px bg-slate-100 dark:bg-slate-700" />
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.total_budget')}</p>
-                                        <p className="text-sm font-bold font-mono">
-                                            <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + Number(curr.budget_amount), 0)} />
-                                        </p>
-                                    </div>
-                                    <div className="h-px bg-slate-100 dark:bg-slate-700" />
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('budget.total_spent')}</p>
-                                        <p className="text-sm font-bold font-mono text-rose-600 dark:text-rose-400">
-                                            <CurrencyDisplay value={budgetStats.reduce((acc, curr) => acc + curr.spent, 0)} />
-                                        </p>
-                                    </div>
+                    <div className="flex sm:items-center justify-between gap-4 flex-col sm:flex-row">
+                        <div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">
+                            <div className="relative">
+                                <select
+                                    className="w-full lg:w-40 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
+                                    value={selectedMonth}
+                                    onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                                >
+                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                        <option key={m} value={m} className="bg-white dark:bg-slate-800 text-foreground py-2">
+                                            {new Date(0, m - 1).toLocaleString(language || 'en-US', { month: 'long' })}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
                             </div>
 
-                            <div className="flex sm:items-center justify-between gap-4 flex-col sm:flex-row">
-                                <div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">
-                                    <div className="relative">
-                                        <select
-                                            className="w-full lg:w-40 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
-                                            value={selectedMonth}
-                                            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                                        >
-                                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                                <option key={m} value={m} className="bg-white dark:bg-slate-800 text-foreground py-2">
-                                                    {new Date(0, m - 1).toLocaleString(language || 'en-US', { month: 'long' })}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                                            <ChevronDown className="h-4 w-4" />
-                                        </div>
-                                    </div>
-
-                                    <div className="relative">
-                                        <select
-                                            className="w-full lg:w-28 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
-                                            value={selectedYear}
-                                            onChange={(e) => setSelectedYear(Number(e.target.value))}
-                                        >
-                                            {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(y => (
-                                                <option key={y} value={y} className="bg-white dark:bg-slate-800 text-foreground py-2">{y}</option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                                            <ChevronDown className="h-4 w-4" />
-                                        </div>
-                                    </div>
+                            <div className="relative">
+                                <select
+                                    className="w-full lg:w-28 appearance-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2.5 sm:py-2 text-base sm:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all hover:border-primary/50 cursor-pointer shadow-sm font-medium touch-manipulation"
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                                >
+                                    {Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - 2 + i).map(y => (
+                                        <option key={y} value={y} className="bg-white dark:bg-slate-800 text-foreground py-2">{y}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                    <ChevronDown className="h-4 w-4" />
                                 </div>
-
-                                <Dialog open={isBudgetAddOpen} onOpenChange={setIsBudgetAddOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 rounded-xl"><Plus className="mr-2 h-4 w-4" /> {t('budget.set_budget')}</Button>
-                                    </DialogTrigger>
-                                    <DialogContent className={cn(
-                                        "flex flex-col gap-0 p-0 overflow-hidden",
-                                        "w-full sm:w-auto h-full sm:h-auto",
-                                        "sm:max-w-[425px] sm:rounded-2xl",
-                                        "border-0 sm:border"
-                                    )}>
-                                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                                            <DialogTitle>{t('budget.set_budget_title')}</DialogTitle>
-                                            <DialogDescription>{t('budget.set_budget_desc')}</DialogDescription>
-                                        </DialogHeader>
-                                        <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
-                                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                                                {/* 1. Amount Input - Centerpiece */}
-                                                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.limit_amount')}</Label>
-                                                    <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
-                                                        <Input
-                                                            id="amount"
-                                                            type="text"
-                                                            inputMode="numeric"
-                                                            className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
-                                                            placeholder="0"
-                                                            value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString(language) : ''}
-                                                            onKeyDown={(e) => {
-                                                                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                                    e.preventDefault();
-                                                                }
-                                                            }}
-                                                            onChange={(e) => {
-                                                                const rawValue = e.target.value.replace(/\./g, '');
-                                                                const numValue = parseInt(rawValue) || 0;
-                                                                setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
-                                                            }}
-                                                            required
-                                                            autoFocus
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* 2. Category Select */}
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                        <Tag className="w-4 h-4 text-primary" /> {t('budget.category_label')}
-                                                    </Label>
-                                                    <div className="relative">
-                                                        <select
-                                                            id="category"
-                                                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
-                                                            value={budgetFormData.category_id}
-                                                            onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
-                                                            required
-                                                        >
-                                                            <option value={0} disabled>{t('budget.select_category')}</option>
-                                                            {categories?.filter(c => c.type === 'expense').map((c) => (
-                                                                <option key={c.id} value={c.id}>{c.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="shrink-0 p-6 bg-background border-t border-border/50">
-                                                <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createBudgetMutation.isPending}>
-                                                    {createBudgetMutation.isPending ? t('budget.saving') : t('budget.save_budget_btn')}
-                                                </Button>
-                                            </div>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
                             </div>
                         </div>
 
-                        {/* Budget Edit Dialog */}
-                        <Dialog open={isBudgetEditOpen} onOpenChange={setIsBudgetEditOpen}>
+                        <Dialog open={isBudgetAddOpen} onOpenChange={setIsBudgetAddOpen}>
+                            <DialogTrigger asChild>
+                                <Button onClick={resetBudgetForm} className="w-full sm:w-auto shadow-lg shadow-primary/25 hover:shadow-primary/40 rounded-xl"><Plus className="mr-2 h-4 w-4" /> {t('budget.set_budget')}</Button>
+                            </DialogTrigger>
                             <DialogContent className={cn(
                                 "flex flex-col gap-0 p-0 overflow-hidden",
                                 "w-full sm:w-auto h-full sm:h-auto",
@@ -450,18 +259,18 @@ export default function BudgetGoalsPage() {
                                 "border-0 sm:border"
                             )}>
                                 <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                                    <DialogTitle>{t('budget.edit_budget_title')}</DialogTitle>
-                                    <DialogDescription>{t('budget.edit_budget_desc')}</DialogDescription>
+                                    <DialogTitle>{t('budget.set_budget_title')}</DialogTitle>
+                                    <DialogDescription>{t('budget.set_budget_desc')}</DialogDescription>
                                 </DialogHeader>
                                 <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
                                     <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
                                         {/* 1. Amount Input - Centerpiece */}
                                         <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                            <Label htmlFor="edit-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.limit_amount')}</Label>
+                                            <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.limit_amount')}</Label>
                                             <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
                                                 <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
                                                 <Input
-                                                    id="edit-amount"
+                                                    id="amount"
                                                     type="text"
                                                     inputMode="numeric"
                                                     className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
@@ -485,17 +294,18 @@ export default function BudgetGoalsPage() {
 
                                         {/* 2. Category Select */}
                                         <div className="space-y-2">
-                                            <Label htmlFor="edit-category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                            <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
                                                 <Tag className="w-4 h-4 text-primary" /> {t('budget.category_label')}
                                             </Label>
                                             <div className="relative">
                                                 <select
-                                                    id="edit-category"
+                                                    id="category"
                                                     className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
                                                     value={budgetFormData.category_id}
                                                     onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
                                                     required
                                                 >
+                                                    <option value={0} disabled>{t('budget.select_category')}</option>
                                                     {categories?.filter(c => c.type === 'expense').map((c) => (
                                                         <option key={c.id} value={c.id}>{c.name}</option>
                                                     ))}
@@ -506,335 +316,154 @@ export default function BudgetGoalsPage() {
                                     </div>
 
                                     <div className="shrink-0 p-6 bg-background border-t border-border/50">
-                                        <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateBudgetMutation.isPending}>
-                                            {updateBudgetMutation.isPending ? t('budget.updating') : t('budget.update_budget_btn')}
+                                        <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createBudgetMutation.isPending}>
+                                            {createBudgetMutation.isPending ? t('budget.saving') : t('budget.save_budget_btn')}
                                         </Button>
                                     </div>
                                 </form>
                             </DialogContent>
                         </Dialog>
+                    </div>
+                </div>
 
-                        {/* Budget List */}
-                        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
-                            {isLoading && <p className="text-muted-foreground">{t('budget.loading_budgets')}</p>
-                            }
-
-                            {
-                                !isLoading && budgetStats.map((item) => (
-                                    <div key={item.id} className="p-4 sm:p-6 rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 group">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-primary/10 rounded-xl text-primary group-hover:scale-110 transition-transform">
-                                                    <Wallet className="h-5 w-5 sm:h-6 sm:w-6" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-bold text-base sm:text-lg tracking-tight">{item.categoryName}</h3>
-                                                    <p className="text-xs text-muted-foreground">{new Date(0, item.month - 1).toLocaleString(language || 'en-US', { month: 'short' })} {item.year}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleBudgetEdit(item)}>
-                                                    <Pencil className="h-3.5 w-3.5" />
-                                                </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => handleBudgetDelete(item.id)}>
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-baseline text-sm">
-                                                <span className="text-muted-foreground font-medium">{t('budget.spent')}</span>
-                                                <div className="text-right">
-                                                    <span className="font-bold text-base"><CurrencyDisplay value={item.spent} /></span>
-                                                    <span className="text-muted-foreground ml-1">/ <CurrencyDisplay value={item.budget_amount} /></span>
-                                                </div>
-                                            </div>
-                                            <Progress
-                                                value={item.percentage}
-                                                className={cn("h-2.5 rounded-full bg-slate-100 dark:bg-slate-800", item.percentage > 100 ? "[&>div]:bg-rose-500" : "[&>div]:bg-primary")}
-                                            />
-                                            <div className="flex justify-between text-xs font-medium">
-                                                <span className={item.percentage > 100 ? "text-rose-500" : "text-primary"}>
-                                                    {item.percentage}% {t('budget.used')}
-                                                </span>
-                                                <span className="text-muted-foreground">
-                                                    <CurrencyDisplay value={Math.max(0, item.budget_amount - item.spent)} /> {item.percentage > 100 ? t('budget.over') : t('budget.left')}
-                                                </span>
-                                            </div>
-                                        </div>
+                {/* Budget Edit Dialog */}
+                <Dialog open={isBudgetEditOpen} onOpenChange={setIsBudgetEditOpen}>
+                    <DialogContent className={cn(
+                        "flex flex-col gap-0 p-0 overflow-hidden",
+                        "w-full sm:w-auto h-full sm:h-auto",
+                        "sm:max-w-[425px] sm:rounded-2xl",
+                        "border-0 sm:border"
+                    )}>
+                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
+                            <DialogTitle>{t('budget.edit_budget_title')}</DialogTitle>
+                            <DialogDescription>{t('budget.edit_budget_desc')}</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleBudgetSubmit} className="flex flex-col h-full bg-background">
+                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+                                {/* 1. Amount Input - Centerpiece */}
+                                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
+                                    <Label htmlFor="edit-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.limit_amount')}</Label>
+                                    <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
+                                        <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
+                                        <Input
+                                            id="edit-amount"
+                                            type="text"
+                                            inputMode="numeric"
+                                            className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
+                                            placeholder="0"
+                                            value={budgetFormData.budget_amount ? Math.floor(Number(budgetFormData.budget_amount)).toLocaleString(language) : ''}
+                                            onKeyDown={(e) => {
+                                                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                            onChange={(e) => {
+                                                const rawValue = e.target.value.replace(/\./g, '');
+                                                const numValue = parseInt(rawValue) || 0;
+                                                setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
+                                            }}
+                                            required
+                                            autoFocus
+                                        />
                                     </div>
-                                ))
-                            }
-                        </div>
+                                </div>
 
-                        {!isLoading && budgetStats.length === 0 && (
-                            <div className="text-center py-12 border border-dashed border-border rounded-xl">
-                                <div className="flex flex-col items-center gap-2">
-                                    <Wallet className="h-10 w-10 text-muted-foreground/50" />
-                                    <h3 className="text-lg font-semibold">{t('budget.no_budgets')}</h3>
-                                    <p className="text-muted-foreground text-sm">{t('budget.no_budgets_desc')}</p>
-                                    <Button variant="outline" className="mt-4" onClick={() => setIsBudgetAddOpen(true)}>{t('budget.create_budget')}</Button>
+                                {/* 2. Category Select */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                                        <Tag className="w-4 h-4 text-primary" /> {t('budget.category_label')}
+                                    </Label>
+                                    <div className="relative">
+                                        <select
+                                            id="edit-category"
+                                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10 bg-transparent"
+                                            value={budgetFormData.category_id}
+                                            onChange={(e) => setBudgetFormData({ ...budgetFormData, category_id: Number(e.target.value) })}
+                                            required
+                                        >
+                                            {categories?.filter(c => c.type === 'expense').map((c) => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
+                                    </div>
                                 </div>
                             </div>
-                        )}
-                    </>
-                )}
 
-                {/* ===================== GOALS TAB ===================== */}
-                {
-                    activeTab === 'goals' && (
-                        <>
-                            {/* Goal Controls */}
-                            <div className="flex items-center justify-between gap-4">
-                                {/* Summary */}
-                                <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/10 flex-1">
+                            <div className="shrink-0 p-6 bg-background border-t border-border/50">
+                                <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateBudgetMutation.isPending}>
+                                    {updateBudgetMutation.isPending ? t('budget.updating') : t('budget.update_budget_btn')}
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Budget List */}
+                <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
+                    {isLoading && <p className="text-muted-foreground">{t('budget.loading_budgets')}</p>
+                    }
+
+                    {
+                        !isLoading && budgetStats.map((item) => (
+                            <div key={item.id} className="p-4 sm:p-6 rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-300 group">
+                                <div className="flex justify-between items-start mb-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400">
-                                            <TrendingUp className="h-5 w-5" />
+                                        <div className="p-2.5 bg-primary/10 rounded-xl text-primary group-hover:scale-110 transition-transform">
+                                            <Wallet className="h-5 w-5 sm:h-6 sm:w-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-base sm:text-lg tracking-tight">{item.categoryName}</h3>
+                                            <p className="text-xs text-muted-foreground">{new Date(0, item.month - 1).toLocaleString(language || 'en-US', { month: 'short' })} {item.year}</p>
                                         </div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs sm:text-sm text-muted-foreground font-medium">{t('budget.total_saved')}</p>
-                                        <p className="text-lg sm:text-xl font-bold font-mono tracking-tight">
-                                            <CurrencyDisplay value={totalSavings} />
-                                        </p>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleBudgetEdit(item)}>
+                                            <Pencil className="h-3.5 w-3.5" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => handleBudgetDelete(item.id)}>
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-baseline text-sm">
+                                        <span className="text-muted-foreground font-medium">{t('budget.spent')}</span>
+                                        <div className="text-right">
+                                            <span className="font-bold text-base"><CurrencyDisplay value={item.spent} /></span>
+                                            <span className="text-muted-foreground ml-1">/ <CurrencyDisplay value={item.budget_amount} /></span>
+                                        </div>
+                                    </div>
+                                    <Progress
+                                        value={item.percentage}
+                                        className={cn("h-2.5 rounded-full bg-slate-100 dark:bg-slate-800", item.percentage > 100 ? "[&>div]:bg-rose-500" : "[&>div]:bg-primary")}
+                                    />
+                                    <div className="flex justify-between text-xs font-medium">
+                                        <span className={item.percentage > 100 ? "text-rose-500" : "text-primary"}>
+                                            {item.percentage}% {t('budget.used')}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                            <CurrencyDisplay value={Math.max(0, item.budget_amount - item.spent)} /> {item.percentage > 100 ? t('budget.over') : t('budget.left')}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
+                        ))
+                    }
+                </div>
 
-                            <Dialog open={isGoalAddOpen} onOpenChange={setIsGoalAddOpen}>
-                                <DialogTrigger asChild>
-                                    <Button onClick={resetGoalForm} className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">{t('budget.add_goal')}</span><span className="sm:hidden">{t('common.add', { defaultValue: 'Add' })}</span></Button>
-                                </DialogTrigger>
-                                <DialogContent className={cn(
-                                    "flex flex-col gap-0 p-0 overflow-hidden",
-                                    "w-full sm:w-auto h-full sm:h-auto",
-                                    "sm:max-w-[425px] sm:rounded-2xl",
-                                    "border-0 sm:border"
-                                )}>
-                                    <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                                        <DialogTitle>{t('budget.add_goal_title')}</DialogTitle>
-                                        <DialogDescription>{t('budget.add_goal_desc')}</DialogDescription>
-                                    </DialogHeader>
-                                    <form onSubmit={handleGoalSubmit} className="flex flex-col h-full bg-background">
-                                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                                            {/* 1. Amount Input - Centerpiece */}
-                                            <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                <Label htmlFor="goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.target_amount')}</Label>
-                                                <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
-                                                    <Input
-                                                        id="goal-amount"
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
-                                                        placeholder="0"
-                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString(language) : ''}
-                                                        onKeyDown={(e) => {
-                                                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                                e.preventDefault();
-                                                            }
-                                                        }}
-                                                        onChange={(e) => {
-                                                            const rawValue = e.target.value.replace(/\./g, '');
-                                                            const numValue = parseInt(rawValue) || 0;
-                                                            setGoalFormData({ ...goalFormData, amount: numValue });
-                                                        }}
-                                                        required
-                                                        autoFocus
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* 2. Goal Name */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <AlignLeft className="w-4 h-4 text-primary" /> {t('budget.goal_name_label')}
-                                                </Label>
-                                                <Input
-                                                    id="name"
-                                                    className="h-12 rounded-xl border-input bg-background/50 text-base shadow-sm"
-                                                    value={goalFormData.name}
-                                                    onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                                                    placeholder={t('budget.goal_name_placeholder')}
-                                                    required
-                                                />
-                                            </div>
-
-                                            {/* 3. Target Date */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <Calendar className="w-4 h-4 text-primary" /> {t('budget.target_date_label')}
-                                                </Label>
-                                                <div className="relative">
-                                                    <Input
-                                                        id="date"
-                                                        type="date"
-                                                        className="h-12 rounded-xl border-input bg-background/50 text-base font-medium cursor-pointer shadow-sm"
-                                                        value={goalFormData.saving_date}
-                                                        onClick={(e: any) => {
-                                                            if (e.currentTarget.showPicker) {
-                                                                e.currentTarget.showPicker();
-                                                            }
-                                                        }}
-                                                        onChange={(e) => setGoalFormData({ ...goalFormData, saving_date: e.target.value })}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="shrink-0 p-6 bg-background border-t border-border/50">
-                                            <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={createGoalMutation.isPending}>
-                                                {createGoalMutation.isPending ? t('budget.saving') : t('budget.save_goal_btn')}
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
-
-
-                            {/* Goal Edit Dialog */}
-                            <Dialog open={isGoalEditOpen} onOpenChange={setIsGoalEditOpen}>
-                                <DialogContent className={cn(
-                                    "flex flex-col gap-0 p-0 overflow-hidden",
-                                    "w-full sm:w-auto h-full sm:h-auto",
-                                    "sm:max-w-[425px] sm:rounded-2xl",
-                                    "border-0 sm:border"
-                                )}>
-                                    <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                                        <DialogTitle>{t('budget.edit_goal_title')}</DialogTitle>
-                                        <DialogDescription>{t('budget.edit_goal_desc')}</DialogDescription>
-                                    </DialogHeader>
-                                    <form onSubmit={handleGoalSubmit} className="flex flex-col h-full bg-background">
-                                        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                                            {/* 1. Amount Input - Centerpiece */}
-                                            <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                                <Label htmlFor="edit-goal-amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">{t('budget.target_amount')}</Label>
-                                                <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                                                    <span className="text-xl sm:text-2xl font-bold text-muted-foreground mr-1">{currency === 'USD' ? '$' : 'Rp'}</span>
-                                                    <Input
-                                                        id="edit-goal-amount"
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        className="text-3xl sm:text-4xl font-bold bg-transparent border-none text-center w-full focus-visible:ring-0 placeholder:text-muted-foreground/20 p-0 shadow-none h-auto hover:bg-transparent"
-                                                        placeholder="0"
-                                                        value={goalFormData.amount ? Math.floor(Number(goalFormData.amount)).toLocaleString(language) : ''}
-                                                        onKeyDown={(e) => {
-                                                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                                                e.preventDefault();
-                                                            }
-                                                        }}
-                                                        onChange={(e) => {
-                                                            const rawValue = e.target.value.replace(/\./g, '');
-                                                            const numValue = parseInt(rawValue) || 0;
-                                                            setGoalFormData({ ...goalFormData, amount: numValue });
-                                                        }}
-                                                        required
-                                                        autoFocus
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* 2. Goal Name */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="edit-name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <AlignLeft className="w-4 h-4 text-primary" /> {t('budget.goal_name_label')}
-                                                </Label>
-                                                <Input
-                                                    id="edit-name"
-                                                    className="h-12 rounded-xl border-input bg-background/50 text-base shadow-sm"
-                                                    value={goalFormData.name}
-                                                    onChange={(e) => setGoalFormData({ ...goalFormData, name: e.target.value })}
-                                                    placeholder={t('budget.goal_name_placeholder')}
-                                                    required
-                                                />
-                                            </div>
-
-                                            {/* 3. Target Date */}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="edit-date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                                                    <Calendar className="w-4 h-4 text-primary" /> {t('budget.target_date_label')}
-                                                </Label>
-                                                <div className="relative">
-                                                    <Input
-                                                        id="edit-date"
-                                                        type="date"
-                                                        className="h-12 rounded-xl border-input bg-background/50 text-base font-medium cursor-pointer shadow-sm"
-                                                        value={goalFormData.saving_date}
-                                                        onClick={(e: any) => {
-                                                            if (e.currentTarget.showPicker) {
-                                                                e.currentTarget.showPicker();
-                                                            }
-                                                        }}
-                                                        onChange={(e) => setGoalFormData({ ...goalFormData, saving_date: e.target.value })}
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="shrink-0 p-6 bg-background border-t border-border/50">
-                                            <Button type="submit" size="lg" className="w-full rounded-xl shadow-lg" disabled={updateGoalMutation.isPending}>
-                                                {updateGoalMutation.isPending ? t('budget.updating') : t('budget.update_goal_btn')}
-                                            </Button>
-                                        </div>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
-
-                            {/* Goals List */}
-                            <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {isLoading && <p className="text-muted-foreground">{t('budget.loading_goals')}</p>
-                                }
-
-                                {
-                                    !isLoading && savings?.map((goal) => (
-                                        <div key={goal.id} className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
-                                            <div className="p-4 sm:p-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <div className="p-2.5 bg-secondary rounded-xl text-primary group-hover:scale-110 transition-transform">
-                                                        <Rocket className="h-5 w-5" />
-                                                    </div>
-                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleGoalEdit(goal)}>
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => handleGoalDelete(goal.id)}>
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                                <h3 className="font-bold text-lg mb-1 tracking-tight">{goal.name}</h3>
-                                                <div className="flex items-baseline gap-2 mb-4">
-                                                    <span className="text-2xl font-bold font-mono text-primary tracking-tight">
-                                                        <CurrencyDisplay value={Number(goal.amount)} />
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center pt-4 border-t border-border/50 text-xs font-medium text-muted-foreground">
-                                                    <span>{t('budget.target_date_label')}</span>
-                                                    <span className="bg-secondary px-2 py-1 rounded-md">{new Date(goal.saving_date).toLocaleDateString(language || 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                }
-                            </div>
-
-                            {!isLoading && savings?.length === 0 && (
-                                <div className="text-center py-12 border border-dashed border-border rounded-xl">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Rocket className="h-10 w-10 text-muted-foreground/50" />
-                                        <h3 className="text-lg font-semibold">{t('budget.no_goals')}</h3>
-                                        <p className="text-muted-foreground text-sm">{t('budget.no_goals_desc')}</p>
-                                        <Button variant="outline" className="mt-4" onClick={() => setIsGoalAddOpen(true)}>{t('budget.add_goal')}</Button>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    )}
+                {!isLoading && budgetStats.length === 0 && (
+                    <div className="text-center py-12 border border-dashed border-border rounded-xl">
+                        <div className="flex flex-col items-center gap-2">
+                            <Wallet className="h-10 w-10 text-muted-foreground/50" />
+                            <h3 className="text-lg font-semibold">{t('budget.no_budgets')}</h3>
+                            <p className="text-muted-foreground text-sm">{t('budget.no_budgets_desc')}</p>
+                            <Button variant="outline" className="mt-4" onClick={() => setIsBudgetAddOpen(true)}>{t('budget.create_budget')}</Button>
+                        </div>
+                    </div>
+                )}
             </div>
-        </DashboardLayout >
+        </DashboardLayout>
     );
 }

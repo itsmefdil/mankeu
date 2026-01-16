@@ -1,15 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRightLeft, Settings, Tags, LayoutGrid, PlusCircle, PieChart, Coins, Target } from 'lucide-react';
+import { ArrowRightLeft, Settings, LayoutGrid, PlusCircle, Coins, Target, CreditCard, PiggyBank, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
 export const NAV_ITEMS = [
     { label: 'nav.dashboard', icon: LayoutGrid, href: '/' },
+    { label: 'nav.accounts', icon: Wallet, href: '/accounts' },
     { label: 'nav.transactions', icon: ArrowRightLeft, href: '/transactions' },
-    { label: 'nav.analytics', icon: PieChart, href: '/analytics' },
-    { label: 'nav.categories', icon: Tags, href: '/categories' },
-    { label: 'nav.budget', icon: Target, href: '/budget' },
+    { label: 'nav.budget_only', icon: Target, href: '/budget' },
+    { label: 'nav.savings', icon: PiggyBank, href: '/savings' },
+    { label: 'nav.debts', icon: CreditCard, href: '/debts' },
     { label: 'nav.settings', icon: Settings, href: '/settings' },
 ];
 

@@ -5,9 +5,10 @@ import { Preferences } from '@capacitor/preferences';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '@/pages/Dashboard';
 import TransactionsPage from '@/pages/Transactions';
-import CategoriesPage from '@/pages/Categories';
 import BudgetPage from '@/pages/Budget';
-import AnalyticsPage from '@/pages/Analytics';
+import SavingsPage from '@/pages/Savings';
+import AccountsPage from '@/pages/AccountsPage';
+import DebtsPage from '@/pages/Debts';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -81,10 +82,13 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/categories" element={<Navigate to="/transactions" replace />} />
             <Route path="/budget" element={<BudgetPage />} />
-            <Route path="/goals" element={<Navigate to="/budget" replace />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/savings" element={<SavingsPage />} />
+            <Route path="/debts" element={<DebtsPage />} />
+            <Route path="/goals" element={<Navigate to="/savings" replace />} />
+            <Route path="/analytics" element={<Navigate to="/" replace />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>

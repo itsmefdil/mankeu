@@ -10,6 +10,7 @@ export interface Transaction {
     id: number;
     user_id: number;
     category_id: number;
+    account_id?: number;
     name: string;
     transaction_date: string;
     amount: number;
@@ -34,11 +35,47 @@ export interface Saving {
     saving_date: string;
 }
 
+export interface SavingTransaction {
+    id: number;
+    saving_id: number;
+    type: 'deposit' | 'withdraw';
+    amount: number;
+    notes?: string;
+    transaction_date: string;
+    created_at: string;
+}
+
 export interface Income {
     id: number;
     source: string;
     amount: number;
     income_date: string;
+}
+
+export interface Debt {
+    id: number;
+    user_id: number;
+    type: 'payable' | 'receivable';
+    person_name: string;
+    description?: string;
+    amount: number;
+    remaining_amount: number;
+    due_date?: string;
+    is_paid: boolean;
+    created_at: string;
+}
+
+export interface DebtPayment {
+    id: number;
+    debt_id: number;
+    amount: number;
+    payment_date: string;
+    notes?: string;
+    created_at: string;
+}
+
+export interface DebtWithPayments extends Debt {
+    payments: DebtPayment[];
 }
 
 export const financialService = {
@@ -128,5 +165,119 @@ export const financialService = {
 
     deleteSaving: async (id: number): Promise<void> => {
         await api.delete(`/savings/${id}`);
+    },
+
+    depositToSaving: async (id: number, amount: number, accountId: number, categoryId: number, notes?: string, date?: string): Promise<Saving> => {
+        const response = await api.post(`/savings/${id}/deposit`, { amount, account_id: accountId, category_id: categoryId, notes, date });
+        return response.data;
+    },
+
+    withdrawFromSaving: async (id: number, amount: number, accountId: number, categoryId: number, notes?: string, date?: string): Promise<Saving> => {
+        const response = await api.post(`/savings/${id}/withdraw`, { amount, account_id: accountId, category_id: categoryId, notes, date });
+        return response.data;
+    },
+
+    getSavingTransactions: async (id: number): Promise<SavingTransaction[]> => {
+        const response = await api.get(`/savings/${id}/transactions`);
+        return response.data;
+    },
+
+    // Debt CRUD
+    getDebts: async (type?: 'payable' | 'receivable'): Promise<Debt[]> => {
+        const params = type ? `?type=${type}` : '';
+        const response = await api.get(`/debts/${params}`);
+        return response.data;
+    },
+
+    getDebt: async (id: number): Promise<DebtWithPayments> => {
+        const response = await api.get(`/debts/${id}`);
+        return response.data;
+    },
+
+    createDebt: async (data: Partial<Debt>): Promise<Debt> => {
+        const response = await api.post('/debts/', data);
+        return response.data;
+    },
+
+    updateDebt: async (id: number, data: Partial<Debt>): Promise<Debt> => {
+        const response = await api.put(`/debts/${id}`, data);
+        return response.data;
+    },
+
+    deleteDebt: async (id: number): Promise<void> => {
+        await api.delete(`/debts/${id}`);
+    },
+
+    toggleDebtPaid: async (id: number): Promise<Debt> => {
+        const response = await api.patch(`/debts/${id}/toggle-paid`);
+        return response.data;
+    },
+
+    // Debt Payments
+    getDebtPayments: async (debtId: number): Promise<DebtPayment[]> => {
+        const response = await api.get(`/debts/${debtId}/payments`);
+        return response.data;
+    },
+
+    addDebtPayment: async (debtId: number, data: Partial<DebtPayment>): Promise<DebtPayment> => {
+        const response = await api.post(`/debts/${debtId}/payments`, data);
+        return response.data;
+    },
+
+    deleteDebtPayment: async (debtId: number, paymentId: number): Promise<void> => {
+        await api.delete(`/debts/${debtId}/payments/${paymentId}`);
+    },
+
+    // Accounts
+    getAccounts: async (): Promise<Account[]> => {
+        const response = await api.get('/accounts/');
+        return response.data;
+    },
+
+    createAccount: async (data: Partial<Account>): Promise<Account> => {
+        const response = await api.post('/accounts/', data);
+        return response.data;
+    },
+
+    updateAccount: async (id: number, data: Partial<Account>): Promise<Account> => {
+        const response = await api.put(`/accounts/${id}`, data);
+        return response.data;
+    },
+
+    deleteAccount: async (id: number): Promise<void> => {
+        await api.delete(`/accounts/${id}`);
+    },
+
+    // Transfers
+    getTransfers: async (): Promise<Transfer[]> => {
+        const response = await api.get('/transfers/');
+        return response.data;
+    },
+
+    createTransfer: async (data: Partial<Transfer>): Promise<void> => {
+        await api.post('/transfers/', data);
     }
 };
+
+export interface Account {
+    id: number;
+    user_id: number;
+    name: string;
+    type: 'cash' | 'bank' | 'ewallet';
+    balance: number;
+    is_default: boolean;
+    created_at: string;
+}
+
+export interface Transfer {
+    id: number;
+    user_id: number;
+    from_account_id: number;
+    to_account_id: number;
+    amount: number;
+    notes?: string;
+    date: string;
+    created_at: string;
+    from_account_name?: string;
+    to_account_name?: string;
+}
