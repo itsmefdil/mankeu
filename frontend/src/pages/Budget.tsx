@@ -282,7 +282,7 @@ export default function BudgetPage() {
                                                         }
                                                     }}
                                                     onChange={(e) => {
-                                                        const rawValue = e.target.value.replace(/\./g, '');
+                                                        const rawValue = e.target.value.replace(/[^0-9]/g, '');
                                                         const numValue = parseInt(rawValue) || 0;
                                                         setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
                                                     }}
@@ -358,7 +358,7 @@ export default function BudgetPage() {
                                                 }
                                             }}
                                             onChange={(e) => {
-                                                const rawValue = e.target.value.replace(/\./g, '');
+                                                const rawValue = e.target.value.replace(/[^0-9]/g, '');
                                                 const numValue = parseInt(rawValue) || 0;
                                                 setBudgetFormData({ ...budgetFormData, budget_amount: numValue });
                                             }}

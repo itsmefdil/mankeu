@@ -1,0 +1,10 @@
+{
+    "name": "mankeu-root",
+    "private": true,
+    "scripts": {
+        "dev": "concurrently \"bun run --cwd backend dev\" \"bun run --cwd frontend dev\""
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.2"
+    }
+}
