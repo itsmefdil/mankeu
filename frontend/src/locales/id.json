@@ -32,7 +32,9 @@
         "left": "tersisa",
         "no_budgets": "Tidak ada anggaran bulan ini",
         "create_budget": "Buat Anggaran",
-        "day": "Hari"
+        "day": "Hari",
+        "all_accounts": "Semua Akun",
+        "net_worth": "Kekayaan Bersih"
     },
     "transactions": {
         "title": "Transaksi",

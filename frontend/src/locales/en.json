@@ -32,7 +32,9 @@
         "left": "left",
         "no_budgets": "No budgets for this month",
         "create_budget": "Create Budget",
-        "day": "Day"
+        "day": "Day",
+        "all_accounts": "All Account",
+        "net_worth": "Net Worth"
     },
     "transactions": {
         "title": "Transactions",

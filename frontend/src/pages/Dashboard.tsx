@@ -12,7 +12,8 @@ import {
     Loader2,
     BarChart3,
     PieChart as PieChartIcon,
-    PiggyBank
+    PiggyBank,
+    Landmark
 } from 'lucide-react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -62,7 +63,16 @@ export default function Dashboard() {
         queryFn: financialService.getCategories
     });
 
+    const { data: accounts } = useQuery({
+        queryKey: ['accounts'],
+        queryFn: financialService.getAccounts
+    });
+
     // --- Computed Data & Aggregations ---
+
+    const totalNetWorth = useMemo(() => {
+        return accounts?.reduce((acc, curr) => acc + Number(curr.balance), 0) || 0;
+    }, [accounts]);
 
     const categoryMap = useMemo(() => {
         const map = new Map();
@@ -268,8 +278,39 @@ export default function Dashboard() {
 
                 {/* KPI Cards - Premium Design */}
                 <div className="grid gap-2 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-                    {/* Balance Card - Featured */}
-                    <div className="col-span-2 lg:col-span-1 p-4 sm:p-5 lg:p-6 rounded-2xl bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 text-white shadow-2xl shadow-emerald-500/25 relative overflow-hidden hover-lift group">
+                    {/* Total Net Worth Card - Featured */}
+                    <div className="col-span-2 lg:col-span-2 p-4 sm:p-5 lg:p-6 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 text-white shadow-2xl shadow-indigo-500/25 relative overflow-hidden hover-lift group">
+                        {/* Decorative Elements */}
+                        <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/5 rounded-full blur-xl translate-y-1/2 -translate-x-1/2" />
+
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-3 sm:mb-4">
+                                <div className="p-1.5 sm:p-2.5 bg-white/20 rounded-xl backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform">
+                                    <Landmark className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold bg-white/20 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                                    <Target className="h-3 w-3" />
+                                    {t('dashboard.net_worth') || 'Net Worth'}
+                                </div>
+                            </div>
+                            <div>
+                                <h3 className="text-xl sm:text-3xl lg:text-3xl font-bold font-display tracking-tight drop-shadow-lg animate-value truncate">
+                                    <CurrencyDisplay value={totalNetWorth} className="text-white" />
+                                </h3>
+                                <p className="text-white/80 text-[10px] sm:text-sm mt-1 sm:mt-2 flex items-center gap-1">
+                                    <span className="inline-block w-1.5 h-1.5 sm:w-2 sm:h-2 bg-indigo-400 rounded-full animate-pulse" />
+                                    {t('dashboard.all_accounts') || 'All Accounts'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                    </div>
+
+                    {/* Balance Card - Monthly Flow */}
+                    <div className=" lg:col-span-2 sm:col-span-1 p-3 p-3 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl glass-card hover-lift group relative overflow-hidden bg-gradient-to-br from-emerald-600 via-green-600 to-teal-700 text-white shadow-2xl shadow-emerald-500/25 relative overflow-hidden hover-lift group">
                         {/* Decorative Elements */}
                         <div className="absolute top-0 right-0 w-32 h-32 sm:w-40 sm:h-40 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
                         <div className="absolute bottom-0 left-0 w-24 h-24 sm:w-32 sm:h-32 bg-white/5 rounded-full blur-xl translate-y-1/2 -translate-x-1/2" />
