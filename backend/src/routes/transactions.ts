@@ -42,7 +42,8 @@ router.get('/', async (req, res) => {
         createdAt: transactions.createdAt,
         accountName: accounts.name,
         categoryName: categories.name,
-        categoryType: categories.type
+        categoryType: categories.type,
+        isTransfer: transactions.isTransfer
     })
         .from(transactions)
         .leftJoin(accounts, eq(transactions.accountId, accounts.id))
@@ -65,7 +66,8 @@ router.get('/', async (req, res) => {
         created_at: t.createdAt,
         account_name: t.accountName,
         category_name: t.categoryName,
-        type: t.categoryType
+        type: t.categoryType,
+        is_transfer: t.isTransfer
     }));
 
     res.json(formattedResult);

@@ -17,6 +17,7 @@ export interface Transaction {
     notes?: string;
     category?: Category; // Assuming backend might expand this or we fetch separately
     goal_id?: number;
+    is_transfer?: boolean;
 }
 
 export interface Budget {

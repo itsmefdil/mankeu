@@ -99,6 +99,7 @@ export const transactions = pgTable('transactions', {
     amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
     notes: text('notes'),
     goalId: integer('goal_id').references(() => savings.id),
+    isTransfer: boolean('is_transfer').default(false).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 

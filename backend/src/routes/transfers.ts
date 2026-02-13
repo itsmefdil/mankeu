@@ -149,6 +149,7 @@ router.post('/', validate(transferSchema), async (req, res) => {
             transactionDate: body.date,
             amount: String(amount),
             notes: body.notes || 'Transfer Out',
+            isTransfer: true,
             // goalId: null, // No goal linked
         });
 
@@ -161,6 +162,7 @@ router.post('/', validate(transferSchema), async (req, res) => {
             transactionDate: body.date,
             amount: String(amount),
             notes: body.notes || 'Transfer In',
+            isTransfer: true,
         });
     });
 
