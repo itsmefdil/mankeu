@@ -16,31 +16,13 @@ Mankeu is a modern, feature-rich personal finance management application designe
 
 ## Screenshots
 
-### Dashboard
-![Dashboard](assets/images/dashboard.png)
-*Get a comprehensive overview of your financial health with interactive charts and real-time statistics*
-
-### Transactions
-![Transactions](assets/images/transactions.png)
-*Track all your income and expenses with detailed categorization and filtering options*
-
-### Categories
-![Categories](assets/images/categories.png)
-*Manage and customize your transaction categories to fit your needs*
-
-### Budget & Goals
-![Budget & Goals](assets/images/budget-goals.png)
-*Set and monitor your monthly budgets and financial goals*
-
-## Mobile Screenshots
-
-<div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-  <img src="assets/images/mobile-dashboard.png" alt="Mobile Dashboard" width="200" />
-  <img src="assets/images/mobile-transactions.png" alt="Mobile Transactions" width="200" />
-  <img src="assets/images/mobile-categories.png" alt="Mobile Categories" width="200" />
-  <img src="assets/images/mobile-budget&goals.png" alt="Mobile Budget & Goals" width="200" />
-  <img src="assets/images/mobile-analytics.png" alt="Mobile Analytics" width="200" />
-</div>
+| Dashboard | Transactions |
+| :---: | :---: |
+| ![Dashboard](assets/images/dashboard.jpg) | ![Transactions](assets/images/transactions.jpg) |
+| **Savings & Goals** | **Accounts** |
+| ![Savings](assets/images/saving.jpg) | ![Accounts](assets/images/account.jpg) |
+| **Debts** | |
+| ![Debts](assets/images/debt.jpg) | |
 
 
 ## Tech Stack
