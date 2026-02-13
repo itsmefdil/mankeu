@@ -453,7 +453,7 @@ export default function SavingsPage() {
                 {/* History Sheet */}
                 <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
                     <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-                        <SheetHeader className="mb-6">
+                        <SheetHeader className="mb-6 pt-[calc(1rem+env(safe-area-inset-top))]">
                             <div className="flex items-center gap-3">
                                 <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
                                     <PiggyBank className="h-6 w-6" />

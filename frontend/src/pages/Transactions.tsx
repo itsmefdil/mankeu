@@ -137,7 +137,12 @@ export default function TransactionsPage() {
                 const category = categories.find(c => c.id === tx.category_id);
                 // Use strict check for 'expense' type
                 const isExpense = category?.type === 'expense';
-                return isToday && isExpense;
+                // Exclude system transfers (Robust check via is_transfer flag)
+                // If flag is missing (old data), fall back to name check if needed, but flag is cleaner.
+                // We'll rely on the flag primarily.
+                const isTransfer = !!tx.is_transfer;
+
+                return isToday && isExpense && !isTransfer;
             })
             .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
     }, [transactions, categories]);
@@ -155,8 +160,11 @@ export default function TransactionsPage() {
                 const date = new Date(tx.transaction_date);
                 const category = categories.find(c => c.id === tx.category_id);
                 const isExpense = category?.type === 'expense';
+                // Exclude system transfers
+                const isTransfer = !!tx.is_transfer;
 
                 return isExpense &&
+                    !isTransfer &&
                     date.getMonth() === currentMonth &&
                     date.getFullYear() === currentYear &&
                     date.getDate() <= currentDayOf; // Only count up to today for fairness? Or just total month to date.
@@ -458,7 +466,7 @@ export default function TransactionsPage() {
                                 </Button>
                             </SheetTrigger>
                             <SheetContent side="right" className="w-full sm:max-w-lg p-0 overflow-hidden">
-                                <SheetHeader className="px-6 py-4 border-b border-border/50">
+                                <SheetHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50">
                                     <SheetTitle className="flex items-center gap-2">
                                         <Tags className="h-5 w-5 text-primary" />
                                         {t('categories.title')}
