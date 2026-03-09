@@ -39,6 +39,7 @@ export default function AnalyticsPage() {
     const filteredTransactions = useMemo(() => {
         if (!transactions) return [];
         return transactions.filter(tx => {
+            if (tx.is_transfer) return false;
             const date = new Date(tx.transaction_date);
             if (viewMode === 'all') return true;
             if (viewMode === 'year') return date.getFullYear() === selectedYear;
@@ -103,6 +104,7 @@ export default function AnalyticsPage() {
         let saving = 0;
 
         transactions.forEach(tx => {
+            if (tx.is_transfer) return;
             const date = new Date(tx.transaction_date);
             if (date.getMonth() + 1 === prevMonth && date.getFullYear() === prevYear) {
                 const cat = categoryMap.get(tx.category_id);

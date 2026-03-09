@@ -91,6 +91,7 @@ export default function Dashboard() {
         transactions.forEach(tx => {
             const txDate = new Date(tx.transaction_date);
             if (txDate.getMonth() + 1 !== selectedMonth || txDate.getFullYear() !== selectedYear) return;
+            if (tx.is_transfer) return;
 
             const cat = categoryMap.get(tx.category_id);
             if (cat?.type === 'income') {
@@ -141,6 +142,7 @@ export default function Dashboard() {
 
         transactions.forEach(tx => {
             const txDate = new Date(tx.transaction_date);
+            if (tx.is_transfer) return;
             const match = last6Months.find(m => m.month === txDate.getMonth() + 1 && m.year === txDate.getFullYear());
             if (match) {
                 const cat = categoryMap.get(tx.category_id);
@@ -161,6 +163,7 @@ export default function Dashboard() {
         transactions.forEach(tx => {
             const txDate = new Date(tx.transaction_date);
             if (txDate.getMonth() + 1 !== selectedMonth || txDate.getFullYear() !== selectedYear) return;
+            if (tx.is_transfer) return;
 
             const cat = categoryMap.get(tx.category_id);
             if (cat?.type === 'expense') {
@@ -187,6 +190,7 @@ export default function Dashboard() {
         transactions.forEach(tx => {
             const txDate = new Date(tx.transaction_date);
             if (txDate.getMonth() + 1 !== selectedMonth || txDate.getFullYear() !== selectedYear) return;
+            if (tx.is_transfer) return;
 
             const dayStats = days[txDate.getDate() - 1];
             if (dayStats) {

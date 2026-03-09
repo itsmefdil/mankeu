@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRightLeft, Settings, LayoutGrid, PlusCircle, Coins, Target, CreditCard, PiggyBank, Wallet } from 'lucide-react';
+import { ArrowRightLeft, Settings, LayoutGrid, PlusCircle, Coins, Target, CreditCard, PiggyBank, Wallet, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ export const NAV_ITEMS = [
     { label: 'nav.transactions', icon: ArrowRightLeft, href: '/transactions' },
     { label: 'nav.budget_only', icon: Target, href: '/budget' },
     { label: 'nav.savings', icon: PiggyBank, href: '/savings' },
+    { label: 'nav.analytics', icon: BarChart3, href: '/analytics' },
     { label: 'nav.debts', icon: CreditCard, href: '/debts' },
     { label: 'nav.settings', icon: Settings, href: '/settings' },
 ];
@@ -75,4 +76,3 @@ export const Sidebar = () => {
         </aside>
     );
 };
-

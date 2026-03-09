@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useAuthStore } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -8,12 +9,74 @@ import { Label } from '@/components/ui/label';
 import { User, Moon, Sun, Monitor, LogOut, Shield, Bell, HelpCircle, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import {
+    applyReminderSettings,
+    DEFAULT_REMINDER_SETTINGS,
+    loadReminderSettings,
+    sendTestNotification,
+} from '@/services/notifications';
 
 export default function SettingsPage() {
     const { user, logout } = useAuthStore();
     const { theme, setTheme } = useTheme();
     const { currency, language, setCurrency, setLanguage } = usePreferencesStore();
     const { t } = useTranslation();
+    const [reminderSettings, setReminderSettings] = useState(DEFAULT_REMINDER_SETTINGS);
+    const [isLoadingReminder, setIsLoadingReminder] = useState(true);
+    const [isSavingReminder, setIsSavingReminder] = useState(false);
+    const [isTestingReminder, setIsTestingReminder] = useState(false);
+    const [reminderStatus, setReminderStatus] = useState('');
+
+    useEffect(() => {
+        const loadSettings = async () => {
+            const settings = await loadReminderSettings();
+            setReminderSettings(settings);
+            setIsLoadingReminder(false);
+        };
+
+        loadSettings();
+    }, []);
+
+    const handleSaveReminder = async () => {
+        setIsSavingReminder(true);
+
+        const result = await applyReminderSettings(
+            reminderSettings,
+            t('settings.reminder_notification_title'),
+            t('settings.reminder_notification_body')
+        );
+
+        if (!result.isNative) {
+            setReminderStatus(t('settings.reminder_native_only'));
+        } else if (reminderSettings.enabled && !result.granted) {
+            setReminderStatus(t('settings.reminder_permission_denied'));
+        } else if (reminderSettings.enabled) {
+            setReminderStatus(t('settings.reminder_saved'));
+        } else {
+            setReminderStatus(t('settings.reminder_disabled'));
+        }
+
+        setIsSavingReminder(false);
+    };
+
+    const handleTestReminder = async () => {
+        setIsTestingReminder(true);
+
+        const result = await sendTestNotification(
+            t('settings.reminder_test_notification_title'),
+            t('settings.reminder_test_notification_body')
+        );
+
+        if (!result.isNative) {
+            setReminderStatus(t('settings.reminder_native_only'));
+        } else if (!result.granted) {
+            setReminderStatus(t('settings.reminder_permission_denied'));
+        } else {
+            setReminderStatus(t('settings.reminder_test_sent'));
+        }
+
+        setIsTestingReminder(false);
+    };
 
     return (
         <DashboardLayout>
@@ -156,15 +219,64 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
-                {/* Notifications & Security (Placeholders) */}
+                {/* Notifications & Security */}
                 <div className="grid gap-8 md:grid-cols-2">
-                    <div className="rounded-2xl border border-border bg-card shadow-sm p-6 space-y-4 opacity-50 pointer-events-none">
+                    <div className="rounded-2xl border border-border bg-card shadow-sm p-6 space-y-4">
                         <div className="flex items-center gap-2">
                             <Bell className="h-5 w-5 text-primary" />
                             <h3 className="font-bold">{t('settings.notifications_title')}</h3>
                         </div>
                         <p className="text-sm text-muted-foreground">{t('settings.notifications_desc')}</p>
-                        <Button variant="outline" size="sm" disabled>{t('settings.manage_notifications')}</Button>
+
+                        <div className="space-y-3 rounded-xl border border-border p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <Label>{t('settings.reminder_enable')}</Label>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={reminderSettings.enabled ? 'default' : 'outline'}
+                                    onClick={() => setReminderSettings((prev) => ({ ...prev, enabled: !prev.enabled }))}
+                                    disabled={isLoadingReminder}
+                                >
+                                    {reminderSettings.enabled ? t('settings.reminder_on') : t('settings.reminder_off')}
+                                </Button>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="reminder-time">{t('settings.reminder_time')}</Label>
+                                <Input
+                                    id="reminder-time"
+                                    type="time"
+                                    value={reminderSettings.time}
+                                    onChange={(e) => setReminderSettings((prev) => ({ ...prev, time: e.target.value }))}
+                                    disabled={isLoadingReminder || !reminderSettings.enabled}
+                                />
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={handleSaveReminder}
+                                    disabled={isLoadingReminder || isSavingReminder || isTestingReminder}
+                                >
+                                    {isSavingReminder ? t('settings.reminder_saving') : t('settings.reminder_save')}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleTestReminder}
+                                    disabled={isLoadingReminder || isSavingReminder || isTestingReminder}
+                                >
+                                    {isTestingReminder ? t('settings.reminder_testing') : t('settings.reminder_test')}
+                                </Button>
+                            </div>
+
+                            {reminderStatus && (
+                                <p className="text-xs text-muted-foreground">{reminderStatus}</p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="rounded-2xl border border-border bg-card shadow-sm p-6 space-y-4 opacity-50 pointer-events-none">

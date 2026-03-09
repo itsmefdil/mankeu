@@ -9,6 +9,7 @@ import BudgetPage from '@/pages/Budget';
 import SavingsPage from '@/pages/Savings';
 import AccountsPage from '@/pages/AccountsPage';
 import DebtsPage from '@/pages/Debts';
+import AnalyticsPage from '@/pages/Analytics';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -88,7 +89,7 @@ const App = () => {
             <Route path="/savings" element={<SavingsPage />} />
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/goals" element={<Navigate to="/savings" replace />} />
-            <Route path="/analytics" element={<Navigate to="/" replace />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
