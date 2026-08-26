@@ -351,6 +351,12 @@
         "add_transaction": "Tambah Transaksi",
         "finance": "Keuangan",
         "search_placeholder": "Cari...",
+        "search_no_results": "Tidak ada hasil.",
+        "search_navigation": "Navigasi",
+        "search_actions": "Aksi Cepat",
+        "show_amounts": "Tampilkan nominal",
+        "hide_amounts": "Sembunyikan nominal",
+        "toggle_theme": "Ganti tema",
         "profile": "Profil",
         "logout": "Keluar",
         "menu": "Menu"

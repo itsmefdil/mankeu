@@ -1,4 +1,5 @@
-import { Search, Sun, Moon, LogOut, Settings, Coins, Eye, EyeOff } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Sun, Moon, LogOut, Settings, Coins, Eye, EyeOff, LayoutGrid, Wallet, ArrowRightLeft, Target, PiggyBank, BarChart3, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -10,8 +11,18 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Link } from 'react-router-dom';
+} from "@/components/ui/dropdown-menu";
+import {
+    CommandDialog,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandShortcut,
+    CommandSeparator,
+} from '@/components/ui/command';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 export const TopBar = () => {
@@ -19,10 +30,32 @@ export const TopBar = () => {
     const { toggleTheme } = useTheme();
     const { isAmountHidden, toggleAmountVisibility } = usePreferencesStore();
     const { t } = useTranslation();
+    const navigate = useNavigate();
+    const [isCommandOpen, setIsCommandOpen] = useState(false);
+
+    useEffect(() => {
+        const down = (event: KeyboardEvent) => {
+            const isK = event.key.toLowerCase() === 'k';
+            if (!isK || !(event.metaKey || event.ctrlKey)) return;
+            if (window.innerWidth < 768) return;
+
+            event.preventDefault();
+            setIsCommandOpen((open) => !open);
+        };
+
+        document.addEventListener('keydown', down);
+        return () => document.removeEventListener('keydown', down);
+    }, []);
+
+    const goTo = (path: string) => {
+        setIsCommandOpen(false);
+        navigate(path);
+    };
 
 
     return (
-        <header className="sticky top-0 z-40 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-slate-900 dark:to-slate-900 md:bg-none md:bg-white/80 md:dark:bg-slate-900/80 backdrop-blur-md border-b border-transparent dark:border-slate-800 md:border-slate-200 md:dark:border-slate-700 pt-safe transition-all duration-300">
+        <>
+            <header className="sticky top-0 z-40 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-slate-900 dark:to-slate-900 md:bg-none md:bg-white/80 md:dark:bg-slate-900/80 backdrop-blur-md border-b border-transparent dark:border-slate-800 md:border-slate-200 md:dark:border-slate-700 pt-safe transition-all duration-300">
             <div className="flex h-16 items-center gap-4 px-4 md:px-6">
                 <div className="w-full flex-1">
                     {/* Mobile: Logo */}
@@ -40,15 +73,17 @@ export const TopBar = () => {
                         </div>
                     </div>
 
-                    {/* Desktop: Search Form */}
+                    {/* Desktop: Command Search */}
                     <form onSubmit={(e) => e.preventDefault()} className="hidden md:block">
                         <div className="relative group max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <input
-                                type="search"
-                                placeholder={t('nav.search_placeholder')}
-                                className="w-full bg-muted/40 border border-transparent rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/70"
-                            />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
+                            <button
+                                type="button"
+                                onClick={() => setIsCommandOpen(true)}
+                                className="w-full bg-muted/40 border border-transparent rounded-xl pl-10 pr-16 py-2 text-left text-sm text-muted-foreground hover:bg-background focus:outline-none focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
+                            >
+                                {t('nav.search_placeholder')}
+                            </button>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
                                 <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
                                     <span className="text-xs">⌘</span>K
@@ -121,6 +156,64 @@ export const TopBar = () => {
                     </DropdownMenu>
                 </div>
             </div>
-        </header>
+            </header>
+
+            <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+                <CommandInput placeholder={`${t('nav.search_placeholder')}...`} />
+                <CommandList>
+                    <CommandEmpty>{t('nav.search_no_results')}</CommandEmpty>
+                    <CommandGroup heading={t('nav.search_navigation')}>
+                        <CommandItem onSelect={() => goTo('/')}>
+                            <LayoutGrid className="mr-2 h-4 w-4" />
+                            {t('nav.dashboard')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/accounts')}>
+                            <Wallet className="mr-2 h-4 w-4" />
+                            {t('nav.accounts')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/transactions')}>
+                            <ArrowRightLeft className="mr-2 h-4 w-4" />
+                            {t('nav.transactions')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/budget')}>
+                            <Target className="mr-2 h-4 w-4" />
+                            {t('nav.budget_only')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/savings')}>
+                            <PiggyBank className="mr-2 h-4 w-4" />
+                            {t('nav.savings')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/analytics')}>
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                            {t('nav.analytics')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/debts')}>
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            {t('nav.debts')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/settings')}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            {t('nav.settings')}
+                        </CommandItem>
+                    </CommandGroup>
+                    <CommandSeparator />
+                    <CommandGroup heading={t('nav.search_actions')}>
+                        <CommandItem onSelect={() => { toggleAmountVisibility(); setIsCommandOpen(false); }}>
+                            {isAmountHidden ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                            {isAmountHidden ? t('nav.show_amounts') : t('nav.hide_amounts')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => { toggleTheme(); setIsCommandOpen(false); }}>
+                            <Sun className="mr-2 h-4 w-4" />
+                            {t('nav.toggle_theme')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => { setIsCommandOpen(false); logout(); }}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            {t('nav.logout')}
+                            <CommandShortcut>⌘⇧Q</CommandShortcut>
+                        </CommandItem>
+                    </CommandGroup>
+                </CommandList>
+            </CommandDialog>
+        </>
     );
 };
