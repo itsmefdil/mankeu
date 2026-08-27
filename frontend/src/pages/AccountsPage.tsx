@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +22,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Trash2, Pencil, ArrowRightLeft, CreditCard, Banknote, Smartphone, ChevronDown, Check } from 'lucide-react';
+import { Plus, Trash2, Pencil, ArrowRightLeft, CreditCard, Banknote, Smartphone, ChevronDown, Check, Wallet, Landmark } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { useTranslation } from 'react-i18next';
@@ -72,6 +71,9 @@ export default function AccountsPage() {
         queryFn: financialService.getAccounts
     });
 
+    // Total Net Worth Calculation
+    const totalBalance = accounts?.reduce((acc, curr) => acc + Number(curr.balance), 0) || 0;
+
     // Mutations
     const createMutation = useMutation({
         mutationFn: financialService.createAccount,
@@ -104,7 +106,6 @@ export default function AccountsPage() {
             vibrate([50, 50]);
         },
         onError: () => {
-            // Handle error (e.g. existing transactions)
             alert(t('accounts.delete_error') || 'Cannot delete account with transactions');
         }
     });
@@ -144,7 +145,7 @@ export default function AccountsPage() {
         setFormData({
             name: account.name,
             type: account.type,
-            balance: Number(account.balance), // Allow editing balance?
+            balance: Number(account.balance),
             is_default: account.is_default
         });
         setIsEditOpen(true);
@@ -175,54 +176,55 @@ export default function AccountsPage() {
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full pb-20 md:pb-0">
-                {/* Header */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold truncate">{t('nav.accounts') || 'Accounts'}</h1>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            className="rounded-xl hidden sm:flex"
-                            onClick={() => {
-                                resetTransferForm();
-                                setIsTransferOpen(true);
-                            }}
-                        >
-                            <ArrowRightLeft className="mr-2 h-4 w-4" /> Transfer
-                        </Button>
-                        <Button
-                            className="shadow-lg shadow-primary/20 rounded-xl"
-                            onClick={() => {
-                                resetForm();
-                                setIsAddOpen(true);
-                            }}
-                        >
-                            <Plus className="mr-2 h-4 w-4" /> {t('common.add') || 'Add Account'}
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Mobile Transfer Button (Floating?) or regular */}
-                {!isDesktop && (
+            <div className="flex flex-col gap-6 sm:gap-8 w-full pb-20 md:pb-8 px-1 sm:px-0">
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-3">
                     <Button
                         variant="secondary"
-                        className="w-full rounded-xl shadow-sm border border-border sm:hidden"
+                        className="font-semibold gap-2"
                         onClick={() => {
                             resetTransferForm();
                             setIsTransferOpen(true);
                         }}
                     >
-                        <ArrowRightLeft className="mr-2 h-4 w-4" /> Transfer Funds
+                        <ArrowRightLeft className="h-4 w-4 text-neu-accent-sec" /> Transfer
                     </Button>
-                )}
+                    <Button
+                        className="font-semibold gap-2"
+                        onClick={() => {
+                            resetForm();
+                            setIsAddOpen(true);
+                        }}
+                    >
+                        <Plus className="h-4 w-4" /> {t('common.add') || 'Tambah Akun'}
+                    </Button>
+                </div>
+
+                {/* Total Balance Card */}
+                <div className="p-6 sm:p-8 rounded-[32px] bg-background shadow-neu-extruded dark:shadow-neu-dark-extruded flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="h-14 w-14 rounded-2xl bg-background shadow-neu-inset-deep dark:shadow-neu-dark-inset-deep flex items-center justify-center text-primary shrink-0">
+                            <Landmark className="h-7 w-7" />
+                        </div>
+                        <div>
+                            <span className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
+                                Total Saldo Seluruh Akun
+                            </span>
+                            <h2 className="text-2xl sm:text-4xl font-extrabold font-display tracking-tight text-foreground">
+                                <CurrencyDisplay value={totalBalance} />
+                            </h2>
+                        </div>
+                    </div>
+                    <span className="text-xs font-bold text-primary bg-background shadow-neu-inset-sm px-3.5 py-1.5 rounded-full hidden sm:inline-block">
+                        {accounts?.length || 0} Akun Aktif
+                    </span>
+                </div>
 
                 {/* Accounts Grid */}
                 <PullToRefresh onRefresh={async () => {
                     await queryClient.invalidateQueries({ queryKey: ['accounts'] });
                 }}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         {accounts?.map((account) => (
                             <SwipeableItem
                                 key={account.id}
@@ -236,39 +238,87 @@ export default function AccountsPage() {
                                 rightContent={<Pencil className="w-5 h-5 text-white" />}
                                 className="h-full"
                             >
-                                <div className="p-5 rounded-2xl bg-card border border-border shadow-sm flex flex-col gap-4 h-full relative overflow-hidden group">
+                                <div className="p-6 rounded-[32px] bg-background shadow-neu-extruded dark:shadow-neu-dark-extruded hover:shadow-neu-extruded-hover dark:hover:shadow-neu-dark-extruded-hover transition-all duration-300 flex flex-col justify-between gap-6 h-full relative group">
                                     {account.is_default && (
-                                        <div className="absolute top-0 right-0 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-bl-xl uppercase tracking-wider">
+                                        <div className="absolute top-4 right-4 bg-background shadow-neu-inset-sm text-primary text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                                             Default
                                         </div>
                                     )}
+
                                     <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3.5">
                                             <div className={cn(
-                                                "p-3 rounded-xl",
-                                                account.type === 'bank' ? "bg-blue-500/10 text-blue-600" :
-                                                    account.type === 'ewallet' ? "bg-purple-500/10 text-purple-600" :
-                                                        "bg-emerald-500/10 text-emerald-600"
+                                                "h-12 w-12 rounded-2xl bg-background shadow-neu-inset-deep dark:shadow-neu-dark-inset-deep flex items-center justify-center shrink-0",
+                                                account.type === 'bank' ? "text-primary" :
+                                                    account.type === 'ewallet' ? "text-neu-accent-sec" :
+                                                        "text-amber-500"
                                             )}>
                                                 {getIcon(account.type)}
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-lg">{account.name}</h3>
-                                                <p className="text-xs text-muted-foreground capitalize">{account.type}</p>
+                                            <div className="min-w-0">
+                                                <h3 className="font-bold text-lg text-foreground truncate">{account.name}</h3>
+                                                <p className="text-xs text-muted-foreground capitalize font-medium">{account.type}</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="mt-auto pt-2">
-                                        <p className="text-xs text-muted-foreground mb-1">Balance</p>
-                                        <p className="text-2xl font-bold font-display">
+
+                                    <div>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-1">Saldo Akun</p>
+                                        <p className="text-2xl font-extrabold font-display text-foreground tracking-tight">
                                             <CurrencyDisplay value={Number(account.balance)} />
                                         </p>
                                     </div>
+
+                                    {/* Action Buttons for Desktop */}
+                                    {isDesktop && (
+                                        <div className="flex items-center gap-2 pt-2 border-t border-background shadow-neu-inset-sm rounded-xl p-1 justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleEdit(account)}
+                                                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:shadow-neu-extruded-sm active:shadow-neu-inset-sm transition-all"
+                                                title="Edit"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setEditingAccount(account);
+                                                    setDeleteConfirmOpen(true);
+                                                }}
+                                                className="p-2 rounded-xl text-rose-500 hover:text-rose-600 hover:shadow-neu-extruded-sm active:shadow-neu-inset-sm transition-all"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </SwipeableItem>
                         ))}
                     </div>
                 </PullToRefresh>
+
+                {(!accounts || accounts.length === 0) && (
+                    <div className="p-12 rounded-[32px] bg-background shadow-neu-extruded flex flex-col items-center justify-center gap-4 text-center">
+                        <div className="h-16 w-16 rounded-3xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary">
+                            <Wallet className="h-8 w-8 opacity-50" />
+                        </div>
+                        <div>
+                            <p className="text-lg font-bold text-foreground">Belum ada akun terdaftar</p>
+                            <p className="text-sm text-muted-foreground mt-1">Tambahkan akun pertama Anda untuk mulai mengelola saldo.</p>
+                        </div>
+                        <Button
+                            className="mt-2 font-semibold"
+                            onClick={() => {
+                                resetForm();
+                                setIsAddOpen(true);
+                            }}
+                        >
+                            <Plus className="h-4 w-4 mr-2" /> Tambah Akun
+                        </Button>
+                    </div>
+                )}
 
                 {/* Add/Edit Dialog */}
                 <Dialog open={isAddOpen || isEditOpen} onOpenChange={(open) => {
@@ -277,28 +327,28 @@ export default function AccountsPage() {
                         setIsEditOpen(false);
                     }
                 }}>
-                    <DialogContent className="sm:max-w-[425px] rounded-2xl">
+                    <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>{isEditOpen ? 'Edit Account' : 'Add New Account'}</DialogTitle>
+                            <DialogTitle>{isEditOpen ? 'Edit Akun' : 'Tambah Akun Baru'}</DialogTitle>
                             <DialogDescription>
-                                {isEditOpen ? 'Update account details' : 'Create a new account to track your funds'}
+                                {isEditOpen ? 'Perbarui informasi detail akun Anda' : 'Buat akun dompet atau rekening baru untuk mencatat saldo Anda'}
                             </DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
                             <div className="space-y-2">
-                                <Label>Account Name</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Nama Akun</Label>
                                 <Input
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="e.g. BCA, Wallet, OVO"
+                                    placeholder="Contoh: BCA, Dompet Tunai, GoPay"
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Type</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tipe Akun</Label>
                                 <div className="relative">
                                     <select
-                                        className="appearance-none flex h-12 w-full items-center justify-between rounded-xl border border-input bg-card px-4 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 relative z-10"
+                                        className="appearance-none flex h-11 w-full items-center justify-between rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background font-semibold cursor-pointer"
                                         value={formData.type}
                                         onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
                                     >
@@ -306,35 +356,35 @@ export default function AccountsPage() {
                                         <option value="bank">Bank</option>
                                         <option value="ewallet">E-Wallet</option>
                                     </select>
-                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Initial Balance</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Saldo {isEditOpen ? 'Koreksi' : 'Awal'}</Label>
                                 <Input
                                     type="number"
                                     value={formData.balance}
                                     onChange={(e) => setFormData({ ...formData, balance: Number(e.target.value) })}
                                     placeholder="0"
                                 />
-                                {isEditOpen && <p className="text-xs text-muted-foreground">Adjusting this creates a balance correction.</p>}
                             </div>
-                            <div className="flex items-center gap-2 pt-2">
-                                <div
+                            <div className="flex items-center gap-3 pt-2">
+                                <button
+                                    type="button"
                                     className={cn(
-                                        "w-5 h-5 rounded border flex items-center justify-center cursor-pointer transition-colors",
-                                        formData.is_default ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                                        "w-6 h-6 rounded-xl flex items-center justify-center transition-all shadow-neu-inset-sm",
+                                        formData.is_default ? "text-primary font-bold shadow-neu-inset-deep" : "text-transparent"
                                     )}
                                     onClick={() => setFormData({ ...formData, is_default: !formData.is_default })}
                                 >
-                                    {formData.is_default && <Check className="w-3.5 h-3.5" />}
-                                </div>
-                                <Label onClick={() => setFormData({ ...formData, is_default: !formData.is_default })} className="cursor-pointer">
-                                    Set as Default Account
+                                    <Check className="w-4 h-4 text-primary" />
+                                </button>
+                                <Label onClick={() => setFormData({ ...formData, is_default: !formData.is_default })} className="cursor-pointer font-semibold text-sm">
+                                    Jadikan Akun Utama (Default)
                                 </Label>
                             </div>
-                            <Button type="submit" className="w-full mt-4 h-12 rounded-xl text-base" disabled={createMutation.isPending || updateMutation.isPending}>
-                                {isEditOpen ? 'Update Account' : 'Create Account'}
+                            <Button type="submit" className="w-full mt-6 h-12 font-bold" disabled={createMutation.isPending || updateMutation.isPending}>
+                                {isEditOpen ? 'Perbarui Akun' : 'Buat Akun'}
                             </Button>
                         </form>
                     </DialogContent>
@@ -342,64 +392,65 @@ export default function AccountsPage() {
 
                 {/* Transfer Dialog */}
                 <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
-                    <DialogContent className="sm:max-w-[425px] rounded-2xl">
+                    <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>Transfer Funds</DialogTitle>
-                            <DialogDescription>Move money between your accounts</DialogDescription>
+                            <DialogTitle>Transfer Dana</DialogTitle>
+                            <DialogDescription>Pindahkan saldo antar akun keuangan Anda</DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleTransferSubmit} className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
+                        <form onSubmit={handleTransferSubmit} className="space-y-4 py-2">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
-                                    <Label>From</Label>
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Dari Akun</Label>
                                     <div className="relative">
                                         <select
-                                            className="appearance-none flex h-10 w-full rounded-xl border border-input bg-card px-3 text-sm"
+                                            className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-semibold cursor-pointer"
                                             value={transferData.from_account_id || ''}
                                             onChange={(e) => setTransferData({ ...transferData, from_account_id: Number(e.target.value) })}
                                             required
                                         >
-                                            <option value="" disabled>Select</option>
+                                            <option value="" disabled>Pilih Akun</option>
                                             {accounts?.map(a => (
                                                 <option key={a.id} value={a.id} disabled={a.id === transferData.to_account_id}>{a.name}</option>
                                             ))}
                                         </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>To</Label>
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Ke Akun</Label>
                                     <div className="relative">
                                         <select
-                                            className="appearance-none flex h-10 w-full rounded-xl border border-input bg-card px-3 text-sm"
+                                            className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-semibold cursor-pointer"
                                             value={transferData.to_account_id || ''}
                                             onChange={(e) => setTransferData({ ...transferData, to_account_id: Number(e.target.value) })}
                                             required
                                         >
-                                            <option value="" disabled>Select</option>
+                                            <option value="" disabled>Pilih Akun</option>
                                             {accounts?.map(a => (
                                                 <option key={a.id} value={a.id} disabled={a.id === transferData.from_account_id}>{a.name}</option>
                                             ))}
                                         </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Amount</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">Rp</span>
-                                    <Input
-                                        type="number"
-                                        className="pl-10 h-14 text-2xl font-bold"
-                                        value={transferData.amount || ''}
-                                        onChange={(e) => setTransferData({ ...transferData, amount: Number(e.target.value) })}
-                                        required
-                                        min="1"
-                                    />
-                                </div>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Nominal Transfer</Label>
+                                <Input
+                                    type="number"
+                                    deep
+                                    className="h-14 text-2xl font-bold font-mono"
+                                    value={transferData.amount || ''}
+                                    onChange={(e) => setTransferData({ ...transferData, amount: Number(e.target.value) })}
+                                    placeholder="0"
+                                    required
+                                    min="1"
+                                />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Date</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tanggal</Label>
                                 <Input
                                     type="date"
                                     value={transferData.date}
@@ -409,16 +460,16 @@ export default function AccountsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Notes (Optional)</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Catatan (Opsional)</Label>
                                 <Input
                                     value={transferData.notes}
                                     onChange={(e) => setTransferData({ ...transferData, notes: e.target.value })}
-                                    placeholder="e.g. Credit Card Payment"
+                                    placeholder="Contoh: Isi saldo e-wallet / Bayar tagihan"
                                 />
                             </div>
 
-                            <Button type="submit" className="w-full mt-4 h-12 rounded-xl text-base" disabled={transferMutation.isPending}>
-                                {transferMutation.isPending ? 'Processing...' : 'Transfer Now'}
+                            <Button type="submit" className="w-full mt-6 h-12 font-bold" disabled={transferMutation.isPending}>
+                                {transferMutation.isPending ? 'Memproses...' : 'Transfer Sekarang'}
                             </Button>
                         </form>
                     </DialogContent>
@@ -426,18 +477,18 @@ export default function AccountsPage() {
 
                 {/* Delete Confirmation */}
                 <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                    <AlertDialogContent className="rounded-2xl">
+                    <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Account?</AlertDialogTitle>
+                            <AlertDialogTitle>Hapus Akun Ini?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete {editingAccount?.name}? This action cannot be undone.
-                                Note: You cannot delete an account if it has associated transactions.
+                                Apakah Anda yakin ingin menghapus akun <strong>{editingAccount?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+                                Catatan: Akun yang memiliki transaksi terkait tidak dapat dihapus.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => editingAccount && deleteMutation.mutate(editingAccount.id)} className="bg-destructive hover:bg-destructive/90 rounded-xl">
-                                Delete
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => editingAccount && deleteMutation.mutate(editingAccount.id)} className="bg-destructive text-destructive-foreground">
+                                Hapus Akun
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

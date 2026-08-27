@@ -1,18 +1,31 @@
 # Mankeu - Personal Finance Management
 
-Mankeu is a modern, feature-rich personal finance management application designed to help you track your income, expenses, budgets, and financial goals with ease. Built with a focus on user experience and visual aesthetics, it offers a premium, intuitive interface for managing your personal finances.
+Mankeu is a modern, tactile personal finance management application featuring an elegant **Neumorphic (Soft UI)** design system. Designed to help you track income, expenses, budgets, savings, and debts with ease, Mankeu delivers a satisfying, sensory, and clean physical aesthetic in both Light and Dark modes.
 
-## features
+## ✨ Highlights & Design Philosophy
 
-- **📊 Interactive Dashboard**: Get a real-time overview of your financial health with cash flow trends, expense breakdowns, and budget status.
-- **💰 Transaction Tracking**: Easily record and categorize income and expenses.
-- **📉 Analytics**: Visualise your spending habits with detailed charts and graphs.
-- **🎯 Budget & Goals**: Set monthly budgets and financial goals to stay on track.
-- **🏷️ Category Management**: Customize categories to fit your specific needs.
-- **🔐 Secure Authentication**: Google Login (GIS) support and secure session management.
-- **📱 Mobile Optimized**: Responsive design for a seamless experience on all devices.
-- **🔌 Flexible Database Connection**: Support for both standard fields and Connection URI strings.
-- **🌓 Dark Mode**: Fully supported dark mode for a comfortable viewing experience.
+- **🎨 Tactile Neumorphic UI (Soft UI)**: Crafted with extruded surfaces, inset wells, and subtle light play that simulate real physical controls without harsh borders or distracting visual noise.
+- **🌓 Calibrated Dark & Light Modes**: 
+  - **Light Mode**: Soothing monochromatic cool grey (`#E0E5EC`) with smooth ambient shadows.
+  - **Dark Mode**: Deep modern slate (`#13161c`) with soft, low-glare depth highlights tailored for nighttime usage.
+- **⚡ Keyboard-First Navigation**: Global Command Palette (`Cmd+K` / `Ctrl+K`) for lightning-fast page switching and quick actions.
+
+## 🚀 Features
+
+- **📊 Interactive Dashboard**: Real-time overview of your financial health, net worth, cash flow trends, and budget health pulse.
+- **💰 Flexible Budgeting**: Set spending limits per category with versatile duration options:
+  - **Bulan Ini (Single Month)**: Track budgets for a specific month.
+  - **Rentang Bulan (Multi-Month Range)**: Set budgets spanning 1 to 10+ months (e.g. 3, 6, 10, 12 months) with automated progress indicators.
+  - **Tahunan (Full Year)**: Set annual limits active throughout the calendar year.
+  - **Selamanya (Forever / Recurring)**: Set-and-forget recurring monthly budget rules.
+- **💳 Transaction Tracking**: Easily log, categorize, and filter transactions with custom date ranges, bulk delete, and swipe gestures.
+- **📉 Visual Analytics**: Deep-dive spending analytics with interactive Recharts area charts, category pie breakdowns, and month-over-month trend insights.
+- **🎯 Savings & Goals**: Create target savings funds with deposit and withdrawal histories.
+- **🤝 Debts & Loans**: Track payables (debts) and receivables (loans to others) with partial payment logging.
+- **🏷️ Category & Account Management**: Organize multiple wallets/bank accounts and customize income/expense/saving categories.
+- **🔐 Secure Authentication & Session**: JWT-based authentication and Google Login (GIS) support.
+- **🌐 Internationalization (i18n)**: Full multi-language support (English & Indonesian) with customizable currency formatting (`IDR`, `USD`).
+- **📱 Mobile & PWA Ready**: Optimized responsive mobile experience with Capacitor Android build support.
 
 ## Screenshots
 

@@ -24,7 +24,7 @@ export const CurrencyDisplay = ({
     const validLocale = locale === 'id' ? 'id-ID' : 'en-US';
 
     return (
-        <span className={cn("", className)} {...props}>
+        <span className={cn("whitespace-nowrap", className)} {...props}>
             {isAmountHidden ? (
                 <span className="tracking-widest">•••••••</span>
             ) : (

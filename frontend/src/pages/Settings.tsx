@@ -80,7 +80,7 @@ export default function SettingsPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-4xl mx-auto space-y-8 pb-10">
+            <div className="w-full space-y-8 pb-10">
                 <div>
                     <h1 className="text-3xl font-display font-bold">{t('settings.title')}</h1>
                     <p className="text-muted-foreground mt-1">{t('settings.description')}</p>

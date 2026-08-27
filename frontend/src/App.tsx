@@ -5,16 +5,19 @@ import { Preferences } from '@capacitor/preferences';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '@/pages/Dashboard';
 import TransactionsPage from '@/pages/Transactions';
+import AddTransactionPage from '@/pages/AddTransactionPage';
 import BudgetPage from '@/pages/Budget';
 import SavingsPage from '@/pages/Savings';
 import AccountsPage from '@/pages/AccountsPage';
 import DebtsPage from '@/pages/Debts';
 import AnalyticsPage from '@/pages/Analytics';
+import CategoriesPage from '@/pages/Categories';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { BackButtonHandler } from '@/components/BackButtonHandler';
 import SettingsPage from '@/pages/Settings';
+import ProfilePage from '@/pages/ProfilePage';
 import ServerConfig from '@/pages/ServerConfig';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/hooks/useAuth';
@@ -83,13 +86,15 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/transactions/new" element={<AddTransactionPage />} />
             <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/categories" element={<Navigate to="/transactions" replace />} />
+            <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/budget" element={<BudgetPage />} />
             <Route path="/savings" element={<SavingsPage />} />
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/goals" element={<Navigate to="/savings" replace />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>

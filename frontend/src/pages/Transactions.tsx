@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useEffect } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,14 +35,13 @@ import {
 } from "@/components/ui/sheet"
 
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, Target, ChevronDown, Tag, AlignLeft, Search, Tags, Type, Wallet } from 'lucide-react';
+import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, ChevronDown, Tag, AlignLeft, Search, Tags, Wallet, ArrowUpRight, ArrowDownRight, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { useTranslation } from 'react-i18next';
 import { usePreferencesStore } from '@/hooks/usePreferences';
 
-// Haptic feedback helper
 const vibrate = (pattern: number | number[] = 10) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
         navigator.vibrate(pattern);
@@ -62,7 +60,6 @@ export default function TransactionsPage() {
 
     // Form State
     const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-
 
     // Filter State
     const [searchQuery, setSearchQuery] = useState('');
@@ -98,7 +95,6 @@ export default function TransactionsPage() {
     // Filtered Transactions
     const filteredTransactions = useMemo(() => {
         return transactions?.filter(tx => {
-            // Filter out saving-type transactions (they are managed in Savings page)
             const category = categories?.find(c => c.id === tx.category_id);
             if (category?.type === 'saving') return false;
 
@@ -112,89 +108,68 @@ export default function TransactionsPage() {
         }).sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
     }, [transactions, categories, searchQuery, filterCategory, filterMonth, filterYear]);
 
-
-
     // Grouping
     const groupedTransactions = useMemo(() => {
         if (!filteredTransactions) return {};
         return filteredTransactions.reduce((acc, tx) => {
-            const date = tx.transaction_date;
-            if (!acc[date]) acc[date] = [];
-            acc[date].push(tx);
+            const dateStr = new Date(tx.transaction_date).toISOString().split('T')[0];
+            if (!acc[dateStr]) acc[dateStr] = [];
+            acc[dateStr].push(tx);
             return acc;
         }, {} as Record<string, Transaction[]>);
     }, [filteredTransactions]);
 
-    // Daily Expense Calculation
+    // Daily Expense Calculations
+    const todayStr = new Date().toISOString().split('T')[0];
     const todayExpense = useMemo(() => {
         if (!transactions || !categories) return 0;
-        const today = new Date();
-        const todayStr = today.toISOString().split('T')[0]; // Compare using YYYY-MM-DD string from API
-
         return transactions
             .filter(tx => {
-                const isToday = tx.transaction_date === todayStr;
-                const category = categories.find(c => c.id === tx.category_id);
-                // Use strict check for 'expense' type
-                const isExpense = category?.type === 'expense';
-                // Exclude system transfers (Robust check via is_transfer flag)
-                // If flag is missing (old data), fall back to name check if needed, but flag is cleaner.
-                // We'll rely on the flag primarily.
-                const isTransfer = !!tx.is_transfer;
-
-                return isToday && isExpense && !isTransfer;
+                const txDateStr = new Date(tx.transaction_date).toISOString().split('T')[0];
+                const cat = categories.find(c => c.id === tx.category_id);
+                return txDateStr === todayStr && cat?.type === 'expense' && !tx.is_transfer;
             })
-            .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
-    }, [transactions, categories]);
+            .reduce((sum, tx) => sum + Number(tx.amount), 0);
+    }, [transactions, categories, todayStr]);
 
-    // Average Daily Expense Calculation
     const avgDailyExpense = useMemo(() => {
         if (!transactions || !categories) return 0;
-        const today = new Date();
-        const currentMonth = today.getMonth();
-        const currentYear = today.getFullYear();
-        const currentDayOf = today.getDate(); // 1-31
-
+        const now = new Date();
+        const daysInCurrentMonth = now.getDate();
         const totalMonthExpense = transactions
             .filter(tx => {
-                const date = new Date(tx.transaction_date);
-                const category = categories.find(c => c.id === tx.category_id);
-                const isExpense = category?.type === 'expense';
-                // Exclude system transfers
-                const isTransfer = !!tx.is_transfer;
-
-                return isExpense &&
-                    !isTransfer &&
-                    date.getMonth() === currentMonth &&
-                    date.getFullYear() === currentYear &&
-                    date.getDate() <= currentDayOf; // Only count up to today for fairness? Or just total month to date.
+                const txDate = new Date(tx.transaction_date);
+                const cat = categories.find(c => c.id === tx.category_id);
+                return txDate.getMonth() === now.getMonth() &&
+                    txDate.getFullYear() === now.getFullYear() &&
+                    cat?.type === 'expense' &&
+                    !tx.is_transfer;
             })
-            .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+            .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
-        // Avoid division by zero, though getDate() is min 1
-        return totalMonthExpense / Math.max(1, currentDayOf);
+        return daysInCurrentMonth > 0 ? totalMonthExpense / daysInCurrentMonth : 0;
     }, [transactions, categories]);
-
 
     // Mutations
     const createMutation = useMutation({
         mutationFn: financialService.createTransaction,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
             setIsAddOpen(false);
-            vibrate([50, 30, 50]); // Success pattern
-        },
-        onError: () => {
-            vibrate(200); // Error pattern
+            vibrate([50, 30, 50]);
         }
     });
 
     const updateMutation = useMutation({
-        mutationFn: (data: { id: number, tx: Partial<Transaction> }) => financialService.updateTransaction(data.id, data.tx),
+        mutationFn: (data: { id: number; tx: Partial<Transaction> }) =>
+            financialService.updateTransaction(data.id, data.tx),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
             setIsEditOpen(false);
             setEditingTx(null);
+            vibrate(10);
         }
     });
 
@@ -202,6 +177,7 @@ export default function TransactionsPage() {
         mutationFn: financialService.deleteTransaction,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
         }
     });
 
@@ -209,6 +185,7 @@ export default function TransactionsPage() {
         mutationFn: financialService.bulkDeleteTransactions,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['accounts'] });
             setSelectedIds([]);
         }
     });
@@ -224,7 +201,6 @@ export default function TransactionsPage() {
     });
     const [categoryDeleteConfirmOpen, setCategoryDeleteConfirmOpen] = useState(false);
 
-    // Category Mutations
     const createCategoryMutation = useMutation({
         mutationFn: financialService.createCategory,
         onSuccess: () => {
@@ -236,7 +212,7 @@ export default function TransactionsPage() {
     });
 
     const updateCategoryMutation = useMutation({
-        mutationFn: (data: { id: number, cat: Partial<Category> }) => financialService.updateCategory(data.id, data.cat),
+        mutationFn: (data: { id: number; cat: Partial<Category> }) => financialService.updateCategory(data.id, data.cat),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             setIsCategoryEditOpen(false);
@@ -277,8 +253,6 @@ export default function TransactionsPage() {
         setCategoryDeleteConfirmOpen(false);
     };
 
-
-
     const handleEdit = (tx: Transaction) => {
         setEditingTx(tx);
         setIsEditOpen(true);
@@ -301,8 +275,6 @@ export default function TransactionsPage() {
 
     const handleSubmit = (e: React.FormEvent, data: Partial<Transaction>) => {
         e.preventDefault();
-
-        // Convert goal_id to undefined if 0 (select placeholder)
         const submissionData = { ...data };
         if (submissionData.goal_id === 0) submissionData.goal_id = undefined;
 
@@ -317,13 +289,13 @@ export default function TransactionsPage() {
         if (filteredTransactions && selectedIds.length === filteredTransactions.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(filteredTransactions?.map(tx => tx.id) || []);
+            setSelectedIds(filteredTransactions ? filteredTransactions.map(t => t.id) : []);
         }
     };
 
     const toggleSelectOne = (id: number) => {
         if (selectedIds.includes(id)) {
-            setSelectedIds(selectedIds.filter(sid => sid !== id));
+            setSelectedIds(selectedIds.filter(item => item !== id));
         } else {
             setSelectedIds([...selectedIds, id]);
         }
@@ -338,7 +310,7 @@ export default function TransactionsPage() {
         const date = new Date(dateStr);
         const today = new Date();
         const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setDate(today.getDate() - 1);
 
         if (date.toDateString() === today.toDateString()) return t('transactions.today');
         if (date.toDateString() === yesterday.toDateString()) return t('transactions.yesterday');
@@ -348,405 +320,303 @@ export default function TransactionsPage() {
 
     return (
         <DashboardLayout>
-            <div className="flex flex-col gap-8 max-w-6xl mx-auto w-full pb-20 md:pb-0">
+            <div className="flex flex-col gap-6 sm:gap-8 w-full pb-20 md:pb-8 px-1 sm:px-0">
                 {/* Mobile FAB */}
                 {!isDesktop && (
-                    <Button
-                        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg shadow-primary/30 z-40 p-0 hover:scale-105 active:scale-95 transition-all"
+                    <button
+                        className="fixed bottom-24 right-6 h-14 w-14 rounded-2xl bg-primary text-primary-foreground shadow-neu-extruded z-40 flex items-center justify-center active:translate-y-0.5 active:shadow-neu-inset-sm transition-all"
                         onClick={() => {
                             vibrate(10);
                             setIsAddOpen(true);
                         }}
                     >
                         <Plus className="h-6 w-6" />
-                    </Button>
+                    </button>
                 )}
-                {/* Header */}
-                {/* Header */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold truncate">{t('transactions.title')}</h1>
-                        <p className="text-muted-foreground mt-1 text-sm hidden sm:block">{t('transactions.description')}</p>
-                    </div>
 
-                    <div className="flex gap-2 shrink-0">
-                        {selectedIds.length > 0 && (
-                            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending} className="animate-in fade-in zoom-in-95 rounded-xl shadow-sm">
-                                <Trash2 className="mr-2 h-4 w-4" /> <span className="hidden sm:inline">{t('transactions.delete')}</span> ({selectedIds.length})
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-3">
+                    {selectedIds.length > 0 && (
+                        <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending} className="font-semibold gap-2">
+                            <Trash2 className="h-4 w-4" /> <span>{t('transactions.delete')}</span> ({selectedIds.length})
+                        </Button>
+                    )}
+
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="font-semibold gap-2 hidden sm:flex">
+                                <Plus className="h-4 w-4" /> {t('transactions.new_transaction')}
                             </Button>
-                        )}
-                        {/* Add Transaction Dialog - Unified Responsive */}
-                        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                            <DialogTrigger asChild>
-                                {isDesktop ? (
-                                    <Button className="shadow-lg shadow-primary/20 rounded-xl"><Plus className="mr-2 h-4 w-4" /> {t('transactions.new_transaction')}</Button>
-                                ) : (
-                                    <Button className="shadow-lg shadow-primary/20 rounded-xl px-4 hidden">
-                                        <Plus className="h-5 w-5 sm:mr-2" />
-                                        <span className="sr-only sm:not-sr-only">{t('transactions.new_transaction')}</span>
-                                        <span className="sm:hidden font-semibold">{t('transactions.new')}</span>
-                                    </Button>
-                                )}
-                            </DialogTrigger>
-                            <DialogContent className={cn(
-                                "flex flex-col gap-0 p-0 overflow-hidden",
-                                "w-full sm:w-auto h-full sm:h-auto", // Mobile: Fullscreen, Desktop: Auto height
-                                "sm:max-w-[600px] sm:rounded-2xl", // Desktop: Wider and rounded
-                                "border-0 sm:border" // Mobile: No border
-                            )}>
-                                <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                                    <DialogTitle>{t('transactions.add_transaction')}</DialogTitle>
-                                    <DialogDescription>{t('transactions.add_description')}</DialogDescription>
-                                </DialogHeader>
-                                <TransactionForm
-                                    categories={categories}
-                                    accounts={accounts}
-                                    savings={savings}
-                                    onSubmit={handleSubmit}
-                                    isSubmitting={createMutation.isPending}
-                                    initialData={null}
-                                />
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[560px]">
+                            <DialogHeader>
+                                <DialogTitle>{t('transactions.add_transaction')}</DialogTitle>
+                                <DialogDescription>{t('transactions.add_description')}</DialogDescription>
+                            </DialogHeader>
+                            <TransactionForm
+                                categories={categories}
+                                accounts={accounts}
+                                savings={savings}
+                                onSubmit={handleSubmit}
+                                isSubmitting={createMutation.isPending}
+                                initialData={null}
+                            />
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
-                {/* Filters & Actions */}
-                {/* Daily Expense Summary */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-3 shadow-sm">
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-1.5">
-                                <Tag className="w-3 h-3 text-red-600 dark:text-red-400" />
-                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('transactions.today_expense')}</p>
-                            </div>
-                            <p className="text-sm font-bold font-mono text-red-600 dark:text-red-400">
+                {/* Daily Summary 2-Column Grid (Pilihan A) */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                    {/* Today Expense */}
+                    <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-[28px] bg-background shadow-neu-extruded dark:shadow-neu-dark-extruded flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                        <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl bg-background shadow-neu-inset-deep flex items-center justify-center text-rose-500 shrink-0">
+                            <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider block truncate">
+                                {t('transactions.today_expense')}
+                            </span>
+                            <h3 className="text-xs sm:text-lg lg:text-xl font-extrabold font-mono text-rose-500 block mt-0.5 whitespace-nowrap overflow-x-auto scrollbar-none">
                                 <CurrencyDisplay value={todayExpense} />
-                            </p>
+                            </h3>
                         </div>
-                        <div className="h-px bg-slate-100 dark:bg-slate-700" />
-                        <div className="flex justify-between items-center">
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{t('transactions.avg_daily')}</p>
-                            <p className="text-sm font-bold font-mono text-red-600/80 dark:text-red-400/80">
+                    </div>
+
+                    {/* Avg Daily Expense */}
+                    <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-[28px] bg-background shadow-neu-extruded dark:shadow-neu-dark-extruded flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+                        <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl sm:rounded-2xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary shrink-0">
+                            <AlignLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider block truncate">
+                                {t('transactions.avg_daily')}
+                            </span>
+                            <h3 className="text-xs sm:text-lg lg:text-xl font-extrabold font-mono text-foreground block mt-0.5 whitespace-nowrap overflow-x-auto scrollbar-none">
                                 <CurrencyDisplay value={avgDailyExpense} />
-                            </p>
+                            </h3>
                         </div>
                     </div>
                 </div>
 
-                {/* Filters & Actions */}
-                <div className="space-y-4">
+                {/* Filters & Search Bar */}
+                <div className="space-y-3.5">
                     <div className="flex gap-3">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                className="pl-9 h-11 bg-card border-none shadow-sm rounded-xl focus-visible:ring-1 transition-all"
+                                deep
+                                className="pl-11 h-12 text-sm font-medium"
                                 placeholder={t('transactions.search_placeholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
+
                         <Button
-                            variant={showFilters ? "secondary" : "outline"}
-                            size="icon"
-                            className="h-11 w-11 rounded-xl shadow-sm border-none bg-card hover:bg-muted/50 shrink-0"
+                            variant="secondary"
+                            className="font-semibold gap-2 h-12 px-4"
                             onClick={() => setShowFilters(!showFilters)}
                         >
-                            <Filter className="h-4 w-4" />
+                            <Filter className="h-4 w-4 text-primary" />
+                            <span className="hidden sm:inline">Filter</span>
                         </Button>
-                        <Sheet open={isCategorySheetOpen} onOpenChange={setIsCategorySheetOpen}>
-                            <SheetTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-11 w-11 rounded-xl shadow-sm border-none bg-card hover:bg-muted/50 shrink-0"
-                                    title={t('categories.title')}
+                    </div>
+
+                    {/* Horizontal Category Filter Pills (Scrollable Carousel) */}
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 px-1 custom-scrollbar no-scrollbar">
+                        <button
+                            type="button"
+                            onClick={() => setFilterCategory('all')}
+                            className={cn(
+                                "px-4 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all duration-200 shrink-0 select-none",
+                                filterCategory === 'all'
+                                    ? "bg-background text-primary shadow-neu-inset font-black"
+                                    : "bg-background text-muted-foreground shadow-neu-extruded-sm hover:text-foreground active:shadow-neu-inset-sm"
+                            )}
+                        >
+                            ✨ Semua Kategori
+                        </button>
+
+                        {categories?.filter(c => c.type !== 'saving').map((cat) => {
+                            const isSelected = filterCategory === String(cat.id);
+                            return (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => setFilterCategory(isSelected ? 'all' : String(cat.id))}
+                                    className={cn(
+                                        "px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all duration-200 shrink-0 select-none flex items-center gap-1.5",
+                                        isSelected
+                                            ? "bg-background text-primary shadow-neu-inset font-black"
+                                            : "bg-background text-muted-foreground shadow-neu-extruded-sm hover:text-foreground active:shadow-neu-inset-sm"
+                                    )}
                                 >
-                                    <Tags className="h-4 w-4" />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="right" className="w-full sm:max-w-lg p-0 overflow-hidden">
-                                <SheetHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50">
-                                    <SheetTitle className="flex items-center gap-2">
-                                        <Tags className="h-5 w-5 text-primary" />
-                                        {t('categories.title')}
-                                    </SheetTitle>
-                                    <SheetDescription>{t('categories.description')}</SheetDescription>
-                                </SheetHeader>
-                                <div className="flex flex-col h-[calc(100%-80px)] overflow-hidden">
-                                    <div className="p-4 border-b border-border/50">
-                                        <Button
-                                            onClick={() => {
-                                                setCategoryFormData({ name: '', type: 'expense' });
-                                                setEditingCategory(null);
-                                                setIsCategoryAddOpen(true);
-                                            }}
-                                            className="w-full rounded-xl"
-                                        >
-                                            <Plus className="mr-2 h-4 w-4" /> {t('categories.add_category')}
-                                        </Button>
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                        {/* Expense Categories */}
-                                        {categories?.filter(c => c.type === 'expense').length ? (
-                                            <div>
-                                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                                                    {t('categories.expenses_header')} ({categories.filter(c => c.type === 'expense').length})
-                                                </h3>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {categories.filter(c => c.type === 'expense').map((cat) => (
-                                                        <div
-                                                            key={cat.id}
-                                                            onClick={() => handleCategoryCardClick(cat)}
-                                                            className="p-3 rounded-xl border border-border bg-card shadow-sm flex items-center gap-2 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all active:scale-[0.98]"
-                                                        >
-                                                            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                                                                <Tags className="h-3.5 w-3.5" />
-                                                            </div>
-                                                            <span className="font-medium text-sm truncate">{cat.name}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : null}
-
-                                        {/* Income Categories */}
-                                        {categories?.filter(c => c.type === 'income').length ? (
-                                            <div>
-                                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                                                    {t('categories.income_header')} ({categories.filter(c => c.type === 'income').length})
-                                                </h3>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {categories.filter(c => c.type === 'income').map((cat) => (
-                                                        <div
-                                                            key={cat.id}
-                                                            onClick={() => handleCategoryCardClick(cat)}
-                                                            className="p-3 rounded-xl border border-border bg-card shadow-sm flex items-center gap-2 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all active:scale-[0.98]"
-                                                        >
-                                                            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                                                <Tags className="h-3.5 w-3.5" />
-                                                            </div>
-                                                            <span className="font-medium text-sm truncate">{cat.name}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : null}
-
-                                        {/* Saving Categories */}
-                                        {categories?.filter(c => c.type === 'saving').length ? (
-                                            <div>
-                                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                                                    {t('categories.savings_header')} ({categories.filter(c => c.type === 'saving').length})
-                                                </h3>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {categories.filter(c => c.type === 'saving').map((cat) => (
-                                                        <div
-                                                            key={cat.id}
-                                                            onClick={() => handleCategoryCardClick(cat)}
-                                                            className="p-3 rounded-xl border border-border bg-card shadow-sm flex items-center gap-2 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all active:scale-[0.98]"
-                                                        >
-                                                            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                                                                <Tags className="h-3.5 w-3.5" />
-                                                            </div>
-                                                            <span className="font-medium text-sm truncate">{cat.name}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : null}
-
-                                        {/* Empty State */}
-                                        {!categories?.length && (
-                                            <div className="text-center py-8">
-                                                <Tags className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
-                                                <h3 className="text-lg font-semibold">{t('categories.no_categories')}</h3>
-                                                <p className="text-muted-foreground text-sm">{t('categories.no_categories_desc')}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
+                                    <span className={cn(
+                                        "w-2 h-2 rounded-full",
+                                        cat.type === 'income' ? "bg-neu-accent-sec" : "bg-rose-500"
+                                    )} />
+                                    {cat.name}
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {showFilters && (
-                        <div className="grid grid-cols-2 sm:flex gap-2 animate-in slide-in-from-top-2">
-                            <select
-                                className="h-10 w-full sm:w-auto rounded-xl border-none bg-card px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                            >
-                                <option value="all">{t('transactions.all_categories')}</option>
-                                {categories?.filter(c => c.type !== 'saving').map((c) => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                ))}
-                            </select>
-                            <select
-                                className="h-10 w-full sm:w-auto rounded-xl border-none bg-card px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-                                value={filterMonth}
-                                onChange={(e) => setFilterMonth(Number(e.target.value))}
-                            >
-                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                    <option key={m} value={m}>{new Date(0, m - 1).toLocaleString(language, { month: 'short' })}</option>
-                                ))}
-                            </select>
-                            <select
-                                className="h-10 w-full sm:w-auto rounded-xl border-none bg-card px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-                                value={filterYear}
-                                onChange={(e) => setFilterYear(Number(e.target.value))}
-                            >
-                                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
-                                    <option key={y} value={y}>{y}</option>
-                                ))}
-                            </select>
+                        <div className="grid grid-cols-2 sm:flex gap-3 pt-1">
+                            <div className="relative">
+                                <select
+                                    className="appearance-none h-11 w-full sm:w-36 rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset pl-4 pr-10 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                                    value={filterMonth}
+                                    onChange={(e) => setFilterMonth(Number(e.target.value))}
+                                >
+                                    {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                        <option key={m} value={m}>{new Date(0, m - 1).toLocaleString(language, { month: 'short' })}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            </div>
+
+                            <div className="relative">
+                                <select
+                                    className="appearance-none h-11 w-full sm:w-28 rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset pl-4 pr-10 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                                    value={filterYear}
+                                    onChange={(e) => setFilterYear(Number(e.target.value))}
+                                >
+                                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(y => (
+                                        <option key={y} value={y}>{y}</option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            </div>
                         </div>
                     )}
 
-                    <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-between px-2 pt-2">
+                        <div className="flex items-center gap-3">
                             <input
                                 type="checkbox"
                                 id="selectAll"
-                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                className="h-4 w-4 rounded border-none bg-background shadow-neu-inset cursor-pointer accent-primary"
                                 checked={filteredTransactions && filteredTransactions.length > 0 && selectedIds.length === filteredTransactions.length}
                                 onChange={toggleSelectAll}
                             />
-                            <label htmlFor="selectAll" className="text-sm font-medium leading-none cursor-pointer text-muted-foreground select-none">
+                            <label htmlFor="selectAll" className="text-xs font-bold text-muted-foreground uppercase tracking-wider cursor-pointer select-none">
                                 {t('transactions.select_all')}
                             </label>
                         </div>
-                        <span className="text-xs text-muted-foreground font-medium">
+                        <span className="text-xs font-bold text-primary bg-background shadow-neu-inset-sm px-3 py-1 rounded-full">
                             {filteredTransactions?.length || 0} {t('transactions.count_suffix')}
                         </span>
                     </div>
                 </div>
 
+                {/* Transactions Grouped List */}
                 <PullToRefresh onRefresh={async () => { await queryClient.invalidateQueries({ queryKey: ['transactions'] }); }}>
                     <div className="space-y-6">
                         {isLoading ? (
-                            <div className="text-center py-12 text-muted-foreground">{t('transactions.loading')}</div>
+                            <div className="text-center py-16 text-muted-foreground font-medium animate-pulse">{t('transactions.loading')}</div>
                         ) : Object.keys(groupedTransactions).length === 0 ? (
-                            <div className="text-center py-12">
-                                <div className="bg-muted/50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                                    <CalendarIcon className="w-8 h-8 text-muted-foreground" />
+                            <div className="p-12 rounded-[32px] bg-background shadow-neu-extruded flex flex-col items-center justify-center gap-3 text-center">
+                                <div className="h-16 w-16 rounded-3xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary">
+                                    <CalendarIcon className="w-8 h-8 opacity-50" />
                                 </div>
-                                <h3 className="text-lg font-semibold">{t('transactions.no_transactions')}</h3>
-                                <p className="text-muted-foreground">{t('transactions.no_transactions_desc')}</p>
+                                <h3 className="text-lg font-bold text-foreground">{t('transactions.no_transactions')}</h3>
+                                <p className="text-sm text-muted-foreground">{t('transactions.no_transactions_desc')}</p>
                             </div>
                         ) : (
                             Object.keys(groupedTransactions).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((date) => (
-                                <div key={date} className="relative">
-                                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                                        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 mb-2 flex items-center justify-between group">
-                                            <h3 className="font-bold text-base sm:text-lg text-foreground flex items-center gap-2">
+                                <div key={date} className="space-y-3">
+                                    <div className="flex items-center justify-between px-2 py-1">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="font-extrabold font-display text-base text-foreground">
                                                 {formatDateHeader(date)}
-                                                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/50 text-muted-foreground group-hover:bg-secondary transition-colors">
-                                                    {groupedTransactions[date].length}
-                                                </span>
                                             </h3>
-
-                                            {/* Daily Total Calculation and Display */}
-                                            <div className="text-sm font-bold tabular-nums">
-                                                {(() => {
-                                                    const dailyTotal = groupedTransactions[date].reduce((acc, tx) => {
-                                                        const cat = categories?.find(c => c.id === tx.category_id);
-                                                        const amount = Number(tx.amount);
-                                                        return cat?.type === 'income' ? acc + amount : acc - amount;
-                                                    }, 0);
-
-                                                    return (
-                                                        <span className={cn(
-                                                            dailyTotal >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
-                                                        )}>
-                                                            {dailyTotal > 0 ? '+' : ''}<CurrencyDisplay value={dailyTotal} />
-                                                        </span>
-                                                    );
-                                                })()}
-                                            </div>
+                                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-background shadow-neu-inset-sm text-muted-foreground">
+                                                {groupedTransactions[date].length}
+                                            </span>
                                         </div>
-                                        <div className="flex flex-col gap-3 pb-6">
-                                            {groupedTransactions[date].map((tx) => {
-                                                const cat = categories?.find(c => c.id === tx.category_id);
-                                                const isIncome = cat?.type === 'income';
+
+                                        {/* Daily Net */}
+                                        <div className="text-sm font-bold font-mono">
+                                            {(() => {
+                                                const dailyTotal = groupedTransactions[date].reduce((acc, tx) => {
+                                                    const cat = categories?.find(c => c.id === tx.category_id);
+                                                    const amount = Number(tx.amount);
+                                                    return cat?.type === 'income' ? acc + amount : acc - amount;
+                                                }, 0);
 
                                                 return (
-                                                    <SwipeableItem
-                                                        key={tx.id}
-                                                        onSwipeLeft={() => handleDelete(tx.id)}
-                                                        onSwipeRight={() => handleEdit(tx)}
-                                                        vibrate={() => vibrate(10)}
-                                                        leftContent={<Trash2 className="w-5 h-5 text-white" />}
-                                                        rightContent={<Pencil className="w-5 h-5 text-white" />}
-                                                        className={cn(
-                                                            "group relative flex items-stretch p-0 rounded-2xl border border-slate-100 dark:border-slate-800 bg-card shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300 cursor-pointer overflow-hidden",
-                                                            selectedIds.includes(tx.id) && "ring-2 ring-primary bg-primary/5",
-                                                        )}
-                                                    >
-                                                        {/* Selection Indicator Bar */}
-                                                        {selectedIds.includes(tx.id) && (
-                                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary z-20" />
-                                                        )}
+                                                    <span className={cn(
+                                                        dailyTotal >= 0 ? "text-neu-accent-sec" : "text-rose-500"
+                                                    )}>
+                                                        {dailyTotal > 0 ? '+' : ''}<CurrencyDisplay value={dailyTotal} />
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
 
-                                                        <div
-                                                            className="flex flex-1 items-center gap-3 p-4 select-none"
-                                                            onClick={() => toggleSelectOne(tx.id)}
-                                                        >
-                                                            {/* Icon Section */}
+                                    <div className="grid gap-3">
+                                        {groupedTransactions[date].map((tx) => {
+                                            const cat = categories?.find(c => c.id === tx.category_id);
+                                            const isIncome = cat?.type === 'income';
+
+                                            return (
+                                                <SwipeableItem
+                                                    key={tx.id}
+                                                    onSwipeLeft={() => handleDelete(tx.id)}
+                                                    onSwipeRight={() => handleEdit(tx)}
+                                                    vibrate={() => vibrate(10)}
+                                                    leftContent={<Trash2 className="w-5 h-5 text-white" />}
+                                                    rightContent={<Pencil className="w-5 h-5 text-white" />}
+                                                    className={cn(
+                                                        "p-4 rounded-[28px] bg-background shadow-neu-extruded-sm hover:shadow-neu-extruded-hover transition-all duration-300 cursor-pointer select-none",
+                                                        selectedIds.includes(tx.id) && "shadow-neu-inset"
+                                                    )}
+                                                >
+                                                    <div
+                                                        className="flex items-center justify-between gap-4"
+                                                        onClick={() => toggleSelectOne(tx.id)}
+                                                    >
+                                                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
                                                             <div className={cn(
-                                                                "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all duration-300",
-                                                                selectedIds.includes(tx.id)
-                                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110"
-                                                                    : "bg-secondary/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-hover:scale-110"
+                                                                "h-12 w-12 shrink-0 rounded-2xl flex items-center justify-center shadow-neu-inset-deep",
+                                                                tx.is_transfer
+                                                                    ? "text-indigo-500"
+                                                                    : isIncome
+                                                                        ? "text-neu-accent-sec"
+                                                                        : "text-rose-500"
                                                             )}>
-                                                                {selectedIds.includes(tx.id) ? (
-                                                                    <div className="h-3 w-3 rounded-sm bg-current" />
+                                                                {tx.is_transfer ? (
+                                                                    <ArrowRightLeft className="h-5 w-5" />
+                                                                ) : isIncome ? (
+                                                                    <ArrowUpRight className="h-5 w-5" />
                                                                 ) : (
-                                                                    <span className="text-sm font-bold uppercase">{cat?.name?.[0] || '?'}</span>
+                                                                    <ArrowDownRight className="h-5 w-5" />
                                                                 )}
                                                             </div>
-
-                                                            {/* Content Column */}
-                                                            <div className="flex flex-col flex-1 min-w-0 gap-1.5">
-                                                                {/* Top Row: Name and Goal */}
-                                                                <div className="flex items-center justify-between gap-2">
-                                                                    <div className="font-semibold text-base truncate flex items-center gap-2">
-                                                                        <span className="truncate">{tx.name}</span>
-                                                                        {tx.goal_id && (
-                                                                            <span className="inline-flex shrink-0 items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400 ring-1 ring-inset ring-blue-500/20">
-                                                                                <Target className="w-2.5 h-2.5 mr-1" /> {t('transactions.goal')}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* Bottom Row: Category/Notes and Amount */}
-                                                                <div className="flex items-center justify-between gap-2 text-xs">
-                                                                    <div className="flex items-center gap-2 text-muted-foreground truncate min-w-0 flex-1">
-                                                                        <span className={cn(
-                                                                            "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ring-1 ring-inset",
-                                                                            isIncome
-                                                                                ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/20 dark:text-emerald-400 dark:ring-emerald-900/30"
-                                                                                : "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-900/20 dark:text-rose-400 dark:ring-rose-900/30"
-                                                                        )}>
-                                                                            {cat?.name || 'Uncategorized'}
-                                                                        </span>
-                                                                        {tx.notes && <span className="truncate opacity-70">• {tx.notes}</span>}
-                                                                    </div>
-
+                                                            <div className="min-w-0">
+                                                                <p className="font-bold text-sm sm:text-base text-foreground truncate">{tx.name}</p>
+                                                                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                                                                     <span className={cn(
-                                                                        "text-sm font-bold tabular-nums shrink-0",
-                                                                        isIncome ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                                                                        tx.is_transfer ? "text-indigo-500 font-bold" : isIncome ? "text-neu-accent-sec font-bold" : "text-rose-500 font-bold"
                                                                     )}>
-                                                                        {isIncome ? '+' : '-'}<CurrencyDisplay value={tx.amount} />
+                                                                        {tx.is_transfer ? 'Transfer' : cat?.name || t('common.uncategorized')}
                                                                     </span>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </SwipeableItem>
-                                                );
-                                            })}
-                                        </div>
+
+                                                        <div className={cn(
+                                                            "font-bold font-mono text-base sm:text-lg shrink-0",
+                                                            tx.is_transfer ? "text-indigo-500" : isIncome ? "text-neu-accent-sec" : "text-foreground"
+                                                        )}>
+                                                            {tx.is_transfer ? '' : isIncome ? '+' : '-'} <CurrencyDisplay value={Number(tx.amount)} />
+                                                        </div>
+                                                    </div>
+                                                </SwipeableItem>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))
@@ -754,16 +624,12 @@ export default function TransactionsPage() {
                     </div>
                 </PullToRefresh>
 
-                {/* Edit Dialog - Unified Responsive */}
+                {/* Edit Dialog */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className={cn(
-                        "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-full sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
-                        "sm:max-w-[600px] sm:rounded-2xl", // Desktop styling
-                        "border-0 sm:border"
-                    )}>
-                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
+                    <DialogContent className="sm:max-w-[560px]">
+                        <DialogHeader>
                             <DialogTitle>{t('transactions.edit_transaction')}</DialogTitle>
+                            <DialogDescription>Perbarui data transaksi ini</DialogDescription>
                         </DialogHeader>
                         <TransactionForm
                             categories={categories}
@@ -776,189 +642,133 @@ export default function TransactionsPage() {
                     </DialogContent>
                 </Dialog>
 
-                {/* Delete Confirmation Modal */}
-                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                    <AlertDialogContent className="max-w-[90vw] sm:max-w-[425px] rounded-2xl">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-3">
-                                <div className="p-2 bg-destructive/10 rounded-lg">
-                                    <Trash2 className="h-5 w-5 text-destructive" />
-                                </div>
-                                {t('transactions.confirm_delete')}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-base">
-                                {deleteTarget?.type === 'bulk'
-                                    ? t('transactions.delete_bulk_confirm', { count: selectedIds.length })
-                                    : t('transactions.delete_single_confirm')
-                                }
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="gap-2 sm:gap-0">
-                            <AlertDialogCancel className="rounded-xl">{t('transactions.cancel')}</AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={confirmDelete}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
-                            >
-                                {deleteMutation.isPending || bulkDeleteMutation.isPending ? t('transactions.deleting') : t('transactions.delete')}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                {/* Category Add Dialog */}
+                {/* Add Category Dialog */}
                 <Dialog open={isCategoryAddOpen} onOpenChange={setIsCategoryAddOpen}>
-                    <DialogContent className={cn(
-                        "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-full sm:h-auto",
-                        "sm:max-w-[425px] sm:rounded-2xl",
-                        "border-0 sm:border"
-                    )}>
-                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
                             <DialogTitle>{t('categories.add_category')}</DialogTitle>
-                            <DialogDescription>{t('categories.create_desc')}</DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleCategorySubmit} className="flex flex-col h-full bg-background">
-                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">{t('categories.name_label')}</Label>
-                                    <div className="w-full px-4 sm:px-8">
-                                        <input
-                                            type="text"
-                                            className="text-2xl sm:text-3xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none"
-                                            placeholder={t('categories.enter_name')}
-                                            value={categoryFormData.name || ''}
-                                            onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-                                            required
-                                            autoFocus
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium flex items-center gap-2">
-                                        <Type className="w-4 h-4 text-primary" /> {t('categories.type_label')}
-                                    </Label>
-                                    <div className="relative">
-                                        <select
-                                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 relative z-10 bg-transparent font-medium"
-                                            value={categoryFormData.type}
-                                            onChange={(e) => setCategoryFormData({ ...categoryFormData, type: e.target.value as any })}
-                                            required
-                                        >
-                                            <option value="expense">💸 {t('categories.expense')}</option>
-                                            <option value="income">💰 {t('categories.income')}</option>
-                                            <option value="saving">🏦 {t('categories.saving')}</option>
-                                        </select>
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
-                                    </div>
+                        <form onSubmit={handleCategorySubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.name_label')}</Label>
+                                <Input
+                                    value={categoryFormData.name}
+                                    onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                                    placeholder={t('categories.name_placeholder')}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.type_label')}</Label>
+                                <div className="relative">
+                                    <select
+                                        className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                                        value={categoryFormData.type}
+                                        onChange={(e) => setCategoryFormData({ ...categoryFormData, type: e.target.value as any })}
+                                        required
+                                    >
+                                        <option value="expense">💸 {t('categories.expense')}</option>
+                                        <option value="income">💰 {t('categories.income')}</option>
+                                        <option value="saving">🏦 {t('categories.saving')}</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
-                            <div className="pt-4 pb-6 px-6 border-t border-border">
-                                <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg rounded-xl" disabled={createCategoryMutation.isPending}>
-                                    {createCategoryMutation.isPending ? t('categories.saving_btn') : t('categories.save_btn')}
-                                </Button>
-                            </div>
+                            <Button type="submit" className="w-full mt-6 h-12 font-bold" disabled={createCategoryMutation.isPending}>
+                                {createCategoryMutation.isPending ? t('categories.saving') : t('categories.save_btn')}
+                            </Button>
                         </form>
                     </DialogContent>
                 </Dialog>
 
-                {/* Category Edit Dialog */}
+                {/* Edit Category Dialog */}
                 <Dialog open={isCategoryEditOpen} onOpenChange={setIsCategoryEditOpen}>
-                    <DialogContent className={cn(
-                        "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-full sm:h-auto",
-                        "sm:max-w-[425px] sm:rounded-2xl",
-                        "border-0 sm:border"
-                    )}>
-                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
                             <DialogTitle>{t('categories.edit_category')}</DialogTitle>
-                            <DialogDescription>{t('categories.update_desc')}</DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleCategorySubmit} className="flex flex-col h-full bg-background">
-                            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-                                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">{t('categories.name_label')}</Label>
-                                    <div className="w-full px-4 sm:px-8">
-                                        <input
-                                            type="text"
-                                            className="text-2xl sm:text-3xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none"
-                                            placeholder={t('categories.enter_name')}
-                                            value={categoryFormData.name || ''}
-                                            onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
-                                            required
-                                            autoFocus
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium flex items-center gap-2">
-                                        <Type className="w-4 h-4 text-primary" /> {t('categories.type_label')}
-                                    </Label>
-                                    <div className="relative">
-                                        <select
-                                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 relative z-10 bg-transparent font-medium"
-                                            value={categoryFormData.type}
-                                            onChange={(e) => setCategoryFormData({ ...categoryFormData, type: e.target.value as any })}
-                                            required
-                                        >
-                                            <option value="expense">💸 {t('categories.expense')}</option>
-                                            <option value="income">💰 {t('categories.income')}</option>
-                                            <option value="saving">🏦 {t('categories.saving')}</option>
-                                        </select>
-                                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
-                                    </div>
+                        <form onSubmit={handleCategorySubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.name_label')}</Label>
+                                <Input
+                                    value={categoryFormData.name}
+                                    onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.type_label')}</Label>
+                                <div className="relative">
+                                    <select
+                                        className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                                        value={categoryFormData.type}
+                                        onChange={(e) => setCategoryFormData({ ...categoryFormData, type: e.target.value as any })}
+                                        required
+                                    >
+                                        <option value="expense">💸 {t('categories.expense')}</option>
+                                        <option value="income">💰 {t('categories.income')}</option>
+                                        <option value="saving">🏦 {t('categories.saving')}</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
-                            <div className="pt-4 pb-6 px-6 border-t border-border space-y-3">
-                                <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg rounded-xl" disabled={updateCategoryMutation.isPending}>
+                            <div className="pt-4 space-y-3">
+                                <Button type="submit" className="w-full h-12 font-bold" disabled={updateCategoryMutation.isPending}>
                                     {updateCategoryMutation.isPending ? t('categories.updating') : t('categories.update_btn')}
                                 </Button>
                                 <Button
                                     type="button"
-                                    variant="ghost"
-                                    className="w-full h-12 text-base font-semibold text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                                    variant="destructive"
+                                    className="w-full h-12 font-bold"
                                     onClick={() => setCategoryDeleteConfirmOpen(true)}
                                     disabled={deleteCategoryMutation.isPending}
                                 >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    {deleteCategoryMutation.isPending ? t('categories.deleting') : t('categories.delete_btn')}
+                                    <Trash2 className="mr-2 h-4 w-4" /> {t('categories.delete_btn')}
                                 </Button>
                             </div>
                         </form>
                     </DialogContent>
                 </Dialog>
 
-                {/* Category Delete Confirmation */}
-                <AlertDialog open={categoryDeleteConfirmOpen} onOpenChange={setCategoryDeleteConfirmOpen}>
-                    <AlertDialogContent className="max-w-[90vw] sm:max-w-[425px] rounded-2xl">
+                {/* Delete Confirmation */}
+                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                    <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-3">
-                                <div className="p-2 bg-destructive/10 rounded-lg">
-                                    <Trash2 className="h-5 w-5 text-destructive" />
-                                </div>
-                                {t('categories.delete_title')}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-base">
-                                {t('categories.delete_confirm', { name: editingCategory?.name })}
+                            <AlertDialogTitle>{t('transactions.confirm_delete')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Apakah Anda yakin ingin menghapus data transaksi ini? Tindakan tidak dapat dibatalkan.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="gap-2 sm:gap-0">
-                            <AlertDialogCancel className="rounded-xl">{t('common.cancel')}</AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={confirmCategoryDelete}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
-                            >
-                                {deleteCategoryMutation.isPending ? t('categories.deleting') : t('categories.delete_btn')}
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+                                {t('common.delete')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
 
+                {/* Category Delete Confirmation */}
+                <AlertDialog open={categoryDeleteConfirmOpen} onOpenChange={setCategoryDeleteConfirmOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{t('categories.delete_title')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {t('categories.delete_confirm', { name: editingCategory?.name })}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmCategoryDelete} className="bg-destructive text-destructive-foreground">
+                                {t('categories.delete_btn')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </DashboardLayout>
     );
 }
-
-
 
 function TransactionForm({ categories, accounts, onSubmit, isSubmitting, initialData }: any) {
     const { t } = useTranslation();
@@ -972,7 +782,6 @@ function TransactionForm({ categories, accounts, onSubmit, isSubmitting, initial
         goal_id: 0
     });
 
-    // Set default account when accounts are loaded and we are creating a new transaction
     useEffect(() => {
         if (!initialData && accounts && accounts.length > 0 && formData.account_id === 0) {
             const defaultAccount = accounts.find((a: Account) => a.is_default);
@@ -1003,132 +812,116 @@ function TransactionForm({ categories, accounts, onSubmit, isSubmitting, initial
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-background">
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-
-                {/* 1. Amount Input */}
-                <div className="relative py-8 bg-muted/20 rounded-3xl border border-dashed border-border flex flex-col items-center justify-center">
-                    <Label htmlFor="amount" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">{t('transactions.total_amount')}</Label>
-                    <div className="flex items-baseline justify-center relative w-full px-4 sm:px-8">
-                        <span className="text-2xl sm:text-3xl font-bold text-muted-foreground mr-2">{currency === 'USD' ? '$' : 'Rp'}</span>
-                        <input
-                            id="amount"
-                            type="text"
-                            inputMode="numeric"
-                            className="text-4xl sm:text-5xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/20 p-0 outline-none hover:outline-none"
-                            placeholder="0"
-                            value={formData.amount ? Number(formData.amount).toLocaleString(language || 'id-ID') : ''}
-                            onKeyDown={(e) => {
-                                if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-                                    e.preventDefault();
-                                }
-                            }}
-                            onChange={(e) => {
-                                const rawValue = e.target.value.replace(/[^0-9]/g, '');
-                                const numValue = parseInt(rawValue) || 0;
-                                setFormData({ ...formData, amount: numValue });
-                            }}
-                            required
-                            autoFocus
-                        />
-                    </div>
-                </div>
-
-                <div className="grid gap-4 grid-cols-2 sm:gap-6">
-                    {/* 1.5 Account Select */}
-                    <div className="space-y-2">
-                        <Label htmlFor="account" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                            <Wallet className="w-4 h-4 text-primary" /> {t('transactions.account')}
-                        </Label>
-                        <div className="relative">
-                            <select
-                                id="account"
-                                className="appearance-none flex h-12 w-full items-center justify-between rounded-xl border border-input bg-card px-4 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10"
-                                value={formData.account_id}
-                                onChange={(e) => setFormData({ ...formData, account_id: Number(e.target.value) })}
-                                required
-                            >
-                                <option value={0} disabled>{t('transactions.select_account')}</option>
-                                {accounts?.map((acc: Account) => (
-                                    <option key={acc.id} value={acc.id}>{acc.name} ({new Intl.NumberFormat(language || 'id-ID', { style: 'currency', currency: 'IDR' }).format(acc.balance)})</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
-                        </div>
-                    </div>
-
-                    {/* 2. Category Select */}
-                    <div className="space-y-2">
-                        <Label htmlFor="category" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                            <Tag className="w-4 h-4 text-primary" /> {t('transactions.category')}
-                        </Label>
-                        <div className="relative">
-                            <select
-                                id="category"
-                                className="appearance-none flex h-12 w-full items-center justify-between rounded-xl border border-input bg-card px-4 py-2 text-base shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 relative z-10"
-                                value={formData.category_id}
-                                onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
-                                required
-                            >
-                                <option value={0} disabled>{t('transactions.select_category')}</option>
-                                {categories?.filter((c: any) => c.type !== 'saving').map((c: any) => (
-                                    <option key={c.id} value={c.id}>{c.icon || '🔹'} {c.name} ({c.type})</option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
-                        </div>
-                    </div>
-
-                    {/* 3. Date Input */}
-                    <div className="space-y-2">
-                        <Label htmlFor="date" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                            <CalendarIcon className="w-4 h-4 text-primary" /> {t('transactions.date')}
-                        </Label>
-                        <div className="relative">
-                            <Input
-                                id="date"
-                                type="date"
-                                className="h-12 rounded-xl border-input bg-card text-base font-medium cursor-pointer shadow-sm"
-                                value={formData.transaction_date}
-                                onClick={(e: any) => {
-                                    if (e.currentTarget.showPicker) {
-                                        e.currentTarget.showPicker();
-                                    }
-                                }}
-                                onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
-                                required
-                            />
-                        </div>
-                    </div>
-
-                    {/* 4. Note Input */}
-                    <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
-                            <AlignLeft className="w-4 h-4 text-primary" /> {t('transactions.note')}
-                        </Label>
-                        <Input
-                            id="name"
-                            className="h-12 rounded-xl border-input bg-card text-base shadow-sm"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder={t('transactions.note_placeholder')}
-                            required
-                        />
-                    </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 py-2">
+            {/* Amount Input Sunken Well */}
+            <div className="p-6 rounded-3xl bg-background shadow-neu-inset-deep flex flex-col items-center justify-center">
+                <Label htmlFor="amount" className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">{t('transactions.total_amount')}</Label>
+                <div className="flex items-baseline justify-center w-full">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-muted-foreground mr-2">{currency === 'USD' ? '$' : 'Rp'}</span>
+                    <input
+                        id="amount"
+                        type="text"
+                        inputMode="numeric"
+                        className="text-3xl sm:text-5xl font-extrabold font-mono bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none text-foreground"
+                        placeholder="0"
+                        value={formData.amount ? Number(formData.amount).toLocaleString(language || 'id-ID') : ''}
+                        onKeyDown={(e) => {
+                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
+                        onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^0-9]/g, '');
+                            const numValue = parseInt(rawValue) || 0;
+                            setFormData({ ...formData, amount: numValue });
+                        }}
+                        required
+                        autoFocus
+                    />
                 </div>
             </div>
 
-            <div className="shrink-0 p-6 bg-background border-t border-border/50">
-                <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full h-12 sm:h-14 text-lg rounded-xl sm:rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                    {isSubmitting ? t('transactions.saving') : t('transactions.save')}
-                </Button>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                {/* Account Select */}
+                <div className="space-y-2">
+                    <Label htmlFor="account" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <Wallet className="w-3.5 h-3.5 text-primary" /> {t('transactions.account')}
+                    </Label>
+                    <div className="relative">
+                        <select
+                            id="account"
+                            className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                            value={formData.account_id}
+                            onChange={(e) => setFormData({ ...formData, account_id: Number(e.target.value) })}
+                            required
+                        >
+                            <option value={0} disabled>{t('transactions.select_account')}</option>
+                            {accounts?.map((acc: Account) => (
+                                <option key={acc.id} value={acc.id}>{acc.name} ({new Intl.NumberFormat(language || 'id-ID', { style: 'currency', currency: 'IDR' }).format(acc.balance)})</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                </div>
+
+                {/* Category Select */}
+                <div className="space-y-2">
+                    <Label htmlFor="category" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-primary" /> {t('transactions.category')}
+                    </Label>
+                    <div className="relative">
+                        <select
+                            id="category"
+                            className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                            value={formData.category_id}
+                            onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
+                            required
+                        >
+                            <option value={0} disabled>{t('transactions.select_category')}</option>
+                            {categories?.filter((c: any) => c.type !== 'saving').map((c: any) => (
+                                <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    </div>
+                </div>
+
+                {/* Date Input */}
+                <div className="space-y-2">
+                    <Label htmlFor="date" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <CalendarIcon className="w-3.5 h-3.5 text-primary" /> {t('transactions.date')}
+                    </Label>
+                    <Input
+                        id="date"
+                        type="date"
+                        value={formData.transaction_date}
+                        onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+                        required
+                    />
+                </div>
+
+                {/* Note Input */}
+                <div className="space-y-2">
+                    <Label htmlFor="name" className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <AlignLeft className="w-3.5 h-3.5 text-primary" /> {t('transactions.note')}
+                    </Label>
+                    <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder={t('transactions.note_placeholder')}
+                        required
+                    />
+                </div>
             </div>
+
+            <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-6 h-12 font-bold"
+            >
+                {isSubmitting ? t('transactions.saving') : t('transactions.save')}
+            </Button>
         </form>
-    )
+    );
 }
-
-

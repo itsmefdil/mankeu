@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Sun, Moon, LogOut, Settings, Coins, Eye, EyeOff, LayoutGrid, Wallet, ArrowRightLeft, Target, PiggyBank, BarChart3, CreditCard } from 'lucide-react';
+import { Search, Sun, Moon, LogOut, Settings, Coins, Eye, EyeOff, LayoutGrid, Wallet, ArrowRightLeft, Target, PiggyBank, BarChart3, CreditCard, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -52,110 +52,118 @@ export const TopBar = () => {
         navigate(path);
     };
 
-
     return (
         <>
-            <header className="sticky top-0 z-40 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-slate-900 dark:to-slate-900 md:bg-none md:bg-white/80 md:dark:bg-slate-900/80 backdrop-blur-md border-b border-transparent dark:border-slate-800 md:border-slate-200 md:dark:border-slate-700 pt-safe transition-all duration-300">
-            <div className="flex h-16 items-center gap-4 px-4 md:px-6">
-                <div className="w-full flex-1">
-                    {/* Mobile: Logo */}
-                    <div className="md:hidden flex items-center gap-2.5">
-                        <div className="h-9 w-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg ring-1 ring-white/20">
-                            <Coins className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-display font-bold text-lg leading-none text-white dark:bg-gradient-to-r dark:from-white dark:to-gray-300 dark:bg-clip-text dark:text-transparent">
+            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md pt-safe transition-all duration-300">
+                <div className="flex h-16 md:h-20 items-center justify-between gap-3 px-4 md:px-8">
+                    <div className="flex-1 min-w-0">
+                        {/* Mobile: Clean Brand */}
+                        <div className="md:hidden flex items-center gap-2.5">
+                            <div className="h-9 w-9 rounded-2xl bg-background shadow-neu-extruded-sm flex items-center justify-center text-primary shrink-0">
+                                <Coins className="h-5 w-5" />
+                            </div>
+                            <span className="font-display font-black text-xl tracking-tight text-foreground">
                                 Mankeu
                             </span>
-                            <span className="text-[10px] font-medium text-emerald-100 dark:text-muted-foreground tracking-widest uppercase scale-90 origin-left">
-                                {t('nav.finance')}
-                            </span>
                         </div>
+
+                        {/* Desktop: Command Search */}
+                        <form onSubmit={(e) => e.preventDefault()} className="hidden md:block">
+                            <div className="relative group max-w-md">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCommandOpen(true)}
+                                    className="w-full bg-background shadow-neu-inset dark:shadow-neu-dark-inset rounded-2xl pl-11 pr-16 py-2.5 text-left text-sm text-muted-foreground hover:shadow-neu-inset-deep dark:hover:shadow-neu-dark-inset-deep focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-all duration-300"
+                                >
+                                    {t('nav.search_placeholder')}
+                                </button>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
+                                    <kbd className="pointer-events-none inline-flex h-6 select-none items-center gap-1 rounded-xl bg-background shadow-neu-extruded-sm px-2 font-mono text-[10px] font-semibold text-muted-foreground">
+                                        <span className="text-xs">⌘</span>K
+                                    </kbd>
+                                </div>
+                            </div>
+                        </form>
                     </div>
 
-                    {/* Desktop: Command Search */}
-                    <form onSubmit={(e) => e.preventDefault()} className="hidden md:block">
-                        <div className="relative group max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors" />
-                            <button
-                                type="button"
-                                onClick={() => setIsCommandOpen(true)}
-                                className="w-full bg-muted/40 border border-transparent rounded-xl pl-10 pr-16 py-2 text-left text-sm text-muted-foreground hover:bg-background focus:outline-none focus:bg-background focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
-                            >
-                                {t('nav.search_placeholder')}
-                            </button>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1">
-                                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                                    <span className="text-xs">⌘</span>K
-                                </kbd>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div className="flex items-center gap-2 md:gap-3">
-                    <Button variant="ghost" size="icon" onClick={toggleAmountVisibility} className="rounded-xl text-emerald-50 md:text-muted-foreground dark:text-muted-foreground hover:text-white md:hover:text-foreground hover:bg-white/10 md:hover:bg-muted/60 transition-colors">
-                        {isAmountHidden ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        <span className="sr-only">Toggle amount visibility</span>
-                    </Button>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                        <button
+                            type="button"
+                            onClick={toggleAmountVisibility}
+                            className="h-10 w-10 rounded-2xl bg-background text-foreground shadow-neu-extruded-sm hover:shadow-neu-extruded-hover active:shadow-neu-inset-sm active:translate-y-0.5 transition-all duration-200 flex items-center justify-center select-none"
+                            title={isAmountHidden ? "Tampilkan nominal" : "Sembunyikan nominal"}
+                        >
+                            {isAmountHidden ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-primary" />}
+                        </button>
 
-                    <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-xl text-emerald-50 md:text-muted-foreground dark:text-muted-foreground hover:text-white md:hover:text-foreground hover:bg-white/10 md:hover:bg-muted/60 transition-colors">
-                        <Sun className="h-5 w-5 dark:hidden scale-100 dark:scale-0 transition-transform duration-200" />
-                        <Moon className="h-5 w-5 hidden dark:block scale-0 dark:scale-100 transition-transform duration-200" />
-                        <span className="sr-only">Toggle theme</span>
-                    </Button>
+                        <button
+                            type="button"
+                            onClick={toggleTheme}
+                            className="h-10 w-10 rounded-2xl bg-background text-foreground shadow-neu-extruded-sm hover:shadow-neu-extruded-hover active:shadow-neu-inset-sm active:translate-y-0.5 transition-all duration-200 flex items-center justify-center select-none"
+                            title="Ganti tema"
+                        >
+                            <Sun className="h-4 w-4 text-amber-500 dark:hidden" />
+                            <Moon className="h-4 w-4 text-primary hidden dark:block" />
+                        </button>
 
-
-
-                    <div className="h-6 w-px bg-border/60 mx-1 hidden md:block"></div>
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="rounded-xl pl-1 pr-3 gap-3 h-10 hover:bg-white/10 md:hover:bg-muted/60 transition-all group outline-none">
-                                <div className="h-8 w-8 rounded-lg overflow-hidden ring-2 ring-white/20 md:ring-background group-hover:ring-white/40 md:group-hover:ring-primary/20 transition-all shadow-md shadow-black/5 md:shadow-primary/20 bg-white/10 md:bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                    {user?.picture ? (
-                                        <img src={user.picture} alt={user.name} className="h-full w-full object-cover" />
-                                    ) : (
-                                        <span className="text-lg">🤠</span>
-                                    )}
-                                </div>
-                                <div className="flex flex-col items-start hidden sm:flex text-left">
-                                    <span className="text-sm font-semibold leading-none text-white md:text-foreground group-hover:text-white md:group-hover:text-primary transition-colors">{user?.name || 'Guest'}</span>
-                                    <span className="text-[10px] text-emerald-100 md:text-muted-foreground uppercase tracking-wider font-medium">Pro Plan</span>
-                                </div>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end" forceMount>
-                            <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        {user?.picture && (
-                                            <div className="h-8 w-8 rounded-full overflow-hidden shrink-0">
+                        <div className="hidden sm:block">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="secondary"
+                                        className="rounded-2xl pl-2 pr-4 gap-3 h-11 group outline-none select-none"
+                                    >
+                                        <div className="h-8 w-8 rounded-xl overflow-hidden shadow-neu-inset-sm flex items-center justify-center bg-background shrink-0">
+                                            {user?.picture ? (
                                                 <img src={user.picture} alt={user.name} className="h-full w-full object-cover" />
-                                            </div>
-                                        )}
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-medium leading-none truncate">{user?.name}</p>
-                                            <p className="text-xs leading-none text-muted-foreground truncate">{user?.email}</p>
+                                            ) : (
+                                                <span className="text-base">🤠</span>
+                                            )}
                                         </div>
-                                    </div>
-                                </div>
-                            </DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link to="/settings" className="cursor-pointer">
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>{t('nav.settings')}</span>
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>{t('nav.logout')}</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="text-sm font-semibold leading-none text-foreground group-hover:text-primary transition-colors">{user?.name || 'Guest'}</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Pro Plan</span>
+                                        </div>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end" forceMount>
+                                    <DropdownMenuLabel className="font-normal p-3">
+                                        <div className="flex items-center gap-3">
+                                            {user?.picture && (
+                                                <div className="h-9 w-9 rounded-2xl overflow-hidden shadow-neu-inset-sm shrink-0">
+                                                    <img src={user.picture} alt={user.name} className="h-full w-full object-cover" />
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold leading-tight truncate text-foreground">{user?.name}</p>
+                                                <p className="text-xs leading-tight text-muted-foreground truncate">{user?.email}</p>
+                                            </div>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/profile" className="cursor-pointer">
+                                            <User className="mr-2 h-4 w-4" />
+                                            <span>{t('nav.profile') || 'Profile'}</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/settings" className="cursor-pointer">
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            <span>{t('nav.settings')}</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>{t('nav.logout')}</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
                 </div>
-            </div>
             </header>
 
             <CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
@@ -190,6 +198,10 @@ export const TopBar = () => {
                         <CommandItem onSelect={() => goTo('/debts')}>
                             <CreditCard className="mr-2 h-4 w-4" />
                             {t('nav.debts')}
+                        </CommandItem>
+                        <CommandItem onSelect={() => goTo('/profile')}>
+                            <User className="mr-2 h-4 w-4" />
+                            {t('nav.profile') || 'Profile'}
                         </CommandItem>
                         <CommandItem onSelect={() => goTo('/settings')}>
                             <Settings className="mr-2 h-4 w-4" />
