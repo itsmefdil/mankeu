@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react"
+import { Capacitor } from "@capacitor/core"
+import { StatusBar, Style } from "@capacitor/status-bar"
 
 type Theme = "dark" | "light"
+
+function applyStatusBarStyle(theme: Theme) {
+    if (!Capacitor.isNativePlatform()) return
+
+    // App content overlays the status bar (transparent), so only the icon/text
+    // color needs to switch: dark icons on the light theme, light icons on dark.
+    StatusBar.setStyle({ style: theme === "light" ? Style.Light : Style.Dark }).catch(() => {})
+}
 
 function getInitialTheme(): Theme {
     if (typeof window === "undefined") return "light"
@@ -27,6 +37,7 @@ export function useTheme() {
         root.classList.remove("light", "dark")
         root.classList.add(theme)
         localStorage.setItem("theme", theme)
+        applyStatusBarStyle(theme)
     }, [theme])
 
     const toggleTheme = () => {
