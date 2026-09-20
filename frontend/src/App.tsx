@@ -23,7 +23,16 @@ import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/hooks/useAuth';
 import { usePreferencesStore } from '@/hooks/usePreferences';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes cache - keep data visible during mobile network blips
+      gcTime: 1000 * 60 * 30, // 30 minutes retention in memory
+      retry: 1,
+      refetchOnWindowFocus: false, // Avoid excessive refetching when switching apps on mobile
+    },
+  },
+});
 
 
 
@@ -60,7 +69,6 @@ const App = () => {
     };
 
     checkConnection();
-    checkConnection();
   }, []);
 
   const { user } = useAuthStore();
@@ -78,26 +86,30 @@ const App = () => {
       <Router>
         <ConnectionErrorDialog />
         <BackButtonHandler />
-        <Routes>
-          <Route path="/server-config" element={<ServerConfig />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        <div className="min-h-screen w-full bg-slate-200/60 dark:bg-neutral-950 flex justify-center selection:bg-primary/20">
+          <div className="w-full max-w-md min-h-screen bg-background text-foreground font-sans relative flex flex-col shadow-2xl desktop-frame:border-x desktop-frame:border-border/30">
+            <Routes>
+              <Route path="/server-config" element={<ServerConfig />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/transactions" element={<TransactionsPage />} />
-            <Route path="/transactions/new" element={<AddTransactionPage />} />
-            <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/categories" element={<CategoriesPage />} />
-            <Route path="/budget" element={<BudgetPage />} />
-            <Route path="/savings" element={<SavingsPage />} />
-            <Route path="/debts" element={<DebtsPage />} />
-            <Route path="/goals" element={<Navigate to="/savings" replace />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-        </Routes>
+              <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/transactions" element={<TransactionsPage />} />
+                <Route path="/transactions/new" element={<AddTransactionPage />} />
+                <Route path="/accounts" element={<AccountsPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/budget" element={<BudgetPage />} />
+                <Route path="/savings" element={<SavingsPage />} />
+                <Route path="/debts" element={<DebtsPage />} />
+                <Route path="/goals" element={<Navigate to="/savings" replace />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+              </Route>
+            </Routes>
+          </div>
+        </div>
       </Router>
     </QueryClientProvider>
   );

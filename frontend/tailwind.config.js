@@ -6,6 +6,17 @@ export default {
   ],
   darkMode: 'class',
   theme: {
+    // Mobile-only app: all standard responsive breakpoints (sm, md, lg, xl, 2xl)
+    // are neutralized so the mobile layout is always active, even on wide desktop displays.
+    // Use `desktop-frame:` exclusively for styling the outer container when viewed on desktop.
+    screens: {
+      'desktop-frame': '480px',
+      sm: '99999px',
+      md: '99999px',
+      lg: '99999px',
+      xl: '99999px',
+      '2xl': '99999px',
+    },
     container: {
       center: true,
       padding: "2rem",

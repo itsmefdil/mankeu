@@ -13,16 +13,9 @@ export const BottomNav = () => {
         }
     };
 
-    const navItems = [
-        { label: 'nav.dashboard', icon: LayoutGrid, href: '/' },
-        { label: 'nav.transactions', icon: ArrowRightLeft, href: '/transactions' },
-        { label: 'nav.budget_only', icon: Target, href: '/budget' },
-        { label: 'nav.profile', icon: User, href: '/profile' },
-    ];
-
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-background z-50 pt-2 px-3 pb-safe shadow-neu-extruded dark:shadow-neu-dark-extruded rounded-t-[32px]">
-            <div className="flex items-center justify-between h-16 max-w-md mx-auto relative px-2">
+        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-background z-50 pt-2 px-3 pb-safe shadow-neu-extruded dark:shadow-neu-dark-extruded rounded-t-[32px]">
+            <div className="flex items-center justify-between h-16 w-full relative px-2">
                 {/* 1. Home */}
                 <Link
                     to="/"
