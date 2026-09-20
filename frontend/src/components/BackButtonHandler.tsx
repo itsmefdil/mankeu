@@ -13,19 +13,21 @@ export const BackButtonHandler = () => {
 
     useEffect(() => {
         const handleBackButton = async () => {
-            // Check current path using the ref
-            if (locationRef.current.pathname === '/') {
+            const currentPath = locationRef.current.pathname;
+            const rootPaths = ['/', '/login', '/server-config'];
+
+            if (rootPaths.includes(currentPath)) {
                 await CapacitorApp.exitApp();
             } else {
-                navigate('/');
+                navigate(-1);
             }
         };
 
+        let listenerHandle: any = null;
+
         const setupListener = async () => {
             try {
-                // Remove any existing listeners first to prevent duplicates
-                await CapacitorApp.removeAllListeners();
-                await CapacitorApp.addListener('backButton', handleBackButton);
+                listenerHandle = await CapacitorApp.addListener('backButton', handleBackButton);
             } catch (error) {
                 console.error('Failed to setup back button listener:', error);
             }
@@ -34,8 +36,11 @@ export const BackButtonHandler = () => {
         setupListener();
 
         return () => {
-            // Cleanup on unmount
-            CapacitorApp.removeAllListeners();
+            if (listenerHandle?.remove) {
+                listenerHandle.remove();
+            } else {
+                CapacitorApp.removeAllListeners();
+            }
         };
     }, [navigate]);
 
