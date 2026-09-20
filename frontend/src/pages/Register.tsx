@@ -4,8 +4,10 @@ import { useAuthStore } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterPage() {
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -24,7 +26,7 @@ export default function RegisterPage() {
             // Redirect to login or auto-login
             navigate('/login');
         } catch (err: any) {
-            const message = err.response?.data?.detail || 'Registration failed. Please try again.';
+            const message = err.response?.data?.detail || t('auth.registration_failed');
             setError(message);
         } finally {
             setLoading(false);
@@ -32,23 +34,20 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 sm:px-6 lg:px-8 transition-colors duration-300">
-            {/* Header / Logo Area for Mobile */}
-            <div className="mb-8 text-center sm:hidden">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
+            {/* Header / Logo Area */}
+            <div className="mb-8 text-center">
                 <h1 className="text-3xl font-display font-bold text-primary">Mankeu</h1>
-                <p className="text-muted-foreground mt-2 text-sm">Join us today</p>
+                <p className="text-muted-foreground mt-2 text-sm">{t('auth.join_today')}</p>
             </div>
 
-            <div className="w-full max-w-[400px] border-none shadow-none sm:border sm:border-border/60 sm:shadow-xl sm:shadow-primary/5 sm:bg-card sm:backdrop-blur-xl rounded-3xl overflow-hidden p-0 sm:p-8">
-                <div className="text-center mb-8 hidden sm:block">
-                    <h1 className="text-3xl font-display font-bold text-foreground">Create Account</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">Start managing your finances today</p>
-                </div>
+            <div className="w-full max-w-[400px] border-none shadow-none rounded-3xl overflow-hidden p-0">
+
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <label htmlFor="name" className="text-sm font-semibold text-muted-foreground ml-1">Full Name</label>
+                            <label htmlFor="name" className="text-sm font-semibold text-muted-foreground ml-1">{t('auth.full_name')}</label>
                             <Input
                                 id="name"
                                 type="text"
@@ -56,12 +55,12 @@ export default function RegisterPage() {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="h-14 px-4 rounded-2xl border-2 border-border/60 bg-muted/30 text-base transition-all focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
-                                placeholder="John Doe"
+                                placeholder={t('auth.full_name_placeholder')}
                                 autoComplete="name"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-semibold text-muted-foreground ml-1">Email</label>
+                            <label htmlFor="email" className="text-sm font-semibold text-muted-foreground ml-1">{t('auth.email')}</label>
                             <Input
                                 id="email"
                                 type="email"
@@ -69,12 +68,12 @@ export default function RegisterPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="h-14 px-4 rounded-2xl border-2 border-border/60 bg-muted/30 text-base transition-all focus:border-primary focus:bg-background focus:ring-4 focus:ring-primary/10"
-                                placeholder="hello@example.com"
+                                placeholder={t('auth.email_placeholder')}
                                 autoComplete="email"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="password" className="text-sm font-semibold text-muted-foreground ml-1">Password</label>
+                            <label htmlFor="password" className="text-sm font-semibold text-muted-foreground ml-1">{t('auth.password')}</label>
                             <Input
                                 id="password"
                                 type="password"
@@ -99,15 +98,15 @@ export default function RegisterPage() {
                         className="w-full h-14 text-base font-bold rounded-2xl shadow-lg shadow-primary/25 transition-all hover:shadow-primary/40 hover:-translate-y-0.5 active:scale-[0.98]"
                         disabled={loading}
                     >
-                        {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Create Account'}
+                        {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : t('auth.create_account')}
                     </Button>
                 </form>
 
                 <div className="mt-8 text-center">
                     <p className="text-sm text-muted-foreground">
-                        Already have an account?{' '}
+                        {t('auth.already_have_account')}{' '}
                         <Link to="/login" className="font-bold text-primary hover:underline">
-                            Sign in
+                            {t('auth.login_here')}
                         </Link>
                     </p>
                 </div>
