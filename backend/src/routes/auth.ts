@@ -7,6 +7,8 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
 
+import { randomBytes } from 'crypto';
+
 const router = Router();
 
 const loginSchema = z.object({
@@ -18,11 +20,19 @@ const googleLoginSchema = z.object({
     id_token: z.string(),
 });
 
+const getJwtSecret = (): string => {
+    const secret = process.env.SECRET_KEY;
+    if (!secret) {
+        throw new Error('FATAL: SECRET_KEY environment variable is not set');
+    }
+    return secret;
+};
+
 // Helper to create token
 const createAccessToken = (userId: number) => {
-    // 6 months expiration in seconds
+    // 6 months expiration in seconds (suitable for mobile app persistent session)
     const expiresIn = 60 * 60 * 24 * 30 * 6;
-    return jwt.sign({ sub: String(userId) }, process.env.SECRET_KEY || 'secret', { expiresIn });
+    return jwt.sign({ sub: String(userId) }, getJwtSecret(), { expiresIn });
 };
 
 router.post('/login', validate(loginSchema), async (req, res) => {
@@ -88,7 +98,7 @@ router.post('/login/google', validate(googleLoginSchema), async (req, res) => {
         userId = existingUser.id;
     } else {
         // Create user
-        const randomPassword = Math.random().toString(36).slice(-8);
+        const randomPassword = randomBytes(16).toString('hex');
         const [newUser] = await db.insert(users).values({
             email: email,
             name: payload.name || email.split('@')[0],
