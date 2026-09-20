@@ -1,19 +1,21 @@
 services:
   db:
-    image: mysql:8.0
+    image: postgres:16-alpine
     container_name: mankeu_db
     restart: always
     ports:
-      - 3309:3306
+      - "5432:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: mankeu
+      POSTGRES_USER: ${POSTGRES_USER:-mankeu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-mankeu}
     volumes:
-      - db_data:/var/lib/mysql
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      timeout: 20s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mankeu} -d ${POSTGRES_DB:-mankeu}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -23,47 +25,11 @@ services:
     restart: always
     env_file:
       - ./backend/.env
-    volumes:
-      - ./backend/.env:/app/.env
-      - ./backend/app:/app/app # Persist code changes including migrations
-      - ./backend/alembic:/app/alembic # Persist migrations
     ports:
-      - "8088:8000"
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+      - "${PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
-
-  migration:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: mankeu_migration
-    env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend/.env:/app/.env
-      - ./backend/app:/app/app # Persist code changes including migrations
-      - ./backend/alembic:/app/alembic # Persist migrations
-    command: alembic upgrade head
-    depends_on:
-      db:
-        condition: service_healthy
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
-    container_name: mankeu_frontend
-    restart: always
-    env_file:
-      - ./frontend/.env
-    ports:
-      - "3088:80"
-    depends_on:
-      - backend
 
 volumes:
-  db_data:
+  pgdata:
