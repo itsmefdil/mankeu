@@ -25,17 +25,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from "@/components/ui/sheet"
-
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, ChevronDown, Tag, AlignLeft, Search, Tags, Wallet, ArrowUpRight, ArrowDownRight, ArrowRightLeft } from 'lucide-react';
+import { Plus, Trash2, Pencil, Filter, Calendar as CalendarIcon, ChevronDown, Tag, AlignLeft, Search, Wallet, ArrowUpRight, ArrowDownRight, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -191,7 +182,6 @@ export default function TransactionsPage() {
     });
 
     // Category Management State
-    const [isCategorySheetOpen, setIsCategorySheetOpen] = useState(false);
     const [isCategoryAddOpen, setIsCategoryAddOpen] = useState(false);
     const [isCategoryEditOpen, setIsCategoryEditOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -230,12 +220,6 @@ export default function TransactionsPage() {
             setCategoryFormData({ name: '', type: 'expense' });
         }
     });
-
-    const handleCategoryCardClick = (cat: Category) => {
-        setEditingCategory(cat);
-        setCategoryFormData({ name: cat.name, type: cat.type });
-        setIsCategoryEditOpen(true);
-    };
 
     const handleCategorySubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -418,7 +402,7 @@ export default function TransactionsPage() {
                             onClick={() => setShowFilters(!showFilters)}
                         >
                             <Filter className="h-4 w-4 text-primary" />
-                            <span className="hidden sm:inline">Filter</span>
+                            <span className="hidden sm:inline">{t('common.filter')}</span>
                         </Button>
                     </div>
 
@@ -434,7 +418,7 @@ export default function TransactionsPage() {
                                     : "bg-background text-muted-foreground shadow-neu-extruded-sm hover:text-foreground active:shadow-neu-inset-sm"
                             )}
                         >
-                            ✨ Semua Kategori
+                            ✨ {t('transactions.all_categories')}
                         </button>
 
                         {categories?.filter(c => c.type !== 'saving').map((cat) => {
@@ -629,7 +613,7 @@ export default function TransactionsPage() {
                     <DialogContent className="sm:max-w-[560px]">
                         <DialogHeader>
                             <DialogTitle>{t('transactions.edit_transaction')}</DialogTitle>
-                            <DialogDescription>Perbarui data transaksi ini</DialogDescription>
+                            <DialogDescription>{t('transactions.add_description')}</DialogDescription>
                         </DialogHeader>
                         <TransactionForm
                             categories={categories}
@@ -736,13 +720,15 @@ export default function TransactionsPage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>{t('transactions.confirm_delete')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus data transaksi ini? Tindakan tidak dapat dibatalkan.
+                                {deleteTarget?.type === 'bulk'
+                                    ? t('transactions.delete_bulk_confirm', { count: selectedIds.length })
+                                    : t('transactions.delete_single_confirm')}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
-                                {t('common.delete')}
+                                {t('common.remove')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { financialService, type Debt, type DebtPayment } from '@/services/financial';
+import { financialService, type Debt } from '@/services/financial';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,9 +78,9 @@ export default function DebtsPage() {
     });
 
     // Queries
-    const { data: debts, isLoading } = useQuery({
+    const { data: debts, isLoading } = useQuery<Debt[]>({
         queryKey: ['debts'],
-        queryFn: financialService.getDebts
+        queryFn: () => financialService.getDebts()
     });
 
     // Computed Stats
@@ -303,7 +303,7 @@ export default function DebtsPage() {
                                 <ArrowDownLeft className="h-6 w-6" />
                             </div>
                             <div>
-                                <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">{t('debts.payable')} (Saya Berhutang)</span>
+                                <span className="text-xs font-bold text-rose-500 uppercase tracking-wider">{t('debts.type_payable')}</span>
                                 <h3 className="text-2xl sm:text-3xl font-extrabold font-mono text-rose-500 mt-1">
                                     <CurrencyDisplay value={stats.unpaidPayable} />
                                 </h3>
@@ -319,7 +319,7 @@ export default function DebtsPage() {
                                 <ArrowUpRight className="h-6 w-6" />
                             </div>
                             <div>
-                                <span className="text-xs font-bold text-neu-accent-sec uppercase tracking-wider">{t('debts.receivable')} (Orang Berhutang)</span>
+                                <span className="text-xs font-bold text-neu-accent-sec uppercase tracking-wider">{t('debts.type_receivable')}</span>
                                 <h3 className="text-2xl sm:text-3xl font-extrabold font-mono text-neu-accent-sec mt-1">
                                     <CurrencyDisplay value={stats.unpaidReceivable} />
                                 </h3>

@@ -23,7 +23,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Plus, Trash2, Tags, ChevronDown, Tag, ArrowUpRight, ArrowDownRight, PiggyBank } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 
@@ -35,6 +34,7 @@ export default function CategoriesPage() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     // Form State
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -75,7 +75,12 @@ export default function CategoriesPage() {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             setIsEditOpen(false);
             setEditingCategory(null);
+            setDeleteError(null);
             resetForm();
+        },
+        onError: (err: any) => {
+            const message = err.response?.data?.detail || 'Gagal menghapus kategori';
+            setDeleteError(message);
         }
     });
 
@@ -84,6 +89,7 @@ export default function CategoriesPage() {
             name: '',
             type: 'expense'
         });
+        setDeleteError(null);
     };
 
     const handleCardClick = (cat: Category) => {
@@ -331,6 +337,13 @@ export default function CategoriesPage() {
                                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
+
+                            {deleteError && (
+                                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-xl flex items-start gap-2 border border-destructive/20">
+                                    <span className="leading-tight font-medium">{deleteError}</span>
+                                </div>
+                            )}
+
                             <div className="pt-4 space-y-3">
                                 <Button type="submit" className="w-full h-12 font-bold" disabled={updateMutation.isPending}>
                                     {updateMutation.isPending ? t('categories.updating') : t('categories.update_btn')}
@@ -342,7 +355,7 @@ export default function CategoriesPage() {
                                     onClick={handleDelete}
                                     disabled={deleteMutation.isPending}
                                 >
-                                    <Trash2 className="mr-2 h-4 w-4" /> {t('categories.delete_btn')}
+                                    <Trash2 className="mr-2 h-4 w-4" /> {deleteMutation.isPending ? t('categories.deleting') : t('categories.delete_btn')}
                                 </Button>
                             </div>
                         </form>

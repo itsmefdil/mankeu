@@ -552,10 +552,10 @@ export default function BudgetPage() {
                                         <div className="space-y-2 pt-1 border-t border-border/40">
                                             <div className="flex justify-between items-center">
                                                 <Label className="text-[11px] font-bold text-muted-foreground uppercase">{t('budget.duration_label')}</Label>
-                                                <span className="text-xs font-extrabold text-primary font-mono">{durationMonths} Bulan</span>
+                                                <span className="text-xs font-extrabold text-primary font-mono">{t('budget.months_count', { count: durationMonths })}</span>
                                             </div>
 
-                                            {/* Quick Duration Buttons (e.g. 3, 6, 10, 12 Bulan) */}
+                                            {/* Quick Duration Buttons (e.g. 3, 6, 10, 12 Months) */}
                                             <div className="grid grid-cols-4 gap-1.5">
                                                 {[3, 6, 10, 12].map(num => (
                                                     <button
@@ -569,7 +569,7 @@ export default function BudgetPage() {
                                                                 : "bg-background text-muted-foreground hover:text-foreground shadow-neu-inset-sm"
                                                         )}
                                                     >
-                                                        {num} Bln
+                                                        {t('budget.months_short', { count: num })}
                                                     </button>
                                                 ))}
                                             </div>
@@ -629,7 +629,9 @@ export default function BudgetPage() {
                                         {budgetFormData.period_type === 'monthly' && (
                                             <>
                                                 <CalendarDays className="w-3.5 h-3.5 shrink-0" />
-                                                <span>Berlaku khusus {getMonthName(budgetFormData.start_month || selectedMonth)} {budgetFormData.start_year || selectedYear}</span>
+                                                <span>{t('budget.valid_monthly_preview', {
+                                                    month: `${getMonthName(budgetFormData.start_month || selectedMonth)} ${budgetFormData.start_year || selectedYear}`
+                                                })}</span>
                                             </>
                                         )}
                                     </div>
@@ -856,8 +858,8 @@ export default function BudgetPage() {
                             <Wallet className="h-8 w-8 opacity-50" />
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-foreground">Belum ada anggaran aktif untuk bulan ini</p>
-                            <p className="text-sm text-muted-foreground mt-1">Buat anggaran bulanan, rentang waktu, atau selamanya untuk mengontrol pengeluaran kategori.</p>
+                            <p className="text-lg font-bold text-foreground">{t('budget.no_budgets')}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{t('budget.no_budgets_desc')}</p>
                         </div>
                         <Button
                             className="mt-2 font-semibold"

@@ -11,13 +11,11 @@ import { useTranslation } from 'react-i18next';
 import {
     ArrowLeft,
     Wallet,
-    Tag,
     Calendar as CalendarIcon,
     AlignLeft,
     ChevronDown,
     ArrowUpRight,
     ArrowDownRight,
-    Sparkles,
     Check
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -90,8 +88,8 @@ export default function AddTransactionPage() {
     };
 
     return (
-        <DashboardLayout>
-            <div className="flex flex-col gap-4 w-full max-w-xl mx-auto pb-24 md:pb-10 px-1 sm:px-0">
+        <DashboardLayout hideBottomNav>
+            <div className="flex flex-col gap-4 w-full max-w-xl mx-auto pb-8 md:pb-10 px-1 sm:px-0">
                 {/* Back Button & Title */}
                 <div className="flex items-center justify-between gap-3">
                     <button
@@ -270,7 +268,7 @@ export default function AddTransactionPage() {
                             className="h-11 text-xs sm:text-sm font-medium"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Contoh: Makan siang / Belanja bulanan"
+                            placeholder={t('transactions.note_placeholder')}
                             required
                         />
                     </div>
@@ -284,7 +282,7 @@ export default function AddTransactionPage() {
                         {createMutation.isPending ? t('transactions.saving') : (
                             <>
                                 <Check className="h-4 w-4 stroke-[3]" />
-                                Simpan Transaksi
+                                {t('transactions.save')}
                             </>
                         )}
                     </Button>

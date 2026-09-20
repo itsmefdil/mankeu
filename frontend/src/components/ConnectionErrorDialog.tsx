@@ -10,8 +10,10 @@ import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/hooks/useConnectionStore";
 import { WifiOff, Server } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export function ConnectionErrorDialog() {
+    const { t } = useTranslation();
     const { isConnectionError, setConnectionError } = useConnectionStore();
     const navigate = useNavigate();
     const location = useLocation();
@@ -39,10 +41,10 @@ export function ConnectionErrorDialog() {
                         <WifiOff className="w-8 h-8 text-destructive" />
                     </div>
                     <AlertDialogTitle className="text-xl font-display font-bold">
-                        Connection Lost
+                        {t('connection.lost_title')}
                     </AlertDialogTitle>
                     <AlertDialogDescription className="text-muted-foreground text-center">
-                        Unable to connect to the Mankeu server. The server might be down or your internet connection is unstable.
+                        {t('connection.lost_desc')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col gap-2 mt-4 sm:flex-col sm:space-x-0 w-full">
@@ -50,7 +52,7 @@ export function ConnectionErrorDialog() {
                         className="w-full h-12 rounded-xl text-base font-semibold"
                         onClick={handleRetry}
                     >
-                        Retry Connection
+                        {t('connection.retry')}
                     </Button>
                     <Button
                         variant="outline"
@@ -58,7 +60,7 @@ export function ConnectionErrorDialog() {
                         onClick={handleChangeServer}
                     >
                         <Server className="w-4 h-4 mr-2" />
-                        Change Server
+                        {t('connection.change_server')}
                     </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>

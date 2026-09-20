@@ -187,7 +187,7 @@ export default function AccountsPage() {
                             setIsTransferOpen(true);
                         }}
                     >
-                        <ArrowRightLeft className="h-4 w-4 text-neu-accent-sec" /> Transfer
+                        <ArrowRightLeft className="h-4 w-4 text-neu-accent-sec" /> {t('accounts.transfer')}
                     </Button>
                     <Button
                         className="font-semibold gap-2"
@@ -196,7 +196,7 @@ export default function AccountsPage() {
                             setIsAddOpen(true);
                         }}
                     >
-                        <Plus className="h-4 w-4" /> {t('common.add') || 'Tambah Akun'}
+                        <Plus className="h-4 w-4" /> {t('accounts.add_account')}
                     </Button>
                 </div>
 
@@ -208,7 +208,7 @@ export default function AccountsPage() {
                         </div>
                         <div>
                             <span className="text-xs uppercase tracking-widest font-bold text-muted-foreground">
-                                Total Saldo Seluruh Akun
+                                {t('accounts.total_balance')}
                             </span>
                             <h2 className="text-2xl sm:text-4xl font-extrabold font-display tracking-tight text-foreground">
                                 <CurrencyDisplay value={totalBalance} />
@@ -216,7 +216,7 @@ export default function AccountsPage() {
                         </div>
                     </div>
                     <span className="text-xs font-bold text-primary bg-background shadow-neu-inset-sm px-3.5 py-1.5 rounded-full hidden sm:inline-block">
-                        {accounts?.length || 0} Akun Aktif
+                        {t('accounts.active_accounts', { count: accounts?.length || 0 })}
                     </span>
                 </div>
 
@@ -241,7 +241,7 @@ export default function AccountsPage() {
                                 <div className="p-6 rounded-[32px] bg-background shadow-neu-extruded dark:shadow-neu-dark-extruded hover:shadow-neu-extruded-hover dark:hover:shadow-neu-dark-extruded-hover transition-all duration-300 flex flex-col justify-between gap-6 h-full relative group">
                                     {account.is_default && (
                                         <div className="absolute top-4 right-4 bg-background shadow-neu-inset-sm text-primary text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                            Default
+                                            {t('accounts.default')}
                                         </div>
                                     )}
 
@@ -263,7 +263,7 @@ export default function AccountsPage() {
                                     </div>
 
                                     <div>
-                                        <p className="text-xs font-semibold text-muted-foreground mb-1">Saldo Akun</p>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-1">{t('accounts.account_balance')}</p>
                                         <p className="text-2xl font-extrabold font-display text-foreground tracking-tight">
                                             <CurrencyDisplay value={Number(account.balance)} />
                                         </p>
@@ -276,7 +276,7 @@ export default function AccountsPage() {
                                                 type="button"
                                                 onClick={() => handleEdit(account)}
                                                 className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:shadow-neu-extruded-sm active:shadow-neu-inset-sm transition-all"
-                                                title="Edit"
+                                                title={t('accounts.edit')}
                                             >
                                                 <Pencil className="h-4 w-4" />
                                             </button>
@@ -287,7 +287,7 @@ export default function AccountsPage() {
                                                     setDeleteConfirmOpen(true);
                                                 }}
                                                 className="p-2 rounded-xl text-rose-500 hover:text-rose-600 hover:shadow-neu-extruded-sm active:shadow-neu-inset-sm transition-all"
-                                                title="Delete"
+                                                title={t('accounts.delete')}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
@@ -305,8 +305,8 @@ export default function AccountsPage() {
                             <Wallet className="h-8 w-8 opacity-50" />
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-foreground">Belum ada akun terdaftar</p>
-                            <p className="text-sm text-muted-foreground mt-1">Tambahkan akun pertama Anda untuk mulai mengelola saldo.</p>
+                            <p className="text-lg font-bold text-foreground">{t('accounts.no_accounts')}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{t('accounts.no_accounts_desc')}</p>
                         </div>
                         <Button
                             className="mt-2 font-semibold"
@@ -315,7 +315,7 @@ export default function AccountsPage() {
                                 setIsAddOpen(true);
                             }}
                         >
-                            <Plus className="h-4 w-4 mr-2" /> Tambah Akun
+                            <Plus className="h-4 w-4 mr-2" /> {t('accounts.add_account')}
                         </Button>
                     </div>
                 )}
@@ -329,38 +329,40 @@ export default function AccountsPage() {
                 }}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>{isEditOpen ? 'Edit Akun' : 'Tambah Akun Baru'}</DialogTitle>
+                            <DialogTitle>{isEditOpen ? t('accounts.edit_modal_title') : t('accounts.add_modal_title')}</DialogTitle>
                             <DialogDescription>
-                                {isEditOpen ? 'Perbarui informasi detail akun Anda' : 'Buat akun dompet atau rekening baru untuk mencatat saldo Anda'}
+                                {isEditOpen ? t('accounts.edit_modal_desc') : t('accounts.add_modal_desc')}
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSubmit} className="space-y-4 py-2">
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Nama Akun</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('accounts.name_label')}</Label>
                                 <Input
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Contoh: BCA, Dompet Tunai, GoPay"
+                                    placeholder={t('accounts.name_placeholder')}
                                     required
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tipe Akun</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('accounts.type_label')}</Label>
                                 <div className="relative">
                                     <select
                                         className="appearance-none flex h-11 w-full items-center justify-between rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background font-semibold cursor-pointer"
                                         value={formData.type}
                                         onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
                                     >
-                                        <option value="cash">Cash (Tunai)</option>
-                                        <option value="bank">Bank</option>
-                                        <option value="ewallet">E-Wallet</option>
+                                        <option value="cash">{t('accounts.type_cash')}</option>
+                                        <option value="bank">{t('accounts.type_bank')}</option>
+                                        <option value="ewallet">{t('accounts.type_ewallet')}</option>
                                     </select>
                                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Saldo {isEditOpen ? 'Koreksi' : 'Awal'}</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                    {isEditOpen ? t('accounts.balance_correction') : t('accounts.balance_initial')}
+                                </Label>
                                 <Input
                                     type="number"
                                     value={formData.balance}
@@ -380,11 +382,11 @@ export default function AccountsPage() {
                                     <Check className="w-4 h-4 text-primary" />
                                 </button>
                                 <Label onClick={() => setFormData({ ...formData, is_default: !formData.is_default })} className="cursor-pointer font-semibold text-sm">
-                                    Jadikan Akun Utama (Default)
+                                    {t('accounts.set_default')}
                                 </Label>
                             </div>
                             <Button type="submit" className="w-full mt-6 h-12 font-bold" disabled={createMutation.isPending || updateMutation.isPending}>
-                                {isEditOpen ? 'Perbarui Akun' : 'Buat Akun'}
+                                {createMutation.isPending || updateMutation.isPending ? t('accounts.saving') : t('accounts.save')}
                             </Button>
                         </form>
                     </DialogContent>
@@ -394,13 +396,13 @@ export default function AccountsPage() {
                 <Dialog open={isTransferOpen} onOpenChange={setIsTransferOpen}>
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
-                            <DialogTitle>Transfer Dana</DialogTitle>
-                            <DialogDescription>Pindahkan saldo antar akun keuangan Anda</DialogDescription>
+                            <DialogTitle>{t('accounts.transfer_modal_title')}</DialogTitle>
+                            <DialogDescription>{t('accounts.transfer_modal_desc')}</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleTransferSubmit} className="space-y-4 py-2">
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Dari Akun</Label>
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('accounts.from_account')}</Label>
                                     <div className="relative">
                                         <select
                                             className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-semibold cursor-pointer"
@@ -408,7 +410,7 @@ export default function AccountsPage() {
                                             onChange={(e) => setTransferData({ ...transferData, from_account_id: Number(e.target.value) })}
                                             required
                                         >
-                                            <option value="" disabled>Pilih Akun</option>
+                                            <option value="" disabled>{t('accounts.select_source')}</option>
                                             {accounts?.map(a => (
                                                 <option key={a.id} value={a.id} disabled={a.id === transferData.to_account_id}>{a.name}</option>
                                             ))}
@@ -417,7 +419,7 @@ export default function AccountsPage() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Ke Akun</Label>
+                                    <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('accounts.to_account')}</Label>
                                     <div className="relative">
                                         <select
                                             className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-semibold cursor-pointer"
@@ -425,7 +427,7 @@ export default function AccountsPage() {
                                             onChange={(e) => setTransferData({ ...transferData, to_account_id: Number(e.target.value) })}
                                             required
                                         >
-                                            <option value="" disabled>Pilih Akun</option>
+                                            <option value="" disabled>{t('accounts.select_destination')}</option>
                                             {accounts?.map(a => (
                                                 <option key={a.id} value={a.id} disabled={a.id === transferData.from_account_id}>{a.name}</option>
                                             ))}
@@ -436,7 +438,7 @@ export default function AccountsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Nominal Transfer</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('accounts.transfer_amount')}</Label>
                                 <Input
                                     type="number"
                                     deep
@@ -450,7 +452,7 @@ export default function AccountsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tanggal</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('transactions.date')}</Label>
                                 <Input
                                     type="date"
                                     value={transferData.date}
@@ -460,16 +462,16 @@ export default function AccountsPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Catatan (Opsional)</Label>
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('accounts.transfer_notes')}</Label>
                                 <Input
                                     value={transferData.notes}
                                     onChange={(e) => setTransferData({ ...transferData, notes: e.target.value })}
-                                    placeholder="Contoh: Isi saldo e-wallet / Bayar tagihan"
+                                    placeholder={t('accounts.transfer_notes_placeholder')}
                                 />
                             </div>
 
                             <Button type="submit" className="w-full mt-6 h-12 font-bold" disabled={transferMutation.isPending}>
-                                {transferMutation.isPending ? 'Memproses...' : 'Transfer Sekarang'}
+                                {transferMutation.isPending ? t('accounts.processing_transfer') : t('accounts.send_transfer')}
                             </Button>
                         </form>
                     </DialogContent>
@@ -479,16 +481,15 @@ export default function AccountsPage() {
                 <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus Akun Ini?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('accounts.delete_confirm_title')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Apakah Anda yakin ingin menghapus akun <strong>{editingAccount?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
-                                Catatan: Akun yang memiliki transaksi terkait tidak dapat dihapus.
+                                {t('accounts.delete_confirm_desc', { name: editingAccount?.name || '' })}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction onClick={() => editingAccount && deleteMutation.mutate(editingAccount.id)} className="bg-destructive text-destructive-foreground">
-                                Hapus Akun
+                                {t('accounts.delete')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

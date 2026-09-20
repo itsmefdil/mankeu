@@ -2,10 +2,9 @@ import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
 import { financialService } from '@/services/financial';
-import { Button } from '@/components/ui/button';
 import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend } from 'recharts';
-import { Loader2, TrendingUp, TrendingDown, Activity, Filter, ArrowUp, ArrowDown, ChevronDown, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Activity, ArrowUp, ArrowDown, ChevronDown, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { usePreferencesStore } from '@/hooks/usePreferences';
@@ -439,8 +438,8 @@ export default function AnalyticsPage() {
                                 <Legend
                                     formatter={(value: any) => <span className="text-sm font-semibold text-muted-foreground">{value}</span>}
                                 />
-                                <Area type="monotone" dataKey="income" name="Income" stroke="#38B2AC" strokeWidth={3} fillOpacity={1} fill="url(#colorInc)" />
-                                <Area type="monotone" dataKey="expense" name="Expense" stroke="#6C63FF" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" />
+                                <Area type="monotone" dataKey="income" name={t('analytics.income')} stroke="#38B2AC" strokeWidth={3} fillOpacity={1} fill="url(#colorInc)" />
+                                <Area type="monotone" dataKey="expense" name={t('analytics.expense')} stroke="#6C63FF" strokeWidth={3} fillOpacity={1} fill="url(#colorExp)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
@@ -511,7 +510,7 @@ export default function AnalyticsPage() {
                                     </PieChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="h-full flex items-center justify-center text-muted-foreground font-medium">No data available</div>
+                                <div className="h-full flex items-center justify-center text-muted-foreground font-medium">{t('analytics.no_data')}</div>
                             )}
                         </div>
                     </div>
@@ -579,7 +578,7 @@ export default function AnalyticsPage() {
                                     </PieChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="h-full flex items-center justify-center text-muted-foreground font-medium">No data available</div>
+                                <div className="h-full flex items-center justify-center text-muted-foreground font-medium">{t('analytics.no_data')}</div>
                             )}
                         </div>
                     </div>

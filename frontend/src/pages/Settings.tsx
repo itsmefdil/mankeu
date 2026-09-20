@@ -202,7 +202,7 @@ export default function SettingsPage() {
                                     )}
                                 >
                                     <Sun className="h-6 w-6" />
-                                    <span className="text-sm font-medium">Light</span>
+                                    <span className="text-sm font-medium">{t('settings.theme_light')}</span>
                                 </button>
                                 <button
                                     onClick={() => setTheme('dark')}
@@ -212,7 +212,7 @@ export default function SettingsPage() {
                                     )}
                                 >
                                     <Moon className="h-6 w-6" />
-                                    <span className="text-sm font-medium">Dark</span>
+                                    <span className="text-sm font-medium">{t('settings.theme_dark')}</span>
                                 </button>
                             </div>
                         </div>

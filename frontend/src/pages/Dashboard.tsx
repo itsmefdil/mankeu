@@ -4,9 +4,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import {
     ArrowDownRight,
     ArrowUpRight,
-    Calendar,
     ChevronDown,
-    Sparkles,
     Wallet,
     CreditCard,
     Target,
@@ -29,24 +27,15 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { financialService } from '@/services/financial';
 import { isBudgetActive } from '@/lib/budgetUtils';
-import { useAuthStore } from '@/hooks/useAuth';
 
 import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
     const { t } = useTranslation();
-    const { user } = useAuthStore();
-    const { isAmountHidden, language } = usePreferencesStore();
+    const { language } = usePreferencesStore();
     const currentDate = new Date();
     const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-
-    const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour < 12) return t('greeting.morning');
-        if (hour < 17) return t('greeting.afternoon');
-        return t('greeting.evening');
-    };
 
     const { data: transactions, isLoading: loadingTx } = useQuery({
         queryKey: ['transactions'],
@@ -253,8 +242,8 @@ export default function Dashboard() {
                             <PlusCircle className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">Catat Transaksi</span>
-                            <span className="text-[10px] text-muted-foreground font-medium block truncate">Masuk / Keluar</span>
+                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">{t('dashboard.quick_record_tx')}</span>
+                            <span className="text-[10px] text-muted-foreground font-medium block truncate">{t('dashboard.quick_record_sub')}</span>
                         </div>
                     </Link>
 
@@ -266,8 +255,8 @@ export default function Dashboard() {
                             <ArrowRightLeft className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">Transfer Akun</span>
-                            <span className="text-[10px] text-muted-foreground font-medium block truncate">Pindah Saldo</span>
+                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">{t('dashboard.quick_transfer')}</span>
+                            <span className="text-[10px] text-muted-foreground font-medium block truncate">{t('dashboard.quick_transfer_sub')}</span>
                         </div>
                     </Link>
 
@@ -279,8 +268,8 @@ export default function Dashboard() {
                             <Target className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">Atur Anggaran</span>
-                            <span className="text-[10px] text-muted-foreground font-medium block truncate">Batas Bulanan</span>
+                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">{t('dashboard.quick_budget')}</span>
+                            <span className="text-[10px] text-muted-foreground font-medium block truncate">{t('dashboard.quick_budget_sub')}</span>
                         </div>
                     </Link>
 
@@ -292,8 +281,8 @@ export default function Dashboard() {
                             <BarChart3 className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">Analisis Detail</span>
-                            <span className="text-[10px] text-muted-foreground font-medium block truncate">Grafik & Tren</span>
+                            <span className="text-xs sm:text-sm font-bold text-foreground block truncate">{t('dashboard.quick_analytics')}</span>
+                            <span className="text-[10px] text-muted-foreground font-medium block truncate">{t('dashboard.quick_analytics_sub')}</span>
                         </div>
                     </Link>
                 </div>
@@ -307,12 +296,16 @@ export default function Dashboard() {
                                     {budgetPulse.percent > 90 ? <AlertCircle className="h-5 w-5 text-rose-500" /> : <ShieldCheck className="h-5 w-5 text-primary" />}
                                 </div>
                                 <div>
-                                    <h3 className="font-bold font-display text-base text-foreground">Status Anggaran Bulan Ini</h3>
+                                    <h3 className="font-bold font-display text-base text-foreground">{t('dashboard.budget_status_title')}</h3>
                                     <p className="text-xs text-muted-foreground font-medium">
                                         {budgetPulse.remaining >= 0 ? (
-                                            <>Sisa aman <span className="font-bold text-foreground"><CurrencyDisplay value={budgetPulse.remaining} /></span> dari total <CurrencyDisplay value={budgetPulse.totalBudget} /></>
+                                            <>
+                                                {t('dashboard.left')}: <span className="font-bold text-foreground"><CurrencyDisplay value={budgetPulse.remaining} /></span> / <CurrencyDisplay value={budgetPulse.totalBudget} />
+                                            </>
                                         ) : (
-                                            <span className="text-rose-500 font-bold">Melebihi anggaran sebesar <CurrencyDisplay value={Math.abs(budgetPulse.remaining)} /></span>
+                                            <span className="text-rose-500 font-bold">
+                                                {t('dashboard.over')}: <CurrencyDisplay value={Math.abs(budgetPulse.remaining)} />
+                                            </span>
                                         )}
                                     </p>
                                 </div>
@@ -321,7 +314,7 @@ export default function Dashboard() {
                                 "text-xs font-bold px-3 py-1 rounded-full shadow-neu-inset-sm self-start sm:self-auto",
                                 budgetPulse.percent > 90 ? "text-rose-500" : "text-primary"
                             )}>
-                                {Math.round(budgetPulse.percent)}% Terpakai
+                                {t('dashboard.percent_used', { percent: Math.round(budgetPulse.percent) })}
                             </span>
                         </div>
                         <div className="h-3.5 w-full bg-background shadow-neu-inset-sm dark:shadow-neu-dark-inset-sm rounded-full overflow-hidden p-0.5">
@@ -348,7 +341,7 @@ export default function Dashboard() {
                                     </div>
                                     <div>
                                         <h2 className="text-lg sm:text-xl font-bold font-display text-foreground">{t('dashboard.recent_transactions')}</h2>
-                                        <p className="text-xs text-muted-foreground font-medium">Aktivitas keuangan terbaru</p>
+                                        <p className="text-xs text-muted-foreground font-medium">{t('dashboard.recent_activity_sub')}</p>
                                     </div>
                                 </div>
                                 <Button variant="secondary" size="sm" className="hidden sm:flex font-semibold gap-1.5" asChild>
@@ -389,10 +382,10 @@ export default function Dashboard() {
                                                         <span className={cn(
                                                             tx.is_transfer ? "text-indigo-500" : cat?.type === 'income' ? "text-neu-accent-sec" : "text-rose-500"
                                                         )}>
-                                                            {tx.is_transfer ? 'Transfer' : cat?.name || t('common.uncategorized')}
+                                                            {tx.is_transfer ? t('accounts.transfer') : cat?.name || t('common.uncategorized')}
                                                         </span>
                                                         <span>•</span>
-                                                        <span>{new Date(tx.transaction_date).toLocaleDateString()}</span>
+                                                        <span>{new Date(tx.transaction_date).toLocaleDateString(language || 'id-ID')}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -439,7 +432,7 @@ export default function Dashboard() {
                                     <h3 className="font-bold font-display text-lg text-foreground">{t('nav.accounts')}</h3>
                                 </div>
                                 <Button variant="ghost" size="sm" className="text-primary font-semibold text-xs" asChild>
-                                    <Link to="/accounts">Kelola</Link>
+                                    <Link to="/accounts">{t('dashboard.manage')}</Link>
                                 </Button>
                             </div>
 
@@ -465,7 +458,7 @@ export default function Dashboard() {
                                 ))}
 
                                 {(!accounts || accounts.length === 0) && (
-                                    <p className="text-xs text-muted-foreground text-center py-4">Belum ada akun terdaftar</p>
+                                    <p className="text-xs text-muted-foreground text-center py-4">{t('dashboard.no_accounts_registered')}</p>
                                 )}
                             </div>
                         </div>
@@ -480,7 +473,7 @@ export default function Dashboard() {
                                     <h3 className="font-bold font-display text-lg text-foreground">{t('nav.savings')}</h3>
                                 </div>
                                 <Button variant="ghost" size="sm" className="text-primary font-semibold text-xs" asChild>
-                                    <Link to="/savings">Lihat</Link>
+                                    <Link to="/savings">{t('dashboard.view')}</Link>
                                 </Button>
                             </div>
 
@@ -493,7 +486,7 @@ export default function Dashboard() {
                                         <div className="min-w-0">
                                             <p className="font-bold text-sm text-foreground truncate">{sav.name}</p>
                                             <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1">
-                                                <TrendingUp className="h-3 w-3 text-primary" /> Target
+                                                <TrendingUp className="h-3 w-3 text-primary" /> {t('dashboard.target_badge')}
                                             </p>
                                         </div>
                                         <span className="font-bold font-mono text-sm text-primary shrink-0">
@@ -503,7 +496,7 @@ export default function Dashboard() {
                                 ))}
 
                                 {(!savings || savings.length === 0) && (
-                                    <p className="text-xs text-muted-foreground text-center py-4">Belum ada target tabungan</p>
+                                    <p className="text-xs text-muted-foreground text-center py-4">{t('dashboard.no_savings_goals')}</p>
                                 )}
                             </div>
                         </div>

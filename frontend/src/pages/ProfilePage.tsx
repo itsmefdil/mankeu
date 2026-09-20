@@ -14,8 +14,6 @@ import {
     LogOut,
     Sun,
     Moon,
-    Shield,
-    Smartphone,
     UserCircle2,
     Coins,
     Heart,
@@ -28,44 +26,44 @@ import { cn } from '@/lib/utils';
 export default function ProfilePage() {
     const { t } = useTranslation();
     const { user, logout } = useAuthStore();
-    const { theme, toggleTheme } = useTheme();
+    const { toggleTheme } = useTheme();
     const { language, currency } = usePreferencesStore();
 
     const menuGroups = [
         {
-            title: 'Keuangan & Fitur',
+            title: t('profile.finance_features'),
             items: [
                 {
-                    label: t('nav.accounts') || 'Accounts',
-                    desc: 'Kelola dompet dan rekening bank',
+                    label: t('nav.accounts'),
+                    desc: t('profile.accounts_desc'),
                     icon: Wallet,
                     href: '/accounts',
                     color: 'text-primary'
                 },
                 {
-                    label: t('nav.analytics') || 'Analytics',
-                    desc: 'Analisis tren pemasukan & pengeluaran',
+                    label: t('nav.analytics'),
+                    desc: t('profile.analytics_desc'),
                     icon: BarChart3,
                     href: '/analytics',
                     color: 'text-neu-accent-sec'
                 },
                 {
-                    label: t('nav.debts') || 'Debts & Loans',
-                    desc: 'Catatan hutang & piutang',
+                    label: t('nav.debts'),
+                    desc: t('profile.debts_desc'),
                     icon: CreditCard,
                     href: '/debts',
                     color: 'text-rose-500'
                 },
                 {
-                    label: t('nav.savings') || 'Savings',
-                    desc: 'Target dan tabungan masa depan',
+                    label: t('nav.savings'),
+                    desc: t('profile.savings_desc'),
                     icon: PiggyBank,
                     href: '/savings',
                     color: 'text-amber-500'
                 },
                 {
-                    label: t('categories.title') || 'Categories',
-                    desc: 'Kelola kategori pemasukan & pengeluaran',
+                    label: t('categories.title'),
+                    desc: t('profile.categories_desc'),
                     icon: Tags,
                     href: '/categories',
                     color: 'text-primary'
@@ -73,18 +71,18 @@ export default function ProfilePage() {
             ]
         },
         {
-            title: 'Preferensi & Aplikasi',
+            title: t('profile.preferences_app'),
             items: [
                 {
-                    label: t('nav.settings') || 'Settings',
-                    desc: 'Profil, bahasa, mata uang, & notifikasi',
+                    label: t('nav.settings'),
+                    desc: t('profile.settings_desc'),
                     icon: Settings,
                     href: '/settings',
                     color: 'text-foreground'
                 },
                 {
-                    label: 'Tentang Mankeu',
-                    desc: 'Versi 1.0.0 • Dibuat dengan cinta',
+                    label: t('profile.about_mankeu'),
+                    desc: t('profile.about_desc'),
                     icon: Info,
                     href: '/settings#about',
                     color: 'text-primary'
@@ -108,14 +106,14 @@ export default function ProfilePage() {
                         </div>
                         <div className="min-w-0">
                             <h2 className="text-xl sm:text-2xl font-extrabold font-display text-foreground truncate">
-                                {user?.name || 'Mankeu User'}
+                                {user?.name || t('profile.default_user')}
                             </h2>
                             <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate mt-0.5">
                                 {user?.email || 'user@mankeu.app'}
                             </p>
                             <div className="flex items-center gap-2 mt-2">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-background shadow-neu-inset-sm px-2.5 py-0.5 rounded-full">
-                                    Pro Plan
+                                    {t('profile.pro_plan')}
                                 </span>
                                 <span className="text-[10px] font-bold text-muted-foreground bg-background shadow-neu-inset-sm px-2.5 py-0.5 rounded-full">
                                     {currency} • {language.toUpperCase()}
@@ -130,7 +128,7 @@ export default function ProfilePage() {
                             size="icon"
                             onClick={toggleTheme}
                             className="rounded-2xl"
-                            title="Toggle Theme"
+                            title={t('profile.toggle_theme')}
                         >
                             <Sun className="h-5 w-5 dark:hidden" />
                             <Moon className="h-5 w-5 hidden dark:block" />
@@ -187,12 +185,12 @@ export default function ProfilePage() {
                     <div className="h-12 w-12 rounded-2xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary">
                         <Coins className="h-6 w-6" />
                     </div>
-                    <h3 className="font-bold font-display text-lg text-foreground mt-1">Mankeu Finance</h3>
+                    <h3 className="font-bold font-display text-lg text-foreground mt-1">{t('profile.mankeu_finance')}</h3>
                     <p className="text-xs text-muted-foreground max-w-sm">
-                        Aplikasi manajemen keuangan pribadi dengan estetika Neumorphic Soft UI. Kelola pengeluaran, anggaran, dan tabungan Anda secara mandiri.
+                        {t('profile.about_footer_desc')}
                     </p>
                     <span className="text-[11px] font-semibold text-muted-foreground mt-2 flex items-center gap-1">
-                        Dibuat dengan <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> untuk kenyamanan finansial Anda
+                        {t('profile.made_with')} <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> {t('profile.for_your_comfort')}
                     </span>
                 </div>
             </div>

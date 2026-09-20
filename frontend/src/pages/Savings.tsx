@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { financialService, type Saving, type SavingTransaction, type Account } from '@/services/financial';
+import { financialService, type Saving, type SavingTransaction, type Account, type Category } from '@/services/financial';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,7 +29,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet"
-import { Plus, Trash2, Pencil, PiggyBank, Calendar as CalendarIcon, Type, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Search, ChevronDown, Wallet } from 'lucide-react';
+import { Plus, Trash2, Pencil, PiggyBank, ArrowUpRight, ArrowDownLeft, Clock, ChevronRight, Search, ChevronDown, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CurrencyDisplay } from '@/components/CurrencyDisplay';
 import { useTranslation } from 'react-i18next';
@@ -46,7 +46,7 @@ const vibrate = (pattern: number | number[] = 10) => {
 
 export default function SavingsPage() {
     const { t } = useTranslation();
-    const { currency, language } = usePreferencesStore();
+    const { language } = usePreferencesStore();
     const queryClient = useQueryClient();
     const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -88,6 +88,11 @@ export default function SavingsPage() {
     const { data: accounts } = useQuery({
         queryKey: ['accounts'],
         queryFn: financialService.getAccounts
+    });
+
+    const { data: categories } = useQuery({
+        queryKey: ['categories'],
+        queryFn: financialService.getCategories
     });
 
     const { data: savingTransactions, isLoading: loadingTransactions } = useQuery({
@@ -144,8 +149,16 @@ export default function SavingsPage() {
     });
 
     const depositMutation = useMutation({
-        mutationFn: (data: { id: number; amount: number; notes?: string; account_id?: number }) =>
-            financialService.depositSaving(data.id, data.amount, data.notes, data.account_id),
+        mutationFn: (data: { id: number; amount: number; notes?: string; account_id?: number }) => {
+            const expCat = categories?.find((c: Category) => c.type === 'expense') || categories?.[0];
+            return financialService.depositToSaving(
+                data.id,
+                data.amount,
+                data.account_id || accounts?.[0]?.id || 1,
+                expCat?.id || 1,
+                data.notes
+            );
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['savings'] });
             queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -157,8 +170,16 @@ export default function SavingsPage() {
     });
 
     const withdrawMutation = useMutation({
-        mutationFn: (data: { id: number; amount: number; notes?: string; account_id?: number }) =>
-            financialService.withdrawSaving(data.id, data.amount, data.notes, data.account_id),
+        mutationFn: (data: { id: number; amount: number; notes?: string; account_id?: number }) => {
+            const incCat = categories?.find((c: Category) => c.type === 'income') || categories?.[0];
+            return financialService.withdrawFromSaving(
+                data.id,
+                data.amount,
+                data.account_id || accounts?.[0]?.id || 1,
+                incCat?.id || 1,
+                data.notes
+            );
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['savings'] });
             queryClient.invalidateQueries({ queryKey: ['accounts'] });
@@ -310,7 +331,7 @@ export default function SavingsPage() {
                         </div>
                     </div>
                     <span className="text-xs font-bold text-primary bg-background shadow-neu-inset-sm px-3.5 py-1.5 rounded-full hidden sm:inline-block">
-                        {savings?.length || 0} Target Tabungan
+                        {t('savings.savings_count', { count: savings?.length || 0 })}
                     </span>
                 </div>
 
@@ -382,7 +403,7 @@ export default function SavingsPage() {
                                     </div>
 
                                     <div>
-                                        <p className="text-xs font-semibold text-muted-foreground mb-1">Terkumpul</p>
+                                        <p className="text-xs font-semibold text-muted-foreground mb-1">{t('savings.collected')}</p>
                                         <p className="text-2xl font-extrabold font-display text-primary tracking-tight">
                                             <CurrencyDisplay value={Number(saving.amount)} />
                                         </p>
@@ -576,7 +597,7 @@ export default function SavingsPage() {
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
                             <DialogTitle>{t('savings.deposit')} - {selectedSaving?.name}</DialogTitle>
-                            <DialogDescription>Setor dana ke tabungan ini</DialogDescription>
+                            <DialogDescription>{t('savings.deposit_desc')}</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleDepositSubmit} className="space-y-4 py-2">
                             <div className="space-y-2">
@@ -630,7 +651,7 @@ export default function SavingsPage() {
                     <DialogContent className="sm:max-w-[425px]">
                         <DialogHeader>
                             <DialogTitle>{t('savings.withdraw')} - {selectedSaving?.name}</DialogTitle>
-                            <DialogDescription>Tarik dana dari tabungan ini</DialogDescription>
+                            <DialogDescription>{t('savings.withdraw_desc')}</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleWithdrawSubmit} className="space-y-4 py-2">
                             <div className="space-y-2">
