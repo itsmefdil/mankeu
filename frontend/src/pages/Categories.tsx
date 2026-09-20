@@ -3,6 +3,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { financialService, type Category } from '@/services/financial';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Dialog,
@@ -21,18 +22,19 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Plus, Trash2, Tags, ChevronDown, Type } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Plus, Trash2, Tags, ChevronDown, Tag, ArrowUpRight, ArrowDownRight, PiggyBank } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export default function CategoriesPage() {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
+    const isDesktop = useMediaQuery("(min-width: 768px)");
 
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     // Form State
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -58,7 +60,7 @@ export default function CategoriesPage() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: (data: { id: number, cat: Partial<Category> }) => financialService.updateCategory(data.id, data.cat),
+        mutationFn: (data: { id: number; cat: Partial<Category> }) => financialService.updateCategory(data.id, data.cat),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             setIsEditOpen(false);
@@ -73,7 +75,12 @@ export default function CategoriesPage() {
             queryClient.invalidateQueries({ queryKey: ['categories'] });
             setIsEditOpen(false);
             setEditingCategory(null);
+            setDeleteError(null);
             resetForm();
+        },
+        onError: (err: any) => {
+            const message = err.response?.data?.detail || 'Gagal menghapus kategori';
+            setDeleteError(message);
         }
     });
 
@@ -82,6 +89,7 @@ export default function CategoriesPage() {
             name: '',
             type: 'expense'
         });
+        setDeleteError(null);
     };
 
     const handleCardClick = (cat: Category) => {
@@ -106,7 +114,6 @@ export default function CategoriesPage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         if (editingCategory) {
             updateMutation.mutate({ id: editingCategory.id, cat: formData });
         } else {
@@ -114,164 +121,64 @@ export default function CategoriesPage() {
         }
     };
 
-    // Form Content Component (shared between Dialog and Sheet)
-    const CategoryForm = ({ isEditing = false }: { isEditing?: boolean }) => (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-background">
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-
-                {/* 1. Category Name Input - Centerpiece */}
-                <div className="relative py-4 sm:py-6 bg-muted/20 rounded-2xl border border-dashed border-border flex flex-col items-center justify-center">
-                    <Label htmlFor="cat-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">{t('categories.name_label')}</Label>
-                    <div className="w-full px-4 sm:px-8">
-                        <input
-                            id="cat-name"
-                            type="text"
-                            className="text-2xl sm:text-3xl font-bold bg-transparent border-none text-center w-full focus:ring-0 placeholder:text-muted-foreground/30 p-0 outline-none hover:outline-none"
-                            placeholder={t('categories.enter_name')}
-                            value={formData.name || ''}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                            autoFocus
-                        />
-                    </div>
-                </div>
-
-                {/* 2. Type Select - Custom Styled */}
-                <div className="space-y-2">
-                    <Label htmlFor="cat-type" className="text-sm font-medium flex items-center gap-2">
-                        <Type className="w-4 h-4 text-primary" /> {t('categories.type_label')}
-                    </Label>
-                    <div className="relative">
-                        <select
-                            id="cat-type"
-                            className="appearance-none flex h-14 w-full items-center justify-between rounded-xl border border-input bg-background/50 px-4 py-2 text-base ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 relative z-10 bg-transparent font-medium"
-                            value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                            required
-                        >
-                            <option value="expense">💸 {t('categories.expense')}</option>
-                            <option value="income">💰 {t('categories.income')}</option>
-                            <option value="saving">🏦 {t('categories.saving')}</option>
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-0 pointer-events-none" />
-                        <div className="absolute inset-0 rounded-xl bg-card border border-input pointer-events-none -z-10" />
-                    </div>
-                </div>
-
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-4 pb-2 border-t border-border mt-auto space-y-3">
-                <Button
-                    type="submit"
-                    className="w-full h-12 text-base font-semibold shadow-lg rounded-xl"
-                    disabled={isEditing ? updateMutation.isPending : createMutation.isPending}
-                >
-                    {isEditing
-                        ? (updateMutation.isPending ? t('categories.updating') : t('categories.update_btn'))
-                        : (createMutation.isPending ? t('categories.saving_btn') : t('categories.save_btn'))
-                    }
-                </Button>
-
-                {/* Delete Button - Only show in edit mode */}
-                {isEditing && (
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        className="w-full h-12 text-base font-semibold text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
-                        onClick={handleDelete}
-                        disabled={deleteMutation.isPending}
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {deleteMutation.isPending ? t('categories.deleting') : t('categories.delete_btn')}
-                    </Button>
-                )}
-            </div>
-        </form>
-    );
-
-    // Reusable Category Card Component
-    const CategoryCard = ({ cat, colorClass }: { cat: Category; colorClass: string }) => (
-        <div
-            onClick={() => handleCardClick(cat)}
-            className="p-3 sm:p-4 rounded-xl border border-border bg-card shadow-sm flex flex-col group relative overflow-hidden cursor-pointer hover:border-primary/50 hover:shadow-md transition-all active:scale-[0.98]"
-        >
-            <div className="flex items-start justify-between mb-2">
-                <div className={cn("p-2 rounded-lg", colorClass)}>
-                    <Tags className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-            </div>
-            <p className="font-semibold text-sm sm:text-base truncate">{cat.name}</p>
-        </div>
-    );
-
     return (
         <DashboardLayout>
-            <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 pb-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-display font-bold">{t('categories.title')}</h1>
-                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">{t('categories.description')}</p>
-                    </div>
-                    <Button onClick={() => { resetForm(); setEditingCategory(null); setIsAddOpen(true); }} className="w-full sm:w-auto">
-                        <Plus className="mr-2 h-4 w-4" /> {t('categories.add_category')}
+            <div className="flex flex-col gap-6 sm:gap-8 w-full pb-20 md:pb-8 px-1 sm:px-0">
+                {/* Mobile FAB */}
+                {!isDesktop && (
+                    <button
+                        className="fixed bottom-24 right-6 h-14 w-14 rounded-2xl bg-primary text-primary-foreground shadow-neu-extruded z-40 flex items-center justify-center active:translate-y-0.5 active:shadow-neu-inset-sm transition-all"
+                        onClick={() => {
+                            resetForm();
+                            setEditingCategory(null);
+                            setIsAddOpen(true);
+                        }}
+                    >
+                        <Plus className="h-6 w-6" />
+                    </button>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-end">
+                    <Button
+                        onClick={() => { resetForm(); setEditingCategory(null); setIsAddOpen(true); }}
+                        className="font-semibold gap-2 hidden sm:flex"
+                    >
+                        <Plus className="h-4 w-4" /> {t('categories.add_category')}
                     </Button>
                 </div>
-
-                {/* Unified Add Category Dialog */}
-                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                    <DialogContent className={cn(
-                        "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-full sm:h-auto", // Mobile: Fullscreen, Desktop: Auto
-                        "sm:max-w-[425px] sm:rounded-2xl", // Desktop styling
-                        "border-0 sm:border"
-                    )}>
-                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                            <DialogTitle>{t('categories.add_category')}</DialogTitle>
-                            <DialogDescription>{t('categories.create_desc')}</DialogDescription>
-                        </DialogHeader>
-                        <CategoryForm />
-                    </DialogContent>
-                </Dialog>
-
-                {/* Unified Edit Category Dialog */}
-                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className={cn(
-                        "flex flex-col gap-0 p-0 overflow-hidden",
-                        "w-full sm:w-auto h-full sm:h-auto",
-                        "sm:max-w-[425px] sm:rounded-2xl",
-                        "border-0 sm:border"
-                    )}>
-                        <DialogHeader className="px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-border/50 shrink-0">
-                            <DialogTitle>{t('categories.edit_category')}</DialogTitle>
-                            <DialogDescription>{t('categories.update_desc')}</DialogDescription>
-                        </DialogHeader>
-                        <CategoryForm isEditing />
-                    </DialogContent>
-                </Dialog>
 
                 {/* Loading State */}
                 {isLoading && (
-                    <div className="text-center py-8 text-muted-foreground">{t('categories.loading')}</div>
+                    <div className="text-center py-16 text-muted-foreground font-medium animate-pulse">{t('categories.loading')}</div>
                 )}
 
                 {/* Categories by Type */}
                 {!isLoading && categories && categories.length > 0 && (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         {/* Expense Categories */}
                         {categories.filter(c => c.type === 'expense').length > 0 && (
-                            <div>
-                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                                    {t('categories.expenses_header')} ({categories.filter(c => c.type === 'expense').length})
-                                </h2>
-                                <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2.5 px-2">
+                                    <div className="h-8 w-8 rounded-xl bg-background shadow-neu-inset-deep flex items-center justify-center text-rose-500 shrink-0">
+                                        <ArrowDownRight className="h-4 w-4" />
+                                    </div>
+                                    <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                        {t('categories.expenses_header')} ({categories.filter(c => c.type === 'expense').length})
+                                    </h2>
+                                </div>
+                                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                                     {categories.filter(c => c.type === 'expense').map((cat) => (
-                                        <CategoryCard
+                                        <div
                                             key={cat.id}
-                                            cat={cat}
-                                            colorClass="bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                                        />
+                                            onClick={() => handleCardClick(cat)}
+                                            className="p-5 rounded-[28px] bg-background shadow-neu-extruded hover:shadow-neu-extruded-hover active:shadow-neu-inset-sm transition-all duration-300 flex items-center gap-3.5 cursor-pointer select-none group"
+                                        >
+                                            <div className="h-10 w-10 rounded-2xl bg-background shadow-neu-inset-deep flex items-center justify-center text-rose-500 shrink-0 group-hover:scale-105 transition-transform">
+                                                <Tag className="h-4 w-4" />
+                                            </div>
+                                            <span className="font-bold text-sm text-foreground truncate">{cat.name}</span>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -279,17 +186,27 @@ export default function CategoriesPage() {
 
                         {/* Income Categories */}
                         {categories.filter(c => c.type === 'income').length > 0 && (
-                            <div>
-                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                                    {t('categories.income_header')} ({categories.filter(c => c.type === 'income').length})
-                                </h2>
-                                <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2.5 px-2">
+                                    <div className="h-8 w-8 rounded-xl bg-background shadow-neu-inset-deep flex items-center justify-center text-neu-accent-sec shrink-0">
+                                        <ArrowUpRight className="h-4 w-4" />
+                                    </div>
+                                    <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                        {t('categories.income_header')} ({categories.filter(c => c.type === 'income').length})
+                                    </h2>
+                                </div>
+                                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                                     {categories.filter(c => c.type === 'income').map((cat) => (
-                                        <CategoryCard
+                                        <div
                                             key={cat.id}
-                                            cat={cat}
-                                            colorClass="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                        />
+                                            onClick={() => handleCardClick(cat)}
+                                            className="p-5 rounded-[28px] bg-background shadow-neu-extruded hover:shadow-neu-extruded-hover active:shadow-neu-inset-sm transition-all duration-300 flex items-center gap-3.5 cursor-pointer select-none group"
+                                        >
+                                            <div className="h-10 w-10 rounded-2xl bg-background shadow-neu-inset-deep flex items-center justify-center text-neu-accent-sec shrink-0 group-hover:scale-105 transition-transform">
+                                                <Tag className="h-4 w-4" />
+                                            </div>
+                                            <span className="font-bold text-sm text-foreground truncate">{cat.name}</span>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -297,17 +214,27 @@ export default function CategoriesPage() {
 
                         {/* Saving Categories */}
                         {categories.filter(c => c.type === 'saving').length > 0 && (
-                            <div>
-                                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
-                                    {t('categories.savings_header')} ({categories.filter(c => c.type === 'saving').length})
-                                </h2>
-                                <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2.5 px-2">
+                                    <div className="h-8 w-8 rounded-xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary shrink-0">
+                                        <PiggyBank className="h-4 w-4" />
+                                    </div>
+                                    <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+                                        {t('categories.savings_header')} ({categories.filter(c => c.type === 'saving').length})
+                                    </h2>
+                                </div>
+                                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                                     {categories.filter(c => c.type === 'saving').map((cat) => (
-                                        <CategoryCard
+                                        <div
                                             key={cat.id}
-                                            cat={cat}
-                                            colorClass="bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                        />
+                                            onClick={() => handleCardClick(cat)}
+                                            className="p-5 rounded-[28px] bg-background shadow-neu-extruded hover:shadow-neu-extruded-hover active:shadow-neu-inset-sm transition-all duration-300 flex items-center gap-3.5 cursor-pointer select-none group"
+                                        >
+                                            <div className="h-10 w-10 rounded-2xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
+                                                <Tag className="h-4 w-4" />
+                                            </div>
+                                            <span className="font-bold text-sm text-foreground truncate">{cat.name}</span>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -317,37 +244,137 @@ export default function CategoriesPage() {
 
                 {/* Empty State */}
                 {!isLoading && categories?.length === 0 && (
-                    <div className="text-center py-12 border border-dashed border-border rounded-xl">
-                        <div className="flex flex-col items-center gap-2">
-                            <Tags className="h-10 w-10 text-muted-foreground/50" />
-                            <h3 className="text-lg font-semibold">{t('categories.no_categories')}</h3>
-                            <p className="text-muted-foreground text-sm">{t('categories.no_categories_desc')}</p>
-                            <Button variant="outline" className="mt-4" onClick={() => setIsAddOpen(true)}>{t('categories.add_category')}</Button>
+                    <div className="p-12 rounded-[32px] bg-background shadow-neu-extruded flex flex-col items-center justify-center gap-4 text-center">
+                        <div className="h-16 w-16 rounded-3xl bg-background shadow-neu-inset-deep flex items-center justify-center text-primary">
+                            <Tags className="h-8 w-8 opacity-50" />
                         </div>
+                        <div>
+                            <p className="text-lg font-bold text-foreground">{t('categories.no_categories')}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{t('categories.no_categories_desc')}</p>
+                        </div>
+                        <Button
+                            className="mt-2 font-semibold"
+                            onClick={() => {
+                                resetForm();
+                                setEditingCategory(null);
+                                setIsAddOpen(true);
+                            }}
+                        >
+                            <Plus className="h-4 w-4 mr-2" /> {t('categories.add_category')}
+                        </Button>
                     </div>
                 )}
 
-                {/* Delete Confirmation Modal */}
-                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                    <AlertDialogContent className="max-w-[90vw] sm:max-w-[425px] rounded-2xl">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-3">
-                                <div className="p-2 bg-destructive/10 rounded-lg">
-                                    <Trash2 className="h-5 w-5 text-destructive" />
+                {/* Add Category Dialog */}
+                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>{t('categories.add_category')}</DialogTitle>
+                            <DialogDescription>{t('categories.create_desc')}</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.name_label')}</Label>
+                                <Input
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder={t('categories.enter_name')}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.type_label')}</Label>
+                                <div className="relative">
+                                    <select
+                                        className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                                        value={formData.type}
+                                        onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                                        required
+                                    >
+                                        <option value="expense">💸 {t('categories.expense')}</option>
+                                        <option value="income">💰 {t('categories.income')}</option>
+                                        <option value="saving">🏦 {t('categories.saving')}</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 </div>
-                                {t('categories.delete_title')}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-base">
+                            </div>
+                            <Button type="submit" className="w-full mt-6 h-12 font-bold" disabled={createMutation.isPending}>
+                                {createMutation.isPending ? t('categories.saving_btn') : t('categories.save_btn')}
+                            </Button>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Category Dialog */}
+                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>{t('categories.edit_category')}</DialogTitle>
+                            <DialogDescription>{t('categories.update_desc')}</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.name_label')}</Label>
+                                <Input
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{t('categories.type_label')}</Label>
+                                <div className="relative">
+                                    <select
+                                        className="appearance-none flex h-11 w-full rounded-2xl bg-background shadow-neu-inset dark:shadow-neu-dark-inset px-4 text-sm text-foreground font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-primary"
+                                        value={formData.type}
+                                        onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                                        required
+                                    >
+                                        <option value="expense">💸 {t('categories.expense')}</option>
+                                        <option value="income">💰 {t('categories.income')}</option>
+                                        <option value="saving">🏦 {t('categories.saving')}</option>
+                                    </select>
+                                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                </div>
+                            </div>
+
+                            {deleteError && (
+                                <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-xl flex items-start gap-2 border border-destructive/20">
+                                    <span className="leading-tight font-medium">{deleteError}</span>
+                                </div>
+                            )}
+
+                            <div className="pt-4 space-y-3">
+                                <Button type="submit" className="w-full h-12 font-bold" disabled={updateMutation.isPending}>
+                                    {updateMutation.isPending ? t('categories.updating') : t('categories.update_btn')}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    className="w-full h-12 font-bold"
+                                    onClick={handleDelete}
+                                    disabled={deleteMutation.isPending}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" /> {deleteMutation.isPending ? t('categories.deleting') : t('categories.delete_btn')}
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Category Delete Confirmation */}
+                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{t('categories.delete_title')}</AlertDialogTitle>
+                            <AlertDialogDescription>
                                 {t('categories.delete_confirm', { name: editingCategory?.name })}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="gap-2 sm:gap-0">
-                            <AlertDialogCancel className="rounded-xl">{t('common.cancel')}</AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={confirmDelete}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
-                            >
-                                {deleteMutation.isPending ? t('categories.deleting') : 'Delete'}
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+                                {t('categories.delete_btn')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

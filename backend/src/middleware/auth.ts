@@ -10,6 +10,14 @@ declare global {
     }
 }
 
+const getJwtSecret = (): string => {
+    const secret = process.env.SECRET_KEY;
+    if (!secret) {
+        throw new Error('FATAL: SECRET_KEY environment variable is not set');
+    }
+    return secret;
+};
+
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.header('Authorization');
     if (!authHeader) {
@@ -22,7 +30,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     }
 
     try {
-        const payload = jwt.verify(token, process.env.SECRET_KEY || 'secret');
+        const payload = jwt.verify(token, getJwtSecret());
         req.user = payload;
         next();
     } catch (e) {

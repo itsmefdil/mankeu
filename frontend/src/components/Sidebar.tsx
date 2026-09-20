@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowRightLeft, Settings, LayoutGrid, PlusCircle, Coins, Target, CreditCard, PiggyBank, Wallet } from 'lucide-react';
+import { ArrowRightLeft, Settings, LayoutGrid, PlusCircle, Coins, Target, CreditCard, PiggyBank, Wallet, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ export const NAV_ITEMS = [
     { label: 'nav.transactions', icon: ArrowRightLeft, href: '/transactions' },
     { label: 'nav.budget_only', icon: Target, href: '/budget' },
     { label: 'nav.savings', icon: PiggyBank, href: '/savings' },
+    { label: 'nav.analytics', icon: BarChart3, href: '/analytics' },
     { label: 'nav.debts', icon: CreditCard, href: '/debts' },
     { label: 'nav.settings', icon: Settings, href: '/settings' },
 ];
@@ -19,20 +20,20 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
     const { t } = useTranslation();
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex h-16 items-center border-b border-slate-200 dark:border-slate-700 px-6">
+        <div className="flex flex-col h-full bg-background">
+            <div className="flex h-20 items-center px-6">
                 <Link className="flex items-center gap-3 group" to="/" onClick={onNavigate}>
-                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300 ring-1 ring-primary/20">
-                        <Coins className="h-5 w-5" />
+                    <div className="h-11 w-11 rounded-2xl bg-background shadow-neu-extruded-sm flex items-center justify-center text-primary group-hover:shadow-neu-extruded-hover transition-all duration-300">
+                        <Coins className="h-6 w-6" />
                     </div>
                     <div>
-                        <span className="block font-display font-bold text-lg bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Mankeu</span>
-                        <span className="block text-[0.65rem] text-muted-foreground uppercase tracking-widest font-medium">{t('nav.finance')}</span>
+                        <span className="block font-display font-extrabold text-xl tracking-tight text-foreground">Mankeu</span>
+                        <span className="block text-[0.65rem] text-muted-foreground uppercase tracking-widest font-semibold">{t('nav.finance')}</span>
                     </div>
                 </Link>
             </div>
-            <div className="flex-1 overflow-auto py-6 px-3">
-                <nav className="grid items-start gap-1">
+            <div className="flex-1 overflow-y-auto py-6 px-4 custom-scrollbar">
+                <nav className="grid items-start gap-2.5">
                     {NAV_ITEMS.map((item) => {
                         const isActive = location.pathname === item.href;
                         return (
@@ -41,26 +42,31 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                                 to={item.href}
                                 onClick={onNavigate}
                                 className={cn(
-                                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                    "group flex items-center gap-3.5 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-300 outline-none select-none",
                                     isActive
-                                        ? "bg-primary/10 dark:bg-primary/10 text-foreground shadow-sm border border-primary/20"
-                                        : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-foreground"
+                                        ? "bg-background shadow-neu-inset text-primary font-semibold dark:shadow-neu-dark-inset"
+                                        : "text-muted-foreground hover:text-foreground hover:shadow-neu-extruded-sm dark:hover:shadow-neu-dark-extruded-sm"
                                 )}
                             >
-                                <item.icon className={cn("h-4 w-4 transition-colors", isActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground group-hover:text-foreground")} />
-                                {t(item.label)}
+                                <div className={cn(
+                                    "p-1.5 rounded-xl transition-all duration-300",
+                                    isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                                )}>
+                                    <item.icon className="h-4 w-4" />
+                                </div>
+                                <span>{t(item.label)}</span>
                                 {isActive && (
-                                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
+                                    <div className="ml-auto w-2 h-2 rounded-full bg-primary shadow-neu-extruded-sm" />
                                 )}
                             </Link>
                         );
                     })}
                 </nav>
             </div>
-            <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-                <Button className="w-full gap-2 shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all duration-300" size="lg" asChild>
-                    <Link to="/transactions" onClick={onNavigate}>
-                        <PlusCircle className="h-4 w-4" /> <span>{t('nav.add_transaction')}</span>
+            <div className="p-5">
+                <Button className="w-full gap-2 text-base font-semibold" size="lg" asChild>
+                    <Link to="/transactions/new" onClick={onNavigate}>
+                        <PlusCircle className="h-5 w-5" /> <span>{t('nav.add_transaction')}</span>
                     </Link>
                 </Button>
             </div>
@@ -70,9 +76,8 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 
 export const Sidebar = () => {
     return (
-        <aside className="hidden border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 md:flex md:w-64 md:flex-col fixed inset-y-0 left-0 z-50 transition-all duration-300 shadow-sm pt-safe pb-safe">
+        <aside className="hidden bg-background md:flex md:w-64 md:flex-col fixed inset-y-0 left-0 z-50 transition-all duration-300 shadow-neu-extruded dark:shadow-neu-dark-extruded pt-safe pb-safe border-r border-transparent">
             <SidebarContent />
         </aside>
     );
 };
-

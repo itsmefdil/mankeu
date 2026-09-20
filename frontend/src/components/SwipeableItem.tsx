@@ -37,10 +37,6 @@ export function SwipeableItem({ children, onSwipeLeft, onSwipeRight, leftContent
         const x = e.touches[0].clientX;
         const diff = x - startX.current;
 
-        // Only consider horizontal swipes
-        // But we rely on touch-pan-y CSS to let browser handle vertical scroll
-
-        // Limit swipe distance for visual feedback
         const limit = 120;
         let newX = diff;
 
@@ -50,7 +46,6 @@ export function SwipeableItem({ children, onSwipeLeft, onSwipeRight, leftContent
         currentX.current = newX;
         setOffsetX(newX);
 
-        // Haptic feedback when crossing threshold
         if (!triggered.current) {
             if (newX > 80 && onSwipeRight) {
                 if (vibrate) vibrate();
@@ -60,7 +55,6 @@ export function SwipeableItem({ children, onSwipeLeft, onSwipeRight, leftContent
                 triggered.current = true;
             }
         } else {
-            // Reset trigger if user goes back
             if (Math.abs(newX) < 70) {
                 triggered.current = false;
             }
@@ -75,8 +69,6 @@ export function SwipeableItem({ children, onSwipeLeft, onSwipeRight, leftContent
 
         if (currentX.current > threshold && onSwipeRight) {
             onSwipeRight();
-            // Animate out or bounce back? usually we bounce back unless it's a dismiss
-            // For edit/delete, let's bounce back after action
         } else if (currentX.current < -threshold && onSwipeLeft) {
             onSwipeLeft();
         }
@@ -88,40 +80,42 @@ export function SwipeableItem({ children, onSwipeLeft, onSwipeRight, leftContent
 
     return (
         <div
-            className="relative overflow-hidden touch-pan-y select-none"
+            className="relative touch-pan-y select-none"
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
         >
             {/* Background Actions */}
-            <div className="absolute inset-0 flex items-center justify-between">
-                <div
-                    className={cn(
-                        "flex items-center justify-start pl-6 h-full w-1/2 transition-opacity duration-200",
-                        offsetX > 20 ? "opacity-100" : "opacity-0"
-                    )}
-                    style={{ backgroundColor: offsetX > 0 ? 'rgba(16, 185, 129, 0.1)' : 'transparent' }} // Emerald 500/10
-                >
-                    <div className={cn("transform transition-transform duration-200", offsetX > 80 ? "scale-125" : "scale-100")}>
-                        {rightContent}
+            {offsetX !== 0 && (
+                <div className="absolute inset-0 rounded-[32px] overflow-hidden flex items-center justify-between pointer-events-none">
+                    <div
+                        className={cn(
+                            "flex items-center justify-start pl-6 h-full w-1/2 transition-opacity duration-200",
+                            offsetX > 20 ? "opacity-100" : "opacity-0"
+                        )}
+                        style={{ backgroundColor: offsetX > 0 ? 'rgba(56, 178, 172, 0.15)' : 'transparent' }}
+                    >
+                        <div className={cn("transform transition-transform duration-200", offsetX > 80 ? "scale-125" : "scale-100")}>
+                            {rightContent}
+                        </div>
+                    </div>
+                    <div
+                        className={cn(
+                            "flex items-center justify-end pr-6 h-full w-1/2 transition-opacity duration-200",
+                            offsetX < -20 ? "opacity-100" : "opacity-0"
+                        )}
+                        style={{ backgroundColor: offsetX < 0 ? 'rgba(244, 63, 94, 0.15)' : 'transparent' }}
+                    >
+                        <div className={cn("transform transition-transform duration-200", offsetX < -80 ? "scale-125" : "scale-100")}>
+                            {leftContent}
+                        </div>
                     </div>
                 </div>
-                <div
-                    className={cn(
-                        "flex items-center justify-end pr-6 h-full w-1/2 transition-opacity duration-200",
-                        offsetX < -20 ? "opacity-100" : "opacity-0"
-                    )}
-                    style={{ backgroundColor: offsetX < 0 ? 'rgba(244, 63, 94, 0.1)' : 'transparent' }} // Rose 500/10
-                >
-                    <div className={cn("transform transition-transform duration-200", offsetX < -80 ? "scale-125" : "scale-100")}>
-                        {leftContent}
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Foreground Content */}
             <div
-                className={cn(className, "relative transition-transform duration-200 ease-out bg-background")}
+                className={cn(className, "relative transition-transform duration-200 ease-out bg-transparent")}
                 style={{ transform: `translateX(${offsetX}px)` }}
             >
                 {children}

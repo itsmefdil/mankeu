@@ -28,21 +28,18 @@ router.use(authMiddleware);
 // GET all debts
 router.get('/', async (req, res) => {
     const userId = Number(req.user.sub);
-    const type = req.query.type as string | undefined;
+    const type = req.query.type as 'payable' | 'receivable' | undefined;
 
-    let query = db.select()
+    const whereCondition = type
+        ? and(eq(debts.userId, userId), eq(debts.type, type))
+        : eq(debts.userId, userId);
+
+    const result = await db.select()
         .from(debts)
-        .where(eq(debts.userId, userId))
+        .where(whereCondition)
         .orderBy(desc(debts.createdAt));
 
-    const result = await query;
-
-    // Filter by type if provided
-    const filteredResult = type
-        ? result.filter(d => d.type === type)
-        : result;
-
-    const formattedResult = filteredResult.map(d => ({
+    const formattedResult = result.map(d => ({
         id: d.id,
         user_id: d.userId,
         type: d.type,
@@ -201,11 +198,13 @@ router.delete('/:id', async (req, res) => {
         return res.status(404).json({ detail: 'Debt not found' });
     }
 
-    // Delete all payments first
-    await db.delete(debtPayments).where(eq(debtPayments.debtId, id));
+    await db.transaction(async (tx) => {
+        // Delete all payments first
+        await tx.delete(debtPayments).where(eq(debtPayments.debtId, id));
 
-    // Delete the debt
-    await db.delete(debts).where(eq(debts.id, id));
+        // Delete the debt
+        await tx.delete(debts).where(eq(debts.id, id));
+    });
 
     res.json({
         id: debt.id,
@@ -237,24 +236,27 @@ router.post('/:id/payments', validate(paymentSchema), async (req, res) => {
     }
 
     const paymentAmount = Number(body.amount);
+    let newPayment: typeof debtPayments.$inferSelect | undefined;
 
-    // Create payment
-    const [newPayment] = await db.insert(debtPayments).values({
-        debtId,
-        amount: String(paymentAmount),
-        paymentDate: body.payment_date,
-        notes: body.notes,
-    }).returning();
+    await db.transaction(async (tx) => {
+        // Create payment
+        [newPayment] = await tx.insert(debtPayments).values({
+            debtId,
+            amount: String(paymentAmount),
+            paymentDate: body.payment_date,
+            notes: body.notes,
+        }).returning();
 
-    // Update remaining amount
-    const newRemainingAmount = Math.max(0, Number(debt.remainingAmount) - paymentAmount);
+        // Update remaining amount
+        const newRemainingAmount = Math.max(0, Number(debt.remainingAmount) - paymentAmount);
 
-    await db.update(debts)
-        .set({
-            remainingAmount: String(newRemainingAmount),
-            isPaid: newRemainingAmount <= 0,
-        })
-        .where(eq(debts.id, debtId));
+        await tx.update(debts)
+            .set({
+                remainingAmount: String(newRemainingAmount),
+                isPaid: newRemainingAmount <= 0,
+            })
+            .where(eq(debts.id, debtId));
+    });
 
     if (!newPayment) {
         return res.status(500).json({ detail: 'Failed to add payment' });
@@ -324,18 +326,21 @@ router.delete('/:id/payments/:paymentId', async (req, res) => {
         return res.status(404).json({ detail: 'Payment not found' });
     }
 
-    // Delete payment
-    await db.delete(debtPayments).where(eq(debtPayments.id, paymentId));
-
     // Restore remaining amount
     const newRemainingAmount = Number(debt.remainingAmount) + Number(payment.amount);
 
-    await db.update(debts)
-        .set({
-            remainingAmount: String(Math.min(newRemainingAmount, Number(debt.amount))),
-            isPaid: false,
-        })
-        .where(eq(debts.id, debtId));
+    await db.transaction(async (tx) => {
+        // Delete payment
+        await tx.delete(debtPayments).where(eq(debtPayments.id, paymentId));
+
+        // Update remaining amount in debt
+        await tx.update(debts)
+            .set({
+                remainingAmount: String(Math.min(newRemainingAmount, Number(debt.amount))),
+                isPaid: false,
+            })
+            .where(eq(debts.id, debtId));
+    });
 
     res.json({
         id: payment.id,

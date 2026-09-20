@@ -20,11 +20,18 @@ export interface Transaction {
     is_transfer?: boolean;
 }
 
+export type BudgetPeriodType = 'monthly' | 'custom_range' | 'yearly' | 'forever';
+
 export interface Budget {
     id: number;
     category_id: number;
     month: number;
     year: number;
+    period_type?: BudgetPeriodType;
+    start_month?: number;
+    start_year?: number;
+    end_month?: number | null;
+    end_year?: number | null;
     budget_amount: number;
     category?: Category;
 }

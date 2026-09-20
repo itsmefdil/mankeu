@@ -103,46 +103,49 @@ router.post('/', validate(transactionSchema), async (req, res) => {
         return res.status(400).json({ detail: 'Invalid Account' });
     }
 
-    // Create transaction
-    const [newTransaction] = await db.insert(transactions).values({
-        userId,
-        accountId: body.account_id,
-        categoryId: body.category_id,
-        name: body.name,
-        transactionDate: body.transaction_date,
-        amount: String(body.amount),
-        notes: body.notes,
-        goalId: body.goal_id,
-    }).returning();
+    let newTransaction: typeof transactions.$inferSelect;
 
-    // Update Account Balance
-    // Income: + Amount, Expense: - Amount
-    let balanceChange = 0;
-    if (category.type === 'income') {
-        balanceChange = Number(body.amount);
-    } else {
-        balanceChange = -Number(body.amount);
-    }
+    await db.transaction(async (tx) => {
+        // Create transaction
+        const [inserted] = await tx.insert(transactions).values({
+            userId,
+            accountId: body.account_id,
+            categoryId: body.category_id,
+            name: body.name,
+            transactionDate: body.transaction_date,
+            amount: String(body.amount),
+            notes: body.notes,
+            goalId: body.goal_id,
+        }).returning();
 
-    // Check for Saving Category (Special case "Opsi 1" - handled by frontend/logic?)
-    // If category is saving, it is treated as Expense (balance decreases). Logic holds.
+        newTransaction = inserted;
 
-    const newBalance = Number(account.balance) + balanceChange;
-    await db.update(accounts)
-        .set({ balance: String(newBalance) })
-        .where(eq(accounts.id, account.id));
+        // Update Account Balance
+        // Income: + Amount, Expense: - Amount
+        let balanceChange = 0;
+        if (category.type === 'income') {
+            balanceChange = Number(body.amount);
+        } else {
+            balanceChange = -Number(body.amount);
+        }
+
+        const newBalance = Number(account.balance) + balanceChange;
+        await tx.update(accounts)
+            .set({ balance: String(newBalance) })
+            .where(eq(accounts.id, account.id));
+    });
 
     res.json({
-        id: newTransaction.id,
-        user_id: newTransaction.userId,
-        account_id: newTransaction.accountId,
-        category_id: newTransaction.categoryId,
-        name: newTransaction.name,
-        transaction_date: newTransaction.transactionDate,
-        amount: Number(newTransaction.amount),
-        notes: newTransaction.notes,
-        goal_id: newTransaction.goalId,
-        created_at: newTransaction.createdAt
+        id: newTransaction!.id,
+        user_id: newTransaction!.userId,
+        account_id: newTransaction!.accountId,
+        category_id: newTransaction!.categoryId,
+        name: newTransaction!.name,
+        transaction_date: newTransaction!.transactionDate,
+        amount: Number(newTransaction!.amount),
+        notes: newTransaction!.notes,
+        goal_id: newTransaction!.goalId,
+        created_at: newTransaction!.createdAt
     });
 });
 
@@ -171,61 +174,67 @@ router.put('/:id', validate(transactionSchema), async (req, res) => {
         return res.status(400).json({ detail: 'Invalid New Category' });
     }
 
-    // Update Transaction
-    const [updatedTransaction] = await db.update(transactions)
-        .set({
-            accountId: body.account_id,
-            categoryId: body.category_id,
-            name: body.name,
-            transactionDate: body.transaction_date,
-            amount: String(body.amount),
-            notes: body.notes,
-            goalId: body.goal_id,
-        })
-        .where(eq(transactions.id, id))
-        .returning();
+    let updatedTransaction: typeof transactions.$inferSelect;
 
-    // Revert Old Balance Impact
-    if (oldCategory && oldTransaction.accountId) {
-        const [oldAccount] = await db.select().from(accounts).where(eq(accounts.id, oldTransaction.accountId));
-        if (oldAccount) {
-            let revertChange = 0;
-            if (oldCategory.type === 'income') {
-                revertChange = -Number(oldTransaction.amount); // Was +, so -, to revert
-            } else {
-                revertChange = Number(oldTransaction.amount); // Was -, so +, to revert
+    await db.transaction(async (tx) => {
+        // Update Transaction
+        const [updated] = await tx.update(transactions)
+            .set({
+                accountId: body.account_id,
+                categoryId: body.category_id,
+                name: body.name,
+                transactionDate: body.transaction_date,
+                amount: String(body.amount),
+                notes: body.notes,
+                goalId: body.goal_id,
+            })
+            .where(eq(transactions.id, id))
+            .returning();
+
+        updatedTransaction = updated;
+
+        // Revert Old Balance Impact
+        if (oldCategory && oldTransaction.accountId) {
+            const [oldAccount] = await tx.select().from(accounts).where(eq(accounts.id, oldTransaction.accountId));
+            if (oldAccount) {
+                let revertChange = 0;
+                if (oldCategory.type === 'income') {
+                    revertChange = -Number(oldTransaction.amount); // Was +, so -, to revert
+                } else {
+                    revertChange = Number(oldTransaction.amount); // Was -, so +, to revert
+                }
+                await tx.update(accounts)
+                    .set({ balance: String(Number(oldAccount.balance) + revertChange) })
+                    .where(eq(accounts.id, oldAccount.id));
             }
-            await db.update(accounts)
-                .set({ balance: String(Number(oldAccount.balance) + revertChange) })
-                .where(eq(accounts.id, oldAccount.id));
         }
-    }
 
-    // Apply New Balance Impact
-    const [newAccount] = await db.select().from(accounts).where(eq(accounts.id, body.account_id));
-    if (newAccount) {
-        let applyChange = 0;
-        if (newCategory.type === 'income') {
-            applyChange = Number(body.amount);
-        } else {
-            applyChange = -Number(body.amount);
+        // Apply New Balance Impact
+        const [newAccount] = await tx.select().from(accounts).where(eq(accounts.id, body.account_id));
+        if (newAccount) {
+            let applyChange = 0;
+            if (newCategory.type === 'income') {
+                applyChange = Number(body.amount);
+            } else {
+                applyChange = -Number(body.amount);
+            }
+            await tx.update(accounts)
+                .set({ balance: String(Number(newAccount.balance) + applyChange) })
+                .where(eq(accounts.id, newAccount.id));
         }
-        await db.update(accounts)
-            .set({ balance: String(Number(newAccount.balance) + applyChange) })
-            .where(eq(accounts.id, newAccount.id));
-    }
+    });
 
     res.json({
-        id: updatedTransaction.id,
-        user_id: updatedTransaction.userId,
-        account_id: updatedTransaction.accountId,
-        category_id: updatedTransaction.categoryId,
-        name: updatedTransaction.name,
-        transaction_date: updatedTransaction.transactionDate,
-        amount: Number(updatedTransaction.amount),
-        notes: updatedTransaction.notes,
-        goal_id: updatedTransaction.goalId,
-        created_at: updatedTransaction.createdAt
+        id: updatedTransaction!.id,
+        user_id: updatedTransaction!.userId,
+        account_id: updatedTransaction!.accountId,
+        category_id: updatedTransaction!.categoryId,
+        name: updatedTransaction!.name,
+        transaction_date: updatedTransaction!.transactionDate,
+        amount: Number(updatedTransaction!.amount),
+        notes: updatedTransaction!.notes,
+        goal_id: updatedTransaction!.goalId,
+        created_at: updatedTransaction!.createdAt
     });
 });
 
@@ -246,29 +255,30 @@ router.delete('/:id', async (req, res) => {
     }
     const { tx: transaction, cat: category } = transactionResult[0];
 
-    // Delete transaction
-    await db.delete(transactions).where(eq(transactions.id, id));
+    await db.transaction(async (tx) => {
+        // Delete transaction
+        await tx.delete(transactions).where(eq(transactions.id, id));
 
-    // Revert Balance
-    if (category && transaction.accountId) {
-        const [account] = await db.select().from(accounts).where(eq(accounts.id, transaction.accountId));
-        if (account) {
-            let revertChange = 0;
-            if (category.type === 'income') {
-                revertChange = -Number(transaction.amount);
-            } else {
-                revertChange = Number(transaction.amount);
+        // Revert Balance
+        if (category && transaction.accountId) {
+            const [account] = await tx.select().from(accounts).where(eq(accounts.id, transaction.accountId));
+            if (account) {
+                let revertChange = 0;
+                if (category.type === 'income') {
+                    revertChange = -Number(transaction.amount);
+                } else {
+                    revertChange = Number(transaction.amount);
+                }
+                await tx.update(accounts)
+                    .set({ balance: String(Number(account.balance) + revertChange) })
+                    .where(eq(accounts.id, account.id));
             }
-            await db.update(accounts)
-                .set({ balance: String(Number(account.balance) + revertChange) })
-                .where(eq(accounts.id, account.id));
         }
-    }
+    });
 
     res.json({
         id: transaction.id,
         user_id: transaction.userId,
-        // ... return other fields if needed
     });
 });
 
@@ -288,26 +298,28 @@ router.post('/bulk-delete', validate(bulkDeleteSchema), async (req, res) => {
         return res.status(404).json({ detail: 'No transactions found to delete' });
     }
 
-    for (const { tx: transaction, cat: category } of transactionsToDelete) {
-        // Delete
-        await db.delete(transactions).where(eq(transactions.id, transaction.id));
+    await db.transaction(async (tx) => {
+        for (const { tx: transaction, cat: category } of transactionsToDelete) {
+            // Delete
+            await tx.delete(transactions).where(eq(transactions.id, transaction.id));
 
-        // Revert Balance
-        if (category && transaction.accountId) {
-            const [account] = await db.select().from(accounts).where(eq(accounts.id, transaction.accountId));
-            if (account) {
-                let revertChange = 0;
-                if (category.type === 'income') {
-                    revertChange = -Number(transaction.amount);
-                } else {
-                    revertChange = Number(transaction.amount);
+            // Revert Balance
+            if (category && transaction.accountId) {
+                const [account] = await tx.select().from(accounts).where(eq(accounts.id, transaction.accountId));
+                if (account) {
+                    let revertChange = 0;
+                    if (category.type === 'income') {
+                        revertChange = -Number(transaction.amount);
+                    } else {
+                        revertChange = Number(transaction.amount);
+                    }
+                    await tx.update(accounts)
+                        .set({ balance: String(Number(account.balance) + revertChange) })
+                        .where(eq(accounts.id, account.id));
                 }
-                await db.update(accounts)
-                    .set({ balance: String(Number(account.balance) + revertChange) })
-                    .where(eq(accounts.id, account.id));
             }
         }
-    }
+    });
 
     res.status(204).send();
 });

@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { updateApiBaseUrl } from "@/lib/axios";
 import { Preferences } from '@capacitor/preferences';
 import { checkBackendConnection } from "@/services/health";
 import { Server, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function ServerConfig() {
+    const { t } = useTranslation();
     const [url, setUrl] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -30,11 +32,7 @@ export default function ServerConfig() {
         setSuccess(false);
 
         try {
-            // Check connection functionality First without updating global defaults yet
-            // This prevents race conditions and corrupted global state on failure
             await checkBackendConnection(url);
-
-            // If successful, commit the URL
             await updateApiBaseUrl(url);
 
             setSuccess(true);
@@ -43,7 +41,7 @@ export default function ServerConfig() {
             }, 1000);
         } catch (err) {
             console.error(err);
-            setError("Failed to connect to the server. Please check the URL and try again.");
+            setError(t('server_config.error_failed'));
             setSuccess(false);
         } finally {
             setLoading(false);
@@ -51,32 +49,22 @@ export default function ServerConfig() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 sm:px-6 lg:px-8 transition-colors duration-300">
+        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 transition-colors duration-300">
             {/* Header / Logo Area */}
-            <div className="mb-8 text-center sm:hidden">
+            <div className="mb-6 text-center">
                 <div className="mx-auto bg-primary/10 w-16 h-16 rounded-3xl flex items-center justify-center shadow-sm mb-4">
                     <Server className="w-8 h-8 text-primary" />
                 </div>
-                <h1 className="text-2xl font-display font-bold text-foreground">Setup Server</h1>
-                <p className="text-muted-foreground mt-2 text-sm">Connect to your personal Mankeu cloud</p>
+                <h1 className="text-2xl font-display font-bold text-foreground">{t('server_config.header_title')}</h1>
+                <p className="text-muted-foreground mt-2 text-sm">{t('server_config.header_desc')}</p>
             </div>
 
-            <Card className="w-full max-w-[400px] border-none shadow-none sm:border sm:border-border/60 sm:shadow-xl sm:shadow-primary/5 sm:bg-card sm:backdrop-blur-xl rounded-3xl overflow-hidden">
-                <CardHeader className="text-center pb-2 hidden sm:block">
-                    <div className="mx-auto mb-6 bg-primary/10 w-20 h-20 rounded-3xl flex items-center justify-center shadow-inner transform hover:scale-105 transition-transform duration-300">
-                        <Server className="w-10 h-10 text-primary" />
-                    </div>
-                    <CardTitle className="text-2xl font-bold font-display text-foreground">Server Setup</CardTitle>
-                    <CardDescription className="text-base mt-2">
-                        Connect to your Mankeu backend
-                    </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-6 pt-2 sm:pt-6">
+            <Card className="w-full max-w-[400px] border-none shadow-none rounded-3xl overflow-hidden">
+                <CardContent className="space-y-6 pt-2">
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label htmlFor="url" className="text-sm font-semibold text-muted-foreground ml-1">
-                                Server URL
+                                {t('server_config.url_label')}
                             </label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -92,7 +80,7 @@ export default function ServerConfig() {
                                 />
                             </div>
                             <p className="text-[11px] sm:text-xs text-muted-foreground px-2 leading-relaxed">
-                                Tip: Use your computer's local IP address ( e.g. http://localhost:8888/api/v1 ) if running on the same Wi-Fi.
+                                {t('server_config.url_tip')}
                             </p>
                         </div>
 
@@ -106,7 +94,7 @@ export default function ServerConfig() {
                         {success && (
                             <div className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-sm p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 border border-emerald-500/20">
                                 <CheckCircle2 className="w-5 h-5 shrink-0" />
-                                <span className="font-semibold">Connected! Redirecting...</span>
+                                <span className="font-semibold">{t('server_config.success_connected')}</span>
                             </div>
                         )}
                     </div>
@@ -121,16 +109,16 @@ export default function ServerConfig() {
                         {loading ? (
                             <div className="flex items-center gap-2">
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                <span>Connecting...</span>
+                                <span>{t('server_config.connecting_button')}</span>
                             </div>
-                        ) : "Connect to Server"}
+                        ) : t('server_config.connect_button')}
                     </Button>
                 </CardFooter>
             </Card>
 
             {/* Footer Help */}
             <p className="mt-8 text-center text-xs text-muted-foreground/60 sm:hidden">
-                Need help finding your IP? Check network settings.
+                {t('server_config.help_footer')}
             </p>
         </div>
     );

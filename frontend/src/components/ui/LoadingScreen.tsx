@@ -1,6 +1,9 @@
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const LoadingScreen = () => {
+    const { t } = useTranslation();
+
     return (
         <div className="fixed inset-0 bg-background flex flex-col items-center justify-center z-50">
             <div className="flex flex-col items-center gap-6 animate-in fade-in duration-500">
@@ -21,14 +24,14 @@ export const LoadingScreen = () => {
                     </h1>
                     <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Initializing...</span>
+                        <span>{t('common.initializing')}</span>
                     </div>
                 </div>
             </div>
 
             {/* Footer */}
             <div className="absolute bottom-8 text-center text-xs text-muted-foreground/50">
-                <p>Secure Financial Management</p>
+                <p>{t('common.secure_management')}</p>
             </div>
         </div>
     );

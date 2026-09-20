@@ -129,6 +129,11 @@ export const monthlyBudgets = pgTable('monthly_budgets', {
     categoryId: integer('category_id').references(() => categories.id).notNull(),
     month: integer('month').notNull(),
     year: integer('year').notNull(),
+    periodType: text('period_type').default('monthly').notNull(), // monthly, custom_range, yearly, forever
+    startMonth: integer('start_month'),
+    startYear: integer('start_year'),
+    endMonth: integer('end_month'),
+    endYear: integer('end_year'),
     budgetAmount: numeric('budget_amount', { precision: 15, scale: 2 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
