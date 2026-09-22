@@ -14,20 +14,22 @@ import {
     LogOut,
     Sun,
     Moon,
-    UserCircle2,
     Coins,
     Heart,
-    Tags
+    Tags,
+    Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/UserAvatar';
 
 export default function ProfilePage() {
     const { t } = useTranslation();
     const { user, logout } = useAuthStore();
     const { toggleTheme } = useTheme();
-    const { language, currency } = usePreferencesStore();
+    const { language, currency, avatarSeed, randomizeAvatar } = usePreferencesStore();
+    const avatarName = avatarSeed || user?.email || user?.name || 'mankeu';
 
     const menuGroups = [
         {
@@ -97,12 +99,22 @@ export default function ProfilePage() {
                 {/* User Card */}
                 <div className="p-6 sm:p-8 rounded-[32px] bg-background shadow-neu-extruded dark:shadow-neu-dark-extruded flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-3xl overflow-hidden shadow-neu-inset-deep flex items-center justify-center bg-background shrink-0">
-                            {user?.picture ? (
-                                <img src={user.picture} alt={user.name} className="h-full w-full object-cover" />
-                            ) : (
-                                <UserCircle2 className="h-12 w-12 text-primary" />
-                            )}
+                        <div className="relative group shrink-0">
+                            <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-3xl overflow-hidden shadow-neu-inset-deep flex items-center justify-center bg-background shrink-0">
+                                <UserAvatar
+                                    name={avatarName}
+                                    size={76}
+                                    animate="always"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => randomizeAvatar()}
+                                className="absolute -bottom-1 -right-1 h-7 w-7 rounded-xl bg-background shadow-neu-extruded-sm hover:shadow-neu-extruded-hover active:shadow-neu-inset-sm active:translate-y-0.5 transition-all duration-200 flex items-center justify-center text-primary"
+                                title="Acak Karakter Avatar"
+                            >
+                                <Sparkles className="h-3.5 w-3.5" />
+                            </button>
                         </div>
                         <div className="min-w-0">
                             <h2 className="text-xl sm:text-2xl font-extrabold font-display text-foreground truncate">

@@ -6,7 +6,7 @@ import { usePreferencesStore } from '@/hooks/usePreferences';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Moon, Sun, Monitor, LogOut, Shield, Bell, HelpCircle, Globe } from 'lucide-react';
+import { User, Moon, Sun, Monitor, LogOut, Shield, Bell, HelpCircle, Globe, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,11 +15,12 @@ import {
     loadReminderSettings,
     sendTestNotification,
 } from '@/services/notifications';
+import { UserAvatar } from '@/components/UserAvatar';
 
 export default function SettingsPage() {
     const { user, logout } = useAuthStore();
     const { theme, setTheme } = useTheme();
-    const { currency, language, setCurrency, setLanguage } = usePreferencesStore();
+    const { currency, language, setCurrency, setLanguage, avatarSeed, randomizeAvatar } = usePreferencesStore();
     const { t } = useTranslation();
     const [reminderSettings, setReminderSettings] = useState(DEFAULT_REMINDER_SETTINGS);
     const [isLoadingReminder, setIsLoadingReminder] = useState(true);
@@ -96,6 +97,33 @@ export default function SettingsPage() {
                         <p className="text-sm text-muted-foreground mt-1">{t('settings.profile_desc')}</p>
                     </div>
                     <div className="p-6 space-y-6">
+                        {/* Dynamic Avatar Card */}
+                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/40 border border-border">
+                            <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-neu-inset-deep flex items-center justify-center bg-background shrink-0">
+                                <UserAvatar
+                                    name={avatarSeed || user?.email || user?.name || 'mankeu'}
+                                    size={64}
+                                    animate="always"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-sm font-bold text-foreground">Avatar Dinamis (Blobatar)</h3>
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                    Karakter: <span className="font-mono text-primary font-semibold">{avatarSeed || user?.name || user?.email || 'mankeu'}</span>
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => randomizeAvatar()}
+                                className="rounded-xl font-semibold gap-1.5 shrink-0"
+                            >
+                                <Sparkles className="h-4 w-4 text-primary" />
+                                Acak
+                            </Button>
+                        </div>
+
                         <div className="grid gap-4 md:grid-cols-2">
                             <div className="space-y-2">
                                 <Label htmlFor="name">{t('settings.full_name')}</Label>

@@ -4,13 +4,26 @@ import i18n from '@/lib/i18n';
 import { userService } from '@/services/user';
 import { useAuthStore } from './useAuth';
 
+const ADJECTIVES = ['happy', 'cool', 'lucky', 'sunny', 'smart', 'starry', 'swift', 'cozy', 'golden', 'magic', 'neon', 'chill', 'zen'];
+const CREATURES = ['panda', 'koala', 'cat', 'fox', 'penguin', 'sloth', 'otter', 'bunny', 'dolphin', 'bear', 'owl', 'whale', 'duck'];
+
+const generateFunAvatarSeed = () => {
+    const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+    const animal = CREATURES[Math.floor(Math.random() * CREATURES.length)];
+    const num = Math.floor(Math.random() * 90 + 10);
+    return `${adj}-${animal}-${num}`;
+};
+
 interface PreferencesState {
     isAmountHidden: boolean;
     currency: string;
     language: string;
+    avatarSeed: string;
     toggleAmountVisibility: () => void;
     setCurrency: (currency: string) => Promise<void>;
     setLanguage: (language: string) => Promise<void>;
+    setAvatarSeed: (seed: string) => void;
+    randomizeAvatar: () => void;
     syncWithUser: () => void;
 }
 
@@ -20,7 +33,10 @@ export const usePreferencesStore = create<PreferencesState>()(
             isAmountHidden: false,
             currency: 'IDR',
             language: 'id',
+            avatarSeed: '',
             toggleAmountVisibility: () => set((state) => ({ isAmountHidden: !state.isAmountHidden })),
+            setAvatarSeed: (seed: string) => set({ avatarSeed: seed }),
+            randomizeAvatar: () => set({ avatarSeed: generateFunAvatarSeed() }),
 
             setCurrency: async (currency) => {
                 set({ currency });
